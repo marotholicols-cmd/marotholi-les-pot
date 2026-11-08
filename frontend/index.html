@@ -7,6 +7,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Marotholi Les-Pot</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#c8ff00">
 <meta name="theme-color" content="#d4ff3f">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -40,6 +42,7 @@ button.ghost{background:#333;color:#fff}
 a{color:#d4ff3f}
 </style>
 </head>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <body>
 <header>MAROTHOLI LES-POT</header>
 <div id="whoAmI" style="text-align:center;font-size:12px;opacity:.7;padding:6px">Not logged in</div>
