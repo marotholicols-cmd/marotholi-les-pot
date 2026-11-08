@@ -21,6 +21,7 @@
   .nav a{color:#fff;text-decoration:none;font-size:13px;opacity:.7} .nav a.active{opacity:1;color:#d4ff3f}
   .top{ display:flex; justify-content:space-between; align-items:center; }
   .badge{background:#d4ff3f;color:#000;padding:4px 10px;border-radius:10px;font-weight:900;font-size:12px}
+  .cover{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#333;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -48,23 +49,8 @@ async function load(){
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ msg.innerHTML = 'Not logged in. <a href="auth.html" style="color:#d4ff3f">Go to Login →</a>'; return; }
 
-  // FIXED: Check BOTH fan_id AND buyer_id - Wallet buys use fan_id, Mpesa buys use buyer_id
-  // Try fan_id first (new app.js), fallback to buyer_id
-  let purchases = null, error = null;
-  let r1 = await sb.from('purchases').select('*, songs(*)').eq('status', 'approved').eq('fan_id', user.id).order('created_at', { ascending: false });
-  purchases = r1.data; error = r1.error;
-  if(!error && (!purchases || purchases.length===0)){
-    let r2 = await sb.from('purchases').select('*, songs(*)').eq('status','approved').eq('buyer_id', user.id).order('created_at',{ascending:false});
-    if(!r2.error && r2.data && r2.data.length) purchases = r2.data;
-  }
-  // Also merge - in case user has some in each
-  if(!error && purchases){
-    let r3 = await sb.from('purchases').select('*, songs(*)').eq('status','approved').eq('buyer_id', user.id).order('created_at',{ascending:false});
-    if(!r3.error && r3.data){
-      const seen = new Set(purchases.map(p=>p.id));
-      r3.data.forEach(p=>{ if(!seen.has(p.id)) purchases.push(p); });
-    }
-  }
+  // FIXED: ONLY fan_id exists. Deleted buyer_id queries - they errored every time.
+  const { data: purchases, error } = await sb.from('purchases').select('*, songs(*)').eq('status', 'approved').eq('fan_id', user.id).order('created_at', { ascending: false });
 
   if(error){ msg.textContent = "Error: " + error.message; return; }
 
@@ -81,7 +67,8 @@ async function load(){
     if(!s) return;
     const div = document.createElement('div');
     div.className = 'card';
-    div.innerHTML = `<div class="info"><b>${s.title}</b><div>${s.artist_name} • ${s.price_grind}G • APPROVED</div></div><button class="playBtn">▶ PLAY</button>`;
+    const cover = s.cover_url ? `<img src="${s.cover_url}" class="cover">` : `<div class="cover"></div>`;
+    div.innerHTML = `${cover}<div class="info"><b>${s.title}</b><div>${s.artist_name} • ${s.price_grind}G • APPROVED</div></div><button class="playBtn">▶ PLAY</button>`;
     div.querySelector('.playBtn').onclick = () => playSong(s);
     list.appendChild(div);
   });
@@ -97,22 +84,15 @@ async function playSong(song){
   now.textContent = "🎵 " + song.title + " — " + song.artist_name;
   player.style.display = 'block';
 
-  // FIXED: Try all possible audio fields
-  const path = song.audio_path || song.audio_url || song.file_url || '';
-  let url = null;
-  if(path && !path.startsWith('http')){
-    const { data: signed } = await sb.storage.from('songs').createSignedUrl(path, 3600);
-    if(signed) url = signed.signedUrl;
-    if(!url){
-      const { data: pub } = sb.storage.from('songs').getPublicUrl(path);
-      url = pub.publicUrl;
-    }
-  } else if(path.startsWith('http')){
-    url = path;
-  }
+  // FIXED: Only signed URL, no public URL fallback. Signed = expires, can't be shared/downloaded easily.
+  const path = song.audio_path || '';
+  if(!path){ msg.textContent = "No audio file found for this song. Contact admin."; return; }
+  if(path.startsWith('http')){ msg.textContent = "Old song with public link - re-upload needed."; return; }
 
-  if(!url){ msg.textContent = "No audio file found for this song. Contact admin."; return; }
-  audio.src = url;
+  const { data: signed, error } = await sb.storage.from('songs').createSignedUrl(path, 3600);
+  if(error || !signed?.signedUrl){ msg.textContent = "Could not load song. Re-login."; return; }
+
+  audio.src = signed.signedUrl;
   try{
     await audio.play();
     msg.textContent = "✅ Playing: " + song.title;
