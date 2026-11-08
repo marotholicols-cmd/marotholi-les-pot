@@ -60,7 +60,6 @@ async function loadMyBalance(){
   const {data:{user}} = await sb.auth.getUser();
   myUser = user;
   if(!user){ document.getElementById('bal').textContent='G 0.00'; return; }
-  // FIXED: grind_balance not balance_grind
   const {data} = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
   myBalance = Number(data?.grind_balance || 0);
   document.getElementById('bal').textContent = myBalance.toFixed(2)+' G';
@@ -103,30 +102,25 @@ async function submitBuy(){
   if(!selectedSong){msg.textContent="No song selected";return}
   const price = Number(selectedSong.price_grind);
 
-  // ===== WALLET BUY - USE app.js function so no double-pay =====
   if(method === 'Wallet'){
     if(myBalance < price){ msg.textContent=`Not enough balance. You have ${myBalance.toFixed(2)} G, need ${price} G. Top up in Wallet first.`; return; }
     msg.textContent="Buying with Wallet...";
     const artistId = selectedSong.artist_id || selectedSong.user_id || selectedSong.owner_id;
-    // Use central function from app.js - handles deduct + artist 63% + purchase
     await buySongWithWallet(selectedSong.id, price, artistId);
     return;
   }
 
-  // ===== EXTERNAL BUY - Mpesa/EcoCash - WAIT FOR APPROVAL - FIXED COLUMNS =====
+  // ===== EXTERNAL BUY - FIXED =====
   const ref=document.getElementById('payRef').value.trim();
   if(!ref){msg.textContent="Paste your OTP / Reference first.";return}
   msg.textContent="Sending to owner for approval...";
-  // Prevent duplicate pending purchase
   const {data:dup} = await sb.from('purchases').select('id').eq('fan_id', myUser.id).eq('song_id', selectedSong.id).eq('status','pending').maybeSingle();
   if(dup){ msg.textContent="You already sent this. Wait for approval."; return; }
   const {error}=await sb.from('purchases').insert({
     fan_id: myUser.id,
-    buyer_id: myUser.id,
     song_id: selectedSong.id,
-    fees_grind: price * 0.63,
-    platform_grind: price * 0.37,
-    payment_method: method,
+    price_grind: price,
+    pay_method: method,
     payment_ref: ref,
     status: 'pending'
   });
