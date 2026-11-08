@@ -38,7 +38,6 @@
 <div class="bottomnav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="upload.html" class="active">⬆️ Upload</a><a href="wallet.html">💰 Wallet</a><a href="admin.html">🛠️ Admin</a><a href="account.html">👤 Account</a></div>
 
 <script>
-// Auto-fill artist name from profile
 (async ()=>{
   const {data:{user}} = await sb.auth.getUser();
   if(user){
@@ -84,7 +83,6 @@ async function doUpload(){
     const { error: upErr } = await sb.storage.from('songs').upload(audioPath, audioFile);
     if(upErr) throw new Error("Storage upload failed: " + upErr.message + "\nCheck: Supabase > Storage > songs bucket exists and is PUBLIC.");
 
-    // FIXED: Cover goes to 'covers' bucket + save cover_url so Discover shows it
     let coverUrl = null;
     if(coverFile){
       bar.style.width='65%';
@@ -96,7 +94,6 @@ async function doUpload(){
         const {data:pub} = sb.storage.from('covers').getPublicUrl(coverPath);
         coverUrl = pub.publicUrl;
       } else {
-        // Fallback: try songs bucket if covers bucket doesn't exist
         const { error: cErr2 } = await sb.storage.from('songs').upload(coverPath, coverFile);
         if(!cErr2){ const {data:pub2} = sb.storage.from('songs').getPublicUrl(coverPath); coverUrl = pub2.publicUrl; }
       }
@@ -104,6 +101,7 @@ async function doUpload(){
 
     bar.style.width='85%';
     say("Saving song info...");
+    // FIXED: Only columns that definitely exist. Removed total_buys + status - they broke insert if missing.
     const { error: dbErr } = await sb.from('songs').insert({
       title: title,
       artist_name: artist,
@@ -111,9 +109,7 @@ async function doUpload(){
       uploader_id: user.id,
       audio_path: audioPath,
       cover_url: coverUrl,
-      price_grind: parseFloat(priceVal),
-      total_buys: 0,
-      status: 'approved'
+      price_grind: parseFloat(priceVal)
     });
     if(dbErr) throw dbErr;
 
