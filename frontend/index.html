@@ -48,7 +48,6 @@ a{color:#d4ff3f}
 <div id="whoAmI" style="text-align:center;font-size:12px;opacity:.7;padding:6px">Not logged in</div>
 <div class="wrap">
 <div id="msg"></div>
-<!-- REDIRECT NOTICE - keeps linking to new separate pages -->
 <div class="card center" style="border-color:#d4ff3f">
   <h2>Welcome to LES-POT 🇱🇸</h2>
   <p class="small">Discover • Library • Upload • Wallet • Account</p>
@@ -300,7 +299,8 @@ async function submitBuy(){
   const ref=document.getElementById('payRef').value.trim();
   if(!ref){msg.textContent="Paste OTP / Reference first.";return;}
   msg.textContent="Sending...";
-  const r1 = await sb.from('purchases').insert({song_id:currentSong.id,fan_id:user.id,buyer_id:user.id,fees_grind:price*0.63,platform_grind:price*0.37,payment_method:method,payment_ref:ref,status:'pending'});
+  // FIXED: only real columns - price_grind + pay_method, no fees/platform/buyer_id
+  const r1 = await sb.from('purchases').insert({song_id:currentSong.id,fan_id:user.id,price_grind:price,pay_method:method,payment_ref:ref,status:'pending'});
   if(r1.error){msg.textContent=r1.error.message;return;}
   msg.textContent="✅ Sent! Wait for Admin approval."; closeBuy(); setTimeout(function(){ showPage('library'); },800);
 }
@@ -374,7 +374,6 @@ async function doUpload(){
 }
 async function loadWallet(){
   const user = await getCurrentUser(); if(!user) return;
-  // FIXED: grind_balance
   const r1 = await sb.from('profiles').select('grind_balance').eq('id',user.id).single();
   const bal=r1.data ? r1.data.grind_balance : 0;
   document.getElementById('balBig').textContent=(bal||0).toFixed(2)+" G";
@@ -410,7 +409,7 @@ async function loadAdmin(){
   if(!adminCheck){ document.getElementById('adminPurchases').innerHTML="Not admin."; document.getElementById('adminDeposits').innerHTML=""; document.getElementById('adminWithdrawals').innerHTML=""; return; }
   const r1 = await sb.from('purchases').select('*, songs(title)').eq('status','pending').order('created_at',{ascending:false});
   const ps = r1.data || [];
-  document.getElementById('adminPurchases').innerHTML=ps.map(function(p){ return '<div class="flex"><span>'+esc(p.songs ? p.songs.title : 'Song')+' • '+esc(p.fees_grind)+'G • Ref: '+esc(p.payment_ref||'')+'</span><button class="small" onclick="approvePurchase(\''+p.id+'\')">Approve</button></div>'; }).join('')||"No pending purchases";
+  document.getElementById('adminPurchases').innerHTML=ps.map(function(p){ return '<div class="flex"><span>'+esc(p.songs ? p.songs.title : 'Song')+' • Royalty: '+esc(p.royalty_grind)+'G • Ref: '+esc(p.payment_ref||'')+'</span><button class="small" onclick="approvePurchase(\''+p.id+'\')">Approve</button></div>'; }).join('')||"No pending purchases";
   const r2 = await sb.from('deposits').select('*, profiles(full_name,email,phone)').eq('status','pending').order('created_at',{ascending:false});
   const ds = r2.data || [];
   document.getElementById('adminDeposits').innerHTML=ds.map(function(d){ return '<div class="flex"><span>'+esc(d.profiles?.full_name||'No Name')+' • '+esc(d.amount_grind)+'G • '+esc(d.reference||'')+'</span><button class="small" onclick="approveDeposit(\''+d.id+'\')">Approve</button></div>'; }).join('')||"No pending deposits";
@@ -418,11 +417,8 @@ async function loadAdmin(){
   const ws = r3.data || [];
   document.getElementById('adminWithdrawals').innerHTML=ws.map(function(w){ return '<div class="flex"><span>'+esc(w.profiles?.full_name||'No Name')+' • '+esc(w.amount_grind)+'G → '+esc(w.receive_details||'')+'</span><button class="small" onclick="approveWithdrawal(\''+w.id+'\')">Approve</button></div>'; }).join('')||"No pending withdrawals";
 }
-// FIXED: Use app.js functions, NOT missing RPCs
-async function approvePurchase(id){ await approvePurchase(id); }
-async function approveDeposit(id){ await approveDeposit(id); }
-async function approveWithdrawal(id){ await approveWithdrawal(id); }
-
+// FIXED: DO NOT redefine approvePurchase / approveDeposit / approveWithdrawal here.
+// They already exist in app.js as window.approvePurchase etc. Redefining them caused infinite recursion.
 async function showWho(){
   const u = await getCurrentUser();
   const el = document.getElementById('whoAmI');
