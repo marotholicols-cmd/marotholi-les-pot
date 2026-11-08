@@ -145,7 +145,6 @@ async function buySongWithWallet(songId, price, artistId){
     const {data:artist}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single();
     await sb.from('profiles').update({grind_balance:Number(artist?.grind_balance||0)+price*0.63}).eq('id',artistId);
   }
-  const {error:pErr}=await sb.from('purchases').insert({ fan_id:user.id, buyer_id:user.id, song_id:songId, fees_grind:price*0.63, platform_grind:price*0.37, payment_method:'Wallet', payment_ref:'WALLET-'+Date.now(), status:'approved' });
   if(pErr){alert('Purchase save failed: '+pErr.message);return;}
   alert(`✅ Bought! -${price} G. New: ${(bal-price).toFixed(2)} G`); location.href='library.html';
 }
