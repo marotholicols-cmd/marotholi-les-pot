@@ -1,2 +1,17 @@
-<meta http-equiv="refresh" content="0; url=auth.html">
-<script>location.href='auth.html'</script>
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account - LES-POT</title><style>body{background:#0a0a0a;color:#fff;font-family:Arial;padding:20px;text-align:center} .card{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:20px;max-width:400px;margin:20px auto} button{background:#ccff00;color:#000;border:0;padding:12px 20px;border-radius:10px;font-weight:700;width:100%;margin-top:10px} a{color:#ccff00}</style></head>
+<body>
+<h1>👤 My Account</h1>
+<div class="card">
+<p id="info">Loading...</p>
+<p><b>Balance:</b> <span id="bal">-</span></p>
+<button onclick="logout()">Logout</button>
+</div>
+<p><a href="index.html">← Back to LES-POT</a> | <a href="discover.html">Discover</a> | <a href="wallet.html">Wallet</a></p>
+<script>
+let u = JSON.parse(localStorage.getItem('lespot_user')||localStorage.getItem('user')||'null');
+if(!u){ document.getElementById('info').innerHTML='Not logged in<br><br><a href="auth.html">Go to Login</a>'; }
+else{ document.getElementById('info').innerHTML='Logged in as:<br><b>'+(u.email||u.name||'User')+'</b>'; document.getElementById('bal').innerText=(u.balance||u.grind_balance||'0')+' G'; }
+function logout(){ localStorage.removeItem('lespot_user'); localStorage.removeItem('user'); localStorage.removeItem('token'); location.href='auth.html'; }
+</script>
+</body></html>
