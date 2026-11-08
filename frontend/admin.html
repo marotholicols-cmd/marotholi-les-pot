@@ -55,22 +55,15 @@ function showTab(name){
   });
 }
 async function init(isRefresh){
-  if(typeof sb === 'undefined'){
-    setStatus("ERROR: sb not found. app.js did not load.", "err");
-    return;
-  }
+  if(typeof sb === 'undefined'){ setStatus("ERROR: sb not found. app.js did not load.", "err"); return; }
   if(!isRefresh) setStatus("Checking login...");
   try{
     const { data: { user } } = await sb.auth.getUser();
-    if(!user){
-      setStatus("Not logged in. Please login first.", "err");
-      setTimeout(()=> location.href = 'auth.html', 1500);
-      return;
-    }
+    if(!user){ setStatus("Not logged in. Please login first.", "err"); setTimeout(()=> location.href = 'auth.html', 1500); return; }
     setStatus("Logged in as " + user.email + "\nChecking if you are admin...");
     const { data: profile, error: profErr } = await sb.from('profiles').select('is_admin, email').eq('id', user.id).single();
-    if(profErr){ setStatus("Profile error: " + profErr.message + "\nRun: UPDATE profiles SET is_admin=true WHERE email='"+user.email+"'", "err"); return; }
-    if(!profile?.is_admin){ setStatus("ACCESS DENIED\nLogged in as: " + user.email + "\nRun: UPDATE profiles SET is_admin=true WHERE email='"+user.email+"'", "err"); return; }
+    if(profErr){ setStatus("Profile error: " + profErr.message, "err"); return; }
+    if(!profile?.is_admin){ setStatus("ACCESS DENIED\nLogged in as: " + user.email, "err"); return; }
     setStatus("✅ Logged in as OWNER: " + user.email + "\nLoading data...", "ok");
     document.getElementById('adminContent').style.display = 'block';
     await Promise.all([loadDeposits(), loadPurchases(), loadWithdrawals(), loadSongs()]);
@@ -78,29 +71,20 @@ async function init(isRefresh){
   }catch(e){ console.error(e); setStatus("JS CRASH: " + e.message, "err"); }
 }
 
-// --- DEPOSITS - THE MISSING ONE ---
 async function loadDeposits(){
   const el = document.getElementById('deposits');
   el.innerHTML = "Loading...";
-  // Join profiles to get real name / email / phone from user_id
   const { data, error } = await sb.from('deposits').select('*, profiles(full_name,email,phone,grind_balance)').eq('status','pending').order('created_at',{ascending:false});
   if(error){ el.innerHTML = "Error: " + error.message; return; }
   if(!data || !data.length){ el.innerHTML = "<div class='card'>No pending deposits. All clear ✅</div>"; return; }
   el.innerHTML = data.map(d => {
     const p = d.profiles || {};
     const amt = d.amount_grind ?? d.amount ?? 0;
-    return `
-    <div class="card">
-      <b>${p.full_name || 'No Name Yet'}</b> <span class="pill">${amt} Grinds</span><br>
-      <div class="muted">Email: ${p.email || '—'}<br>Phone: ${p.phone || '—'}<br>Current Balance: ${p.grind_balance ?? 0}<br>Method: ${d.method || '-'} • Ref: ${d.reference || '-'}<br>ID: ${d.id}<br>Date: ${d.created_at || ''}</div>
-      <button class="approve" onclick="approveDeposit('${d.id}','${d.user_id}',${Number(amt)})">✅ APPROVE + CREDIT</button>
-      <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
-    </div>`;
+    return `<div class="card"><b>${p.full_name || 'No Name Yet'}</b> <span class="pill">${amt} Grinds</span><br><div class="muted">Email: ${p.email || '—'}<br>Phone: ${p.phone || '—'}<br>Current Balance: ${p.grind_balance ?? 0}<br>Method: ${d.method || '-'} • Ref: ${d.reference || '-'}<br>ID: ${d.id}<br>Date: ${d.created_at || ''}</div><button class="approve" onclick="approveDeposit('${d.id}','${d.user_id}',${Number(amt)})">✅ APPROVE + CREDIT</button><button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button></div>`;
   }).join('');
 }
 async function approveDeposit(id, userId, amountGrind){
   if(!confirm("Approve " + amountGrind + " Grinds and credit wallet?")) return;
-  // Prevent double-credit: only if still pending
   const { data: check } = await sb.from('deposits').select('status').eq('id', id).single();
   if(check?.status !== 'pending'){ alert('Already handled: ' + check?.status); return loadDeposits(); }
   const { error: e1 } = await sb.from('deposits').update({ status: 'approved' }).eq('id', id).eq('status','pending');
@@ -117,12 +101,12 @@ async function rejectDeposit(id){
   if(error) alert(error.message); else loadDeposits();
 }
 
-// --- PURCHASES ---
+// --- PURCHASES - FIXED COLUMNS ---
 async function loadPurchases(){
   const el = document.getElementById('purchases');
   el.innerHTML = "Loading...";
   const { data, error } = await sb.from('purchases').select('*, songs(title, artist_name), profiles!purchases_fan_id_fkey(full_name,email,phone)').eq('status','pending').order('created_at',{ascending:false});
-  if(error){ // fallback if FK name differs
+  if(error){
     const r2 = await sb.from('purchases').select('*, songs(title, artist_name)').eq('status','pending').order('created_at',{ascending:false});
     if(r2.error){ el.innerHTML = "Error: " + r2.error.message; return; }
     return renderPurchases(el, r2.data);
@@ -132,22 +116,18 @@ async function loadPurchases(){
 function renderPurchases(el, data){
   if(!data || !data.length){ el.innerHTML = "<div class='card'>No pending purchases. All clear ✅</div>"; return; }
   el.innerHTML = data.map(p => {
-    const buyer = p.profiles?.full_name || p.fan_id || p.buyer_id || p.user_id || 'unknown';
+    const buyer = p.profiles?.full_name || p.fan_id || 'unknown';
     const buyerEmail = p.profiles?.email ? ' • ' + p.profiles.email : '';
-    return `
-    <div class="card">
-      <b>${p.songs?.title || 'Unknown Song'}</b> — ${p.songs?.artist_name || ''}<br>
-      <div class="muted">Buyer: ${buyer}${buyerEmail}<br>Purchase ID: ${p.id}<br>Song ID: ${p.song_id}<br>Ref: ${p.reference || p.tx_ref || p.otp || '-'}<br>Amount: ${p.amount_grind ?? p.amount ?? p.price_grind ?? '-'} • Method: ${p.payment_method || p.method || '-'}<br>Date: ${p.created_at || ''}</div>
-      <button class="approve" onclick="approveBuy('${p.id}')">✅ APPROVE & UNLOCK</button>
-      <button class="reject" onclick="rejectBuy('${p.id}')">Reject</button>
-    </div>`;
+    const buyerPhone = p.profiles?.phone ? ' • Phone: ' + p.profiles.phone : '';
+    // FIXED: real columns = price_grind, pay_method, payment_ref
+    return `<div class="card"><b>${p.songs?.title || 'Unknown Song'}</b> — ${p.songs?.artist_name || ''}<br><div class="muted">Buyer: ${buyer}${buyerEmail}${buyerPhone}<br>Purchase ID: ${p.id}<br>Song ID: ${p.song_id}<br>Ref: ${p.payment_ref || '-'}<br>Amount: ${p.price_grind ?? '-'}G • Method: ${p.pay_method || '-'} • Artist gets: ${p.royalty_grind ?? ''}G (63%)<br>Date: ${p.created_at || ''}</div><button class="approve" onclick="approveBuy('${p.id}')">✅ APPROVE & PAY ARTIST</button><button class="reject" onclick="rejectBuy('${p.id}')">Reject</button></div>`;
   }).join('');
 }
 async function approveBuy(id){
-  if(!confirm("Approve this purchase and unlock the song?")) return;
-  const { error } = await sb.from('purchases').update({ status: 'approved' }).eq('id', id);
-  if(error) alert("Approve failed: " + error.message);
-  else { await loadPurchases(); setStatus("✅ Purchase approved", "ok"); }
+  if(!confirm("Approve this purchase? Artist will get 63% royalty now and song unlocks.")) return;
+  // FIXED: use app.js approvePurchase - it pays artist 63% + unlocks. Do NOT just update status.
+  await approvePurchase(id);
+  await loadPurchases(); setStatus("✅ Purchase approved + artist paid 63%", "ok");
 }
 async function rejectBuy(id){
   if(!confirm("Reject this purchase?")) return;
@@ -155,7 +135,7 @@ async function rejectBuy(id){
   if(error) alert(error.message); else loadPurchases();
 }
 
-// --- WITHDRAWALS ---
+// --- WITHDRAWALS - FIXED: receive_details / receive_method ---
 async function loadWithdrawals(){
   const el = document.getElementById('withdrawals');
   el.innerHTML = "Loading...";
@@ -166,11 +146,8 @@ async function loadWithdrawals(){
     const p = w.profiles || {};
     const amt = w.amount_grind ?? w.amount ?? 0;
     const uid = w.user_id || w.artist_id;
-    return `
-    <div class="card"><b>${amt} Grinds — ${w.method || w.payment_method || ''}</b><br>
-    <div class="muted">Artist: ${p.full_name || '—'}<br>Email: ${p.email || '—'} • Phone: ${p.phone || '—'}<br>Balance: ${p.grind_balance ?? 0}<br>ID: ${w.id}<br>Details: ${w.phone || w.account || w.details || ''}<br>Date: ${w.created_at || ''}</div>
-    <button class="approve" onclick="approveW('${w.id}','${uid}',${Number(amt)})">✅ APPROVE PAID</button>
-    <button class="reject" onclick="rejectW('${w.id}')">Reject</button></div>`;
+    // FIXED: receive_details = number, receive_method = Mpesa/EcoCash
+    return `<div class="card"><b>${amt} Grinds — ${w.receive_method || w.method || ''}</b><br><div class="muted">Artist: ${p.full_name || '—'}<br>Email: ${p.email || '—'} • Phone: ${p.phone || '—'}<br>Balance: ${p.grind_balance ?? 0}<br>ID: ${w.id}<br>Details: ${w.receive_details || w.phone || w.account || w.details || '(blank - old request)'}<br>Date: ${w.created_at || ''}</div><button class="approve" onclick="approveW('${w.id}','${uid}',${Number(amt)})">✅ APPROVE PAID</button><button class="reject" onclick="rejectW('${w.id}')">Reject</button></div>`;
   }).join('');
 }
 async function approveW(id, userId, amountGrind){
@@ -192,17 +169,13 @@ async function rejectW(id){
   if(error) alert(error.message); else loadWithdrawals();
 }
 
-// --- SONGS ---
 async function loadSongs(){
   const el = document.getElementById('songs');
   el.innerHTML = "Loading...";
   const { data, error } = await sb.from('songs').select('*').order('created_at',{ascending:false});
   if(error){ el.innerHTML = "Error: " + error.message; return; }
   if(!data || !data.length){ el.innerHTML = "<div class='card'>No songs yet.</div>"; return; }
-  el.innerHTML = data.map(s => `
-    <div class="card"><b>${s.title || 'Untitled'}</b> — ${s.artist_name || ''}<br>
-    <div class="muted">ID: ${s.id}<br>audio_path: ${s.audio_path || 'MISSING - will not play!'}<br>Price: ${s.price_grind ?? s.price_maloti ?? ''}</div>
-    <button class="reject" onclick="deleteSong('${s.id}')">Delete Song</button></div>`).join('');
+  el.innerHTML = data.map(s => `<div class="card"><b>${s.title || 'Untitled'}</b> — ${s.artist_name || ''}<br><div class="muted">ID: ${s.id}<br>audio_path: ${s.audio_path || 'MISSING - will not play!'}<br>Price: ${s.price_grind ?? ''}</div><button class="reject" onclick="deleteSong('${s.id}')">Delete Song</button></div>`).join('');
 }
 async function deleteSong(id){
   if(!confirm("Delete this song?")) return;
