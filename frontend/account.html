@@ -14,4 +14,4 @@ if(!u){ document.getElementById('info').innerHTML='Not logged in<br><br><a href=
 else{ document.getElementById('info').innerHTML='Logged in as:<br><b>'+(u.email||u.name||'User')+'</b>'; document.getElementById('bal').innerText=(u.balance||u.grind_balance||'0')+' G'; }
 function logout(){ localStorage.removeItem('lespot_user'); localStorage.removeItem('user'); localStorage.removeItem('token'); location.href='auth.html'; }
 </script>
-</body></html>
+</body></html> 
