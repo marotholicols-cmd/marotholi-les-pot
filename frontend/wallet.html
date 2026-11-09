@@ -88,7 +88,6 @@ async function loadWallet(){
   const {data:{user}} = await sb.auth.getUser();
   if(!user){ document.getElementById('who').textContent='Not logged in - go to Account'; document.getElementById('depList').textContent='Login first'; document.getElementById('wList').textContent='Login first'; document.getElementById('salesList').textContent='Login first'; return; }
 
-  // FIXED: also fetch phone so Admin blank is visible here
   const {data:prof} = await sb.from('profiles').select('grind_balance, full_name, phone').eq('id', user.id).single();
   const bal = Number(prof?.grind_balance || 0);
   document.getElementById('balBig').textContent = bal.toFixed(2);
@@ -101,12 +100,15 @@ async function loadWallet(){
   const {data:ws} = await sb.from('withdrawals').select('*').eq('artist_id', user.id).order('created_at',{ascending:false});
   document.getElementById('wList').innerHTML = (ws||[]).map(w=>`<div>${Number(w.amount_grind).toFixed(2)}G → ${w.receive_method} • <b>${(w.status||'pending').toUpperCase()}</b> • ${w.receive_details||''}</div>`).join('') || 'No withdrawals yet';
 
-  // FIXED SALES: purchases has NO artist_id. Get MY songs first, then purchases for those songs.
+  // FIXED: purchases uses fees_grind, NOT royalty_grind. Fallback to price*0.63 for old rows.
   const {data:mySongs} = await sb.from('songs').select('id').eq('artist_id', user.id);
   const mySongIds = (mySongs||[]).map(s=>s.id);
   if(!mySongIds.length){ document.getElementById('salesList').innerHTML = 'No sales yet - upload & share!'; return; }
   const {data:sales} = await sb.from('purchases').select('*, songs(title)').in('song_id', mySongIds).eq('status','approved').order('created_at',{ascending:false}).limit(20);
-  document.getElementById('salesList').innerHTML = (sales||[]).map(s=>`<div>${s.songs?.title||'Song'} • You got <b>${Number(s.royalty_grind||0).toFixed(2)}G</b> (63%)</div>`).join('') || 'No sales yet - upload & share!';
+  document.getElementById('salesList').innerHTML = (sales||[]).map(s=>{
+    const got = Number(s.fees_grind ?? s.royalty_grind ?? (Number(s.price_grind||0)*0.63) || 0);
+    return `<div>${s.songs?.title||'Song'} • You got <b>${got.toFixed(2)}G</b> (63%) • Buyer paid ${Number(s.price_grind||0).toFixed(2)}G</div>`;
+  }).join('') || 'No sales yet - upload & share!';
 }
 
 async function doDeposit(){
@@ -117,11 +119,12 @@ async function doDeposit(){
   if(!amt || amt<=0){ msg.textContent='Enter amount'; return; }
   if(!ref){ msg.textContent='Enter OTP / Reference'; return; }
   msg.textContent='Sending...';
-  // FIXED: submitDeposit returns undefined - do NOT check its return. It already alerts on error.
-  await submitDeposit(amt, method, ref);
-  msg.textContent='✅ Sent! Check My Deposits below. If it did not appear, check for an alert popup.';
-  document.getElementById('depRef').value='';
-  setTimeout(loadWallet, 1000);
+  try{
+    await submitDeposit(amt, method, ref);
+    msg.textContent='✅ Sent! Check My Deposits below. If it did not appear, check for an alert popup.';
+    document.getElementById('depRef').value='';
+    setTimeout(loadWallet, 1000);
+  }catch(e){ msg.textContent='FAILED: '+e.message; }
 }
 
 async function doWithdraw(){
@@ -132,10 +135,11 @@ async function doWithdraw(){
   if(!amt || amt<2.5){ msg.textContent='Minimum is 2.5G'; return; }
   if(!det){ msg.textContent='Enter where to receive money'; return; }
   msg.textContent='Sending...';
-  // FIXED: same - submitWithdrawal returns undefined, don't check it
-  await submitWithdrawal(amt, method, det);
-  msg.textContent='✅ Request sent! Check My Withdrawals below.';
-  setTimeout(loadWallet, 1000);
+  try{
+    await submitWithdrawal(amt, method, det);
+    msg.textContent='✅ Request sent! Check My Withdrawals below.';
+    setTimeout(loadWallet, 1000);
+  }catch(e){ msg.textContent='FAILED: '+e.message; }
 }
 
 loadWallet();
