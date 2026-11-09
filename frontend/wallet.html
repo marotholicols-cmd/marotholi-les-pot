@@ -6,143 +6,98 @@
 <title>Wallet - Marotholi Les-Pot</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<link rel="stylesheet" href="style.css">
 <style>
-  header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
-  .wrap{max-width:600px;margin:0 auto;padding:16px}
-  .bal{font-size:42px;font-weight:900;letter-spacing:-1px}
-  .bal span{color:var(--green)}
-  .row{display:flex;gap:10px}
-  .row button{flex:1}
-  .hist{font-size:13px;line-height:1.8}
-  .hist b{color:#fff}
+*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
+header{background:#d4ff3f;color:#000;padding:14px 16px;text-align:center;font-weight:900}
+header div{font-size:28px} header small{font-size:12px;opacity:.7}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px} .small{opacity:.7;font-size:13px}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;margin:6px 0;font-size:15px}
+button{width:100%;padding:13px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:15px}
+button.ghost{background:#333;color:#fff}
+.nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
+.nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
+.row{display:flex;gap:8px} .row button{flex:1}
+#bal{background:#000;color:#d4ff3f;padding:6px 10px;border-radius:20px;font-size:13px}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT — WALLET</header>
+<header>MAROTHOLI LES-POT — WALLET<div>YOUR BALANCE • 1G = M10</div><div id="walletBalance" style="font-size:36px">Loading...</div><div class="small" id="walletSub">M0.00 • Min withdraw 2.5 G • M25</div><br><span id="bal" style="display:none">G ...</span></header>
 <div class="wrap">
-  <div class="card center" style="border-color:#a3ff00">
-    <p class="small">YOUR BALANCE • 1G = M10</p>
-    <div class="bal"><span id="balBig">0.00</span> G</div>
-    <p class="small" id="balMaloti">M0.00 • Min withdraw 2.5G = M25</p>
-    <p class="small" id="who">Loading...</p>
-    <div class="row" style="margin-top:12px">
-      <button onclick="document.getElementById('depCard').scrollIntoView({behavior:'smooth'})">➕ TOP UP</button>
-      <button class="ghost" onclick="document.getElementById('wCard').scrollIntoView({behavior:'smooth'})">💸 WITHDRAW</button>
-    </div>
-  </div>
+<div class="nav"><a href="discover.html">Discover</a><a href="library.html">Library</a><a href="wallet.html">Wallet</a><a href="upload.html">Upload</a><a href="admin.html">Admin</a><a href="auth.html">Logout</a></div>
 
-  <div class="card" id="depCard" style="border-color:#a3ff00">
-    <h3>➕ Top Up / Deposit</h3>
-    <p class="small">Stack Grinds to buy songs instantly.</p>
-    <label>Amount in G</label>
-    <input id="depAmt" type="number" step="0.1" min="0.1" placeholder="e.g. 5 = M50">
-    <label>How you will pay</label>
-    <select id="depMethod" onchange="updateDepInfo()">
-      <option>Mpesa</option><option>EcoCash</option><option>Bank / Visa</option><option>Postbank</option><option>Payfast</option>
-    </select>
-    <div class="card" style="background:#0a0a10;margin:0 0 12px">
-      <p style="color:#fff;font-weight:800">Pay MAROTHOLI GRINDERS to:</p>
-      <div id="depDetails" style="color:#d4ff3f;font-weight:800;line-height:1.6"></div>
-      <p class="small">Pay EXACT amount. 1G = M10. Keep OTP / Reference.</p>
-    </div>
-    <label>OTP / Reference from your payment</label>
-    <input id="depRef" placeholder="e.g. MP250... / Tx123...">
-    <button onclick="doDeposit()">SEND DEPOSIT FOR APPROVAL →</button>
-    <p id="depMsg" class="small center" style="margin-top:10px"></p>
-  </div>
-
-  <div class="card" id="wCard">
-    <h3>💸 Request Withdrawal</h3>
-    <p class="small">Artist royalties. Min 2.5G = M25. You keep 63%, platform keeps 37% already taken at sale.</p>
-    <label>Amount in G (min 2.5)</label>
-    <input id="wAmt" type="number" step="0.1" min="2.5" placeholder="e.g. 2.5">
-    <label>Where to receive</label>
-    <select id="wMethod"><option>Mpesa</option><option>EcoCash</option><option>Bank / Visa</option><option>Postbank</option></select>
-    <label>Your number / account</label>
-    <input id="wDetails" placeholder="e.g. 59812345 / Acc number">
-    <button onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
-    <p id="wMsg" class="small center" style="margin-top:10px"></p>
-  </div>
-
-  <div class="card"><h3>My Deposits</h3><div id="depList" class="hist">Loading...</div></div>
-  <div class="card"><h3>My Withdrawals</h3><div id="wList" class="hist">Loading...</div></div>
-  <div class="card"><h3>My Sales (63% Royalties)</h3><div id="salesList" class="hist">Loading...</div></div>
+<div class="card">
+<h3>➕ Top Up / Deposit</h3><p class="small">Stack Grinds to buy songs instantly.</p>
+<label class="small">Amount in G</label>
+<input id="depAmount" type="number" step="0.01" placeholder="e.g. 5 = M50">
+<label class="small">How you will pay</label>
+<select id="depMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option><option value="Bank">Bank</option></select>
+<p class="small">Pay MAROTHOLI GRINDERS to:<br><b style="color:#d4ff3f">+266 5961 2345 (Mpesa) — Use EXACT amount</b><br>Pay EXACT amount. Keep OTP / Reference.</p>
+<label class="small">OTP / Reference from your payment</label>
+<input id="depRef" placeholder="e.g. MP250... / 17x123...">
+<button onclick="doDeposit()">SEND DEPOSIT FOR APPROVAL →</button>
 </div>
 
-<div class="bottomnav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="upload.html">⬆️ Upload</a><a href="wallet.html" class="active">💰 Wallet</a><a href="admin.html">🛠️ Admin</a><a href="account.html">👤 Account</a></div>
+<div class="card">
+<h3>🏧 Request Withdrawal</h3><p class="small">Artist royalties: Min 2.5 G = M25. You keep 63%, platform keeps 37% already taken at sale.</p>
+<label class="small">Amount in G (min 2.5)</label>
+<input id="wdAmount" type="number" step="0.01" placeholder="e.g. 2.5">
+<label class="small">Where to receive</label>
+<select id="wdMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option></select>
+<label class="small">Your number / account</label>
+<input id="wdNumber" placeholder="e.g. 59612345 / Acc number">
+<button onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
+</div>
 
+<div class="card"><h3>My Deposits</h3><div id="myDeposits">Loading...</div></div>
+<div class="card"><h3>My Withdrawals</h3><div id="myWithdrawals">Loading...</div></div>
+<div class="card"><h3>My Sales (63% Royalties)</h3><div id="mySales">Loading...</div></div>
+</div>
 <script>
-function updateDepInfo(){
-  const m = document.getElementById('depMethod').value;
-  const el = document.getElementById('depDetails');
-  if(m==='Mpesa') el.innerHTML = 'Mpesa: 59070688<br><span style="color:#fff;font-size:13px">Name: Tsosane Molibeli</span>';
-  if(m==='EcoCash') el.innerHTML = 'EcoCash MERCHANT<br>Merchant Code: 128235<br><span style="color:#fff;font-size:13px">Name: Marotholi Lespot MSU</span>';
-  if(m==='Bank / Visa') el.innerHTML = 'Bank: Lesotho PostBank<br>Acc: 1040278800016<br><span style="color:#fff;font-size:13px">Name: Marotholi Lespot</span>';
-  if(m==='Postbank') el.innerHTML = 'Postbank Acc: 1040278800016<br><span style="color:#fff;font-size:13px">Name: Marotholi Lespot</span>';
-  if(m==='Payfast') el.innerHTML = 'Payfast Merchant: 37129143<br><span style="color:#fff;font-size:13px">Name: Tsosane Molibeli</span>';
-}
-updateDepInfo();
-
-async function loadWallet(){
-  const {data:{user}} = await sb.auth.getUser();
-  if(!user){ document.getElementById('who').textContent='Not logged in - go to Account'; document.getElementById('depList').textContent='Login first'; document.getElementById('wList').textContent='Login first'; document.getElementById('salesList').textContent='Login first'; return; }
-
-  const {data:prof} = await sb.from('profiles').select('grind_balance, full_name, phone').eq('id', user.id).single();
-  const bal = Number(prof?.grind_balance || 0);
-  document.getElementById('balBig').textContent = bal.toFixed(2);
-  document.getElementById('balMaloti').textContent = 'M' + (bal*10).toFixed(2) + ' • Min withdraw 2.5G = M25';
-  document.getElementById('who').textContent = (prof?.full_name || 'No Name') + ' • ' + user.email + ' • Phone: ' + (prof?.phone || 'NO PHONE');
-
-  const {data:deps} = await sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
-  document.getElementById('depList').innerHTML = (deps||[]).map(d=>`<div>${Number(d.amount_grind).toFixed(2)}G → ${d.method} • <b>${(d.status||'pending').toUpperCase()}</b> • Ref: ${d.reference||d.payment_ref||''}</div>`).join('') || 'No deposits yet';
-
-  const {data:ws} = await sb.from('withdrawals').select('*').eq('artist_id', user.id).order('created_at',{ascending:false});
-  document.getElementById('wList').innerHTML = (ws||[]).map(w=>`<div>${Number(w.amount_grind).toFixed(2)}G → ${w.receive_method} • <b>${(w.status||'pending').toUpperCase()}</b> • ${w.receive_details||''}</div>`).join('') || 'No withdrawals yet';
-
-  // FIXED: purchases uses fees_grind, NOT royalty_grind. Fallback to price*0.63 for old rows.
-  const {data:mySongs} = await sb.from('songs').select('id').eq('artist_id', user.id);
-  const mySongIds = (mySongs||[]).map(s=>s.id);
-  if(!mySongIds.length){ document.getElementById('salesList').innerHTML = 'No sales yet - upload & share!'; return; }
-  const {data:sales} = await sb.from('purchases').select('*, songs(title)').in('song_id', mySongIds).eq('status','approved').order('created_at',{ascending:false}).limit(20);
-  document.getElementById('salesList').innerHTML = (sales||[]).map(s=>{
-    const got = Number(s.fees_grind ?? s.royalty_grind ?? (Number(s.price_grind||0)*0.63) || 0);
-    return `<div>${s.songs?.title||'Song'} • You got <b>${got.toFixed(2)}G</b> (63%) • Buyer paid ${Number(s.price_grind||0).toFixed(2)}G</div>`;
-  }).join('') || 'No sales yet - upload & share!';
-}
-
 async function doDeposit(){
-  const amt = parseFloat(document.getElementById('depAmt').value);
+  const amt = document.getElementById('depAmount').value;
   const method = document.getElementById('depMethod').value;
   const ref = document.getElementById('depRef').value.trim();
-  const msg = document.getElementById('depMsg');
-  if(!amt || amt<=0){ msg.textContent='Enter amount'; return; }
-  if(!ref){ msg.textContent='Enter OTP / Reference'; return; }
-  msg.textContent='Sending...';
-  try{
-    await submitDeposit(amt, method, ref);
-    msg.textContent='✅ Sent! Check My Deposits below. If it did not appear, check for an alert popup.';
-    document.getElementById('depRef').value='';
-    setTimeout(loadWallet, 1000);
-  }catch(e){ msg.textContent='FAILED: '+e.message; }
+  await submitDeposit(amt, method, ref);
 }
-
 async function doWithdraw(){
-  const amt = parseFloat(document.getElementById('wAmt').value);
-  const method = document.getElementById('wMethod').value;
-  const det = document.getElementById('wDetails').value.trim();
-  const msg = document.getElementById('wMsg');
-  if(!amt || amt<2.5){ msg.textContent='Minimum is 2.5G'; return; }
-  if(!det){ msg.textContent='Enter where to receive money'; return; }
-  msg.textContent='Sending...';
-  try{
-    await submitWithdrawal(amt, method, det);
-    msg.textContent='✅ Request sent! Check My Withdrawals below.';
-    setTimeout(loadWallet, 1000);
-  }catch(e){ msg.textContent='FAILED: '+e.message; }
+  const amt = document.getElementById('wdAmount').value;
+  const method = document.getElementById('wdMethod').value;
+  const num = document.getElementById('wdNumber').value.trim();
+  await submitWithdrawal(amt, method, num);
 }
-
-loadWallet();
+async function loadSales(){
+  const el = document.getElementById('mySales');
+  if(!el) return;
+  try{
+    const { data: { user } } = await window.sb.auth.getUser();
+    if(!user){ el.innerHTML = '<p class="small">Login first</p>'; return; }
+    const { data: songs } = await window.sb.from('songs').select('id').eq('artist_id', user.id);
+    const songIds = (songs||[]).map(s=>s.id);
+    if(!songIds.length){ el.innerHTML = '<p class="small">No sales yet. Upload a song!</p>'; return; }
+    const { data: sales } = await window.sb.from('purchases').select('*').in('song_id', songIds).eq('status','approved').order('created_at',{ascending:false}).limit(20);
+    if(!sales || !sales.length){ el.innerHTML = '<p class="small">No sales yet.</p>'; return; }
+    el.innerHTML = sales.map(s=>`<div style="padding:8px 0;border-bottom:1px solid #333"><b>+${(Number(s.price_grind||0)*0.63).toFixed(2)} G</b> <span class="small">royalty from ${s.price_grind} G sale • ${new Date(s.created_at).toLocaleString()}</span></div>`).join('');
+  }catch(e){ el.innerHTML = '<p class="small">Sales failed: '+e.message+'</p>'; }
+}
+async function fixWalletBalance(){
+  try{
+    const { user, profile } = await getMyProfile();
+    if(!profile) return;
+    const bal = Number(profile.grind_balance||0);
+    const big = document.getElementById('walletBalance');
+    if(big) big.textContent = bal.toFixed(2) + ' G';
+    const sub = document.getElementById('walletSub');
+    if(sub) sub.textContent = 'M' + (bal*10).toFixed(0) + '.00 • Min withdraw 2.5 G • M25';
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  fixWalletBalance();
+  loadSales();
+  // loadWallet from app.js already loads deposits/withdrawals
+  setTimeout(fixWalletBalance, 1500);
+});
 </script>
 </body>
 </html>
