@@ -1,143 +1,81 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Discover | LES-POT</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discover - Marotholi Les-Pot</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js" defer></script>
+<style>
+*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
+header{background:#d4ff3f;color:#000;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:900}
+header a{color:#000;text-decoration:none;font-size:13px;background:#fff;padding:6px 10px;border-radius:20px}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.search{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;margin-bottom:12px;font-size:15px}
+.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:14px;margin-bottom:12px}
+.card b{font-size:16px} .small{opacity:.7;font-size:13px}
+button{padding:10px 14px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer}
+button.ghost{background:#333;color:#fff}
+audio{width:100%;margin-top:8px}
+.nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
+#bal{background:#000;color:#d4ff3f;padding:6px 10px;border-radius:20px;font-size:13px}
+.skel{background:#222;height:110px;border-radius:14px;margin-bottom:12px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+</style>
+</head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge" id="bal">G 0.00</span></div>
-<div class="container">
-  <h2 style="margin-bottom:12px">🔥 Discover</h2>
-  <div id="songs"><p class="small">Loading songs...</p></div>
-
-  <!-- BUY MODAL -->
-  <div id="buyModal" class="card hidden" style="border-color:#a3ff00">
-    <h3 id="buyTitle">Buy Song</h3><p id="buyPrice"></p><p id="myBalText" class="small"></p><br>
-    <label class="small">1. How YOU will pay:</label>
-    <select id="payMethod" onchange="togglePayMethod()">
-      <option value="Wallet">💰 Wallet Balance (Instant Unlock)</option>
-      <option value="Mpesa">Mpesa</option>
-      <option value="EcoCash">EcoCash</option>
-      <option value="Visa">Visa</option>
-      <option value="Bank">Bank</option>
-      <option value="Payfast">Payfast</option>
-    </select>
-
-    <div id="walletBox" class="card" style="background:#0a0a10">
-      <p style="color:#fff;font-weight:800">Pay with your Wallet Balance</p>
-      <p class="small">Instant. No OTP. No waiting. Balance deducts now, artist gets 63% now, song unlocks in Library now.</p>
-    </div>
-
-    <div id="externalBox" class="card hidden" style="background:#0a0a10">
-      <p style="color:#fff;font-weight:800">2. Pay MAROTHOLI GRINDERS:</p>
-      <p>• Mpesa: <b style="color:#a3ff00">59812345 - Marotholi Grinders</b></p>
-      <p>• EcoCash: <b style="color:#a3ff00">59812345 - Marotholi Grinders</b></p>
-      <p>• Payfast Merchant: <b style="color:#a3ff00">37****</b></p>
-      <p>• Postbank Acc: <b style="color:#a3ff00">10****</b></p>
-      <p class="small">Pay EXACT amount. Keep your OTP / Reference.</p>
-      <label class="small">3. Paste OTP / Verification Reference from your bank:</label>
-      <input id="payRef" placeholder="e.g. MP250... / Tx123...">
-    </div>
-
-    <button id="buyBtn" onclick="submitBuy()">BUY NOW →</button>
-    <button class="ghost" style="margin-top:10px" onclick="closeBuy()">Cancel</button>
-    <p id="buyMsg" class="small center"></p>
-  </div>
+<header><span>MAROTHOLI LES-POT</span><span><span id="bal">G ...</span> <a href="wallet.html">Wallet</a></span></header>
+<div class="wrap">
+<div class="nav"><a href="discover.html">Discover</a><a href="library.html">Library</a><a href="wallet.html">Wallet</a><a href="upload.html">Upload</a><a href="auth.html">Logout</a></div>
+<input class="search" id="searchBox" placeholder="Search song or artist..." oninput="filterSongs()">
+<div id="songsList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+<p class="small" id="statusMsg" style="text-align:center"></p>
 </div>
-
-<div class="bottomnav">
-  <a href="discover.html" class="active">🔥 Discover</a>
-  <a href="library.html">📚 Library</a>
-  <a href="upload.html">⬆️ Upload</a>
-  <a href="wallet.html">💰 Wallet</a>
-  <a href="admin.html">🛠️ Admin</a>
-  <a href="account.html">👤 Account</a>
-</div>
-<script src="app.js"></script>
 <script>
-let selectedSong=null;
-let myBalance=0;
-let myUser=null;
-let allSongs=[];
-
-async function loadMyBalance(){
-  const {data:{user}} = await sb.auth.getUser();
-  myUser = user;
-  if(!user){ document.getElementById('bal').textContent='G 0.00'; return; }
-  const {data} = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
-  myBalance = Number(data?.grind_balance || 0);
-  document.getElementById('bal').textContent = myBalance.toFixed(2)+' G';
-}
-
-async function loadSongs(){
-  const {data,error}=await sb.from('songs').select('*').order('created_at',{ascending:false});
-  const el=document.getElementById('songs');
-  if(error||!data||data.length===0){el.innerHTML=`<div class="card"><h3>No songs yet</h3><p>Be the first artist to upload. Go to <a href="upload.html">Upload</a>.</p></div>`;return}
-  allSongs = data;
-  el.innerHTML=data.map((s,i)=>`<div class="card song"><img src="${s.cover_url||''}"><div class="meta"><b>${s.title}</b><small>${s.artist_name} • ${s.total_buys||0} buys</small></div><div><div class="price-tag">${s.price_grind}G</div><div class="small">M${(Number(s.price_grind)*10).toFixed(1)}</div><button style="width:auto;padding:8px 14px;margin-top:6px" onclick='openBuy(${i})'>BUY</button></div></div>`).join('');
-}
-
-function togglePayMethod(){
-  const m = document.getElementById('payMethod').value;
-  const isWallet = m === 'Wallet';
-  document.getElementById('walletBox').classList.toggle('hidden', !isWallet);
-  document.getElementById('externalBox').classList.toggle('hidden', isWallet);
-  document.getElementById('buyBtn').textContent = isWallet ? 'BUY WITH WALLET →' : 'SUBMIT FOR APPROVAL →';
-}
-
-function openBuy(index){
-  const s = allSongs[index];
-  selectedSong=s;
-  document.getElementById('buyTitle').textContent="Buy: "+s.title;
-  document.getElementById('buyPrice').textContent=s.price_grind+"G = M"+(Number(s.price_grind)*10).toFixed(2)+" • Artist gets 63%";
-  document.getElementById('myBalText').textContent="Your Wallet: "+myBalance.toFixed(2)+" G • Top up in Wallet if low";
-  document.getElementById('payMethod').value='Wallet';
-  togglePayMethod();
-  document.getElementById('buyModal').classList.remove('hidden');
-  document.getElementById('buyMsg').textContent='';
-  window.scrollTo(0,0);
-}
-function closeBuy(){document.getElementById('buyModal').classList.add('hidden')}
-
-async function submitBuy(){
-  const method=document.getElementById('payMethod').value;
-  const msg=document.getElementById('buyMsg');
-  if(!myUser){msg.textContent="Login first to buy.";location.href='auth.html';return}
-  if(!selectedSong){msg.textContent="No song selected";return}
-  const price = Number(selectedSong.price_grind);
-
-  if(method === 'Wallet'){
-    if(myBalance < price){ msg.textContent=`Not enough balance. You have ${myBalance.toFixed(2)} G, need ${price} G. Top up in Wallet first.`; return; }
-    msg.textContent="Buying with Wallet...";
-    const artistId = selectedSong.artist_id || selectedSong.user_id || selectedSong.owner_id;
-    await buySongWithWallet(selectedSong.id, price, artistId);
-    return;
+let ALL_SONGS = [];
+let OWNED_IDS = new Set();
+async function loadDiscover(){
+  const list = document.getElementById('songsList');
+  try{
+    const { data: songs, error } = await sb.from('songs').select('id,title,artist_name,artist_id,price_grind,total_buys,audio_path,audio_url,file_url,cover_url,created_at').order('created_at',{ascending:false}).limit(50);
+    if(error) throw error;
+    ALL_SONGS = songs || [];
+    const user = await getCurrentUser().catch(()=>null);
+    if(user){
+      const { data: pur } = await sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status','approved');
+      (pur||[]).forEach(p=>OWNED_IDS.add(p.song_id));
+    }
+    renderSongs(ALL_SONGS);
+  }catch(e){
+    list.innerHTML = '<p>Failed to load songs: '+e.message+'<br><button class="ghost" onclick="loadDiscover()">Retry</button></p>';
   }
-
-  // ===== EXTERNAL BUY - FIXED: payment_method + fees_grind + already-owned check =====
-  const ref=document.getElementById('payRef').value.trim();
-  if(!ref){msg.textContent="Paste your OTP / Reference first.";return}
-  msg.textContent="Sending to owner for approval...";
-
-  // 1. Already own? Block double-buy
-  const {data:owned} = await sb.from('purchases').select('id').eq('fan_id', myUser.id).eq('song_id', selectedSong.id).eq('status','approved').maybeSingle();
-  if(owned){ msg.textContent="You already own this. Go to Library."; return; }
-
-  // 2. Already pending? Block duplicate OTP spam
-  const {data:dup} = await sb.from('purchases').select('id').eq('fan_id', myUser.id).eq('song_id', selectedSong.id).eq('status','pending').maybeSingle();
-  if(dup){ msg.textContent="You already sent this. Wait for approval."; return; }
-
-  // 3. Insert with CORRECT column names
-  const {error}=await sb.from('purchases').insert({
-    fan_id: myUser.id,
-    song_id: selectedSong.id,
-    price_grind: price,
-    payment_method: method, // FIXED: was pay_method
-    payment_ref: ref,
-    fees_grind: price * 0.63, // FIXED: artist gets 63% on approval
-    status: 'pending'
-  });
-  if(error){msg.textContent="Failed: "+error.message; console.error(error); return}
-  msg.textContent="✅ Sent! Wait for OWNER approval. Song unlocks in Library after approval.";
 }
-
-loadMyBalance();
-loadSongs();
+function getAudio(s){
+  let src = s.audio_path || s.audio_url || s.file_url || '';
+  if(src && !src.startsWith('http')){
+    const { data: pub } = sb.storage.from('songs').getPublicUrl(src);
+    if(pub?.publicUrl) src = pub.publicUrl;
+  }
+  return src;
+}
+function renderSongs(rows){
+  const list = document.getElementById('songsList');
+  if(!rows.length){ list.innerHTML='<p class="small">No songs yet. Be the first to upload!</p>'; return; }
+  list.innerHTML = rows.map(s=>{
+    const owned = OWNED_IDS.has(s.id);
+    const price = Number(s.price_grind||0);
+    const audio = getAudio(s);
+    return `<div class="card"><b>${escapeHtml(s.title||'Untitled')}</b><br><span class="small">${escapeHtml(s.artist_name||'Unknown')} • ${s.total_buys||0} buys • ${price} G</span>${audio?`<audio controls preload="none" src="${audio}"></audio>`:''}<br><br>${owned?`<button class="ghost" onclick="location.href='library.html'">✅ Owned - Play in Library</button>`:`<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')">Buy for ${price} G</button>`}</div>`;
+  }).join('');
+}
+function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function filterSongs(){
+  const q = document.getElementById('searchBox').value.toLowerCase().trim();
+  if(!q) return renderSongs(ALL_SONGS);
+  renderSongs(ALL_SONGS.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist_name||'').toLowerCase().includes(q)));
+}
+document.addEventListener('DOMContentLoaded', ()=>{ loadDiscover(); });
 </script>
-</body></html>
+</body>
+</html>
