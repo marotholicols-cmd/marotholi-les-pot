@@ -7,184 +7,55 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-  *{box-sizing:border-box}
-  body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
-  header{background:#111;border-bottom:2px solid #d4ff3f;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
-  header b{font-size:18px} header b span{color:#d4ff3f}
-  header a{color:#fff;text-decoration:none;font-size:13px;opacity:.8}
-  .wrap{padding:16px;max-width:850px;margin:0 auto}
-  .status{background:#222;border:1px solid #333;padding:12px;border-radius:12px;margin-bottom:16px;font-size:14px;line-height:1.5;white-space:pre-wrap}
-  .status.ok{border-color:#2ecc71} .status.err{border-color:#ff5252}
-  h2{margin:22px 0 10px;font-size:18px} h2 span{color:#d4ff3f}
-  .card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:14px;margin-bottom:12px}
-  .muted{opacity:.7;font-size:13px;line-height:1.6;word-break:break-word}
-  .pill{display:inline-block;background:#d4ff3f;color:#000;font-size:12px;font-weight:800;padding:3px 8px;border-radius:20px;margin-left:6px}
-  button{border:0;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;margin-right:8px;margin-top:10px;font-size:14px}
-  .approve{background:#d4ff3f;color:#000} .reject{background:#444;color:#fff} .refresh{background:#fff;color:#000;width:100%;margin:16px 0 0}
-  .tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap} .tabs button{background:#222;color:#fff;border:1px solid #333} .tabs button.active{background:#d4ff3f;color:#000}
+*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
+header{background:#111;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #d4ff3f}
+header b{font-size:18px} header b span{color:#d4ff3f} header a{color:#d4ff3f;text-decoration:none;font-size:13px}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+h3{margin:22px 0 10px;border-left:4px solid #d4ff3f;padding-left:8px}
+.card{background:#1e1e1e;border:1px solid #333;padding:12px;border-radius:14px;margin-bottom:10px}
+.small{opacity:.7;font-size:13px}
+button{padding:10px 14px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;margin-right:6px}
+button.ghost{background:#333;color:#fff}
+#statusMsg{text-align:center;padding:20px}
 </style>
 </head>
 <body>
 <header><b>MAROTHOLI <span>LES-POT</span> — ADMIN</b><a href="discover.html">← Back to App</a></header>
 <div class="wrap">
-  <div id="status" class="status">Loading admin...</div>
-  <div id="adminContent" style="display:none">
-    <div class="tabs">
-      <button id="tabD" class="active" onclick="showTab('deposits')">Deposits</button>
-      <button id="tabP" onclick="showTab('purchases')">Purchases</button>
-      <button id="tabW" onclick="showTab('withdrawals')">Withdrawals</button>
-      <button id="tabS" onclick="showTab('songs')">All Songs</button>
-    </div>
-    <div id="section-deposits"><h2>Pending <span>Deposits</span></h2><div id="deposits">Loading...</div></div>
-    <div id="section-purchases" style="display:none"><h2>Pending <span>Purchases</span></h2><div id="purchases">Loading...</div></div>
-    <div id="section-withdrawals" style="display:none"><h2>Pending <span>Withdrawals</span></h2><div id="withdrawals">Loading...</div></div>
-    <div id="section-songs" style="display:none"><h2>All <span>Songs</span></h2><div id="songs">Loading...</div></div>
-    <button class="refresh" onclick="init(true)">🔄 Refresh</button>
-  </div>
+<div id="statusMsg">Loading admin...</div>
+<div id="adminContent" style="display:none">
+<h3>💰 Pending Deposits</h3><div id="pendingDeposits"></div>
+<h3>🏧 Pending Withdrawals</h3><div id="pendingWithdrawals"></div>
+<h3>🎵 Pending Purchases</h3><div id="pendingPurchases"></div>
+<h3>🎤 Recent Songs</h3><div id="pendingSongs"></div>
+</div>
 </div>
 <script>
-function setStatus(msg, type){
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = 'status ' + (type || '');
+if(typeof sb === 'undefined' || !window.sb){
+  var _sb2 = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co","sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP");
+  window.sb = _sb2;
 }
-function showTab(name){
-  ['deposits','purchases','withdrawals','songs'].forEach(t=>{
-    document.getElementById('section-'+t).style.display = name===t ? 'block' : 'none';
-    document.getElementById('tab'+t[0].toUpperCase()).className = name===t ? 'active' : '';
-  });
-}
-async function init(isRefresh){
-  if(typeof sb === 'undefined'){ setStatus("ERROR: sb not found. app.js did not load.", "err"); return; }
-  if(!isRefresh) setStatus("Checking login...");
+var sb = window.sb;
+</script>
+<script>
+async function initAdmin(){
+  const status = document.getElementById('statusMsg');
   try{
-    const { data: { user } } = await sb.auth.getUser();
-    if(!user){ setStatus("Not logged in. Please login first.", "err"); setTimeout(()=> location.href = 'auth.html', 1500); return; }
-    setStatus("Logged in as " + user.email + "\nChecking if you are admin...");
-    const { data: profile, error: profErr } = await sb.from('profiles').select('is_admin, email').eq('id', user.id).single();
-    if(profErr){ setStatus("Profile error: " + profErr.message, "err"); return; }
-    if(!profile?.is_admin){ setStatus("ACCESS DENIED\nLogged in as: " + user.email, "err"); return; }
-    setStatus("✅ Logged in as OWNER: " + user.email + "\nLoading data...", "ok");
+    const { data: { user } } = await window.sb.auth.getUser();
+    if(!user){ status.innerHTML = 'Not logged in. <a href="auth.html" style="color:#d4ff3f">Login</a>'; return; }
+    const { data: prof } = await window.sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if(!prof || !prof.is_admin){
+      status.innerHTML = '❌ Not admin. Your email: ' + (user.email||'') + '<br><br><span class="small">Ask main admin to set is_admin=true for you in Supabase > profiles.</span>';
+      return;
+    }
     document.getElementById('adminContent').style.display = 'block';
-    await Promise.all([loadDeposits(), loadPurchases(), loadWithdrawals(), loadSongs()]);
-    setStatus("✅ Admin ready — Owner: " + user.email, "ok");
-  }catch(e){ console.error(e); setStatus("JS CRASH: " + e.message, "err"); }
-}
-
-async function loadDeposits(){
-  const el = document.getElementById('deposits');
-  el.innerHTML = "Loading...";
-  const { data, error } = await sb.from('deposits').select('*, profiles(full_name,email,phone,grind_balance)').eq('status','pending').order('created_at',{ascending:false});
-  if(error){ el.innerHTML = "Error: " + error.message; return; }
-  if(!data || !data.length){ el.innerHTML = "<div class='card'>No pending deposits. All clear ✅</div>"; return; }
-  el.innerHTML = data.map(d => {
-    const p = d.profiles || {};
-    const amt = d.amount_grind ?? d.amount ?? 0;
-    return `<div class="card"><b>${p.full_name || 'No Name Yet'}</b> <span class="pill">${amt} Grinds</span><br><div class="muted">Email: ${p.email || '—'}<br>Phone: ${p.phone || '—'}<br>Current Balance: ${p.grind_balance ?? 0}<br>Method: ${d.method || '-'} • Ref: ${d.reference || d.payment_ref || '-'}<br>ID: ${d.id}<br>Date: ${d.created_at || ''}</div><button class="approve" onclick="approveDeposit('${d.id}','${d.user_id}',${Number(amt)})">✅ APPROVE + CREDIT</button><button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button></div>`;
-  }).join('');
-}
-async function approveDeposit(id, userId, amountGrind){
-  if(!confirm("Approve " + amountGrind + " Grinds and credit wallet?")) return;
-  const { data: check } = await sb.from('deposits').select('status').eq('id', id).single();
-  if(check?.status !== 'pending'){ alert('Already handled: ' + check?.status); return loadDeposits(); }
-  const { error: e1 } = await sb.from('deposits').update({ status: 'approved' }).eq('id', id).eq('status','pending');
-  if(e1){ alert("Approve failed: " + e1.message); return; }
-  const { data: prof } = await sb.from('profiles').select('grind_balance').eq('id', userId).single();
-  const newBal = (Number(prof?.grind_balance) || 0) + Number(amountGrind);
-  const { error: e2 } = await sb.from('profiles').update({ grind_balance: newBal }).eq('id', userId);
-  if(e2){ alert("Credited failed, but deposit marked approved. Fix manually: " + e2.message); return; }
-  await loadDeposits(); setStatus("✅ Deposit approved + " + amountGrind + " Grinds credited. New balance: " + newBal, "ok");
-}
-async function rejectDeposit(id){
-  if(!confirm("Reject this deposit?")) return;
-  const { error } = await sb.from('deposits').update({ status: 'rejected' }).eq('id', id);
-  if(error) alert(error.message); else loadDeposits();
-}
-
-// --- PURCHASES - FIXED: payment_method + fees_grind ---
-async function loadPurchases(){
-  const el = document.getElementById('purchases');
-  el.innerHTML = "Loading...";
-  const { data, error } = await sb.from('purchases').select('*, songs(title, artist_name), profiles!purchases_fan_id_fkey(full_name,email,phone)').eq('status','pending').order('created_at',{ascending:false});
-  if(error){
-    const r2 = await sb.from('purchases').select('*, songs(title, artist_name)').eq('status','pending').order('created_at',{ascending:false});
-    if(r2.error){ el.innerHTML = "Error: " + r2.error.message; return; }
-    return renderPurchases(el, r2.data);
+    status.style.display = 'none';
+    await loadAdmin();
+  }catch(e){
+    status.innerHTML = 'Admin failed: ' + e.message + '<br><br><button class="ghost" onclick="initAdmin()" style="background:#333;color:#fff;padding:10px 14px;border:0;border-radius:10px">Retry</button>';
   }
-  renderPurchases(el, data);
 }
-function renderPurchases(el, data){
-  if(!data || !data.length){ el.innerHTML = "<div class='card'>No pending purchases. All clear ✅</div>"; return; }
-  el.innerHTML = data.map(p => {
-    const buyer = p.profiles?.full_name || p.fan_id || 'unknown';
-    const buyerEmail = p.profiles?.email ? ' • ' + p.profiles.email : '';
-    const buyerPhone = p.profiles?.phone ? ' • Phone: ' + p.profiles.phone : '';
-    // FIXED: payment_method (was pay_method) + fees_grind (was royalty_grind)
-    const method = p.payment_method || p.pay_method || '-';
-    const artistGets = Number(p.fees_grind ?? p.royalty_grind ?? (Number(p.price_grind||0)*0.63) || 0);
-    return `<div class="card"><b>${p.songs?.title || 'Unknown Song'}</b> — ${p.songs?.artist_name || ''}<br><div class="muted">Buyer: ${buyer}${buyerEmail}${buyerPhone}<br>Purchase ID: ${p.id}<br>Song ID: ${p.song_id}<br>Ref: ${p.payment_ref || p.reference || '-'}<br>Amount: ${p.price_grind ?? '-'}G • Method: ${method} • Artist gets: ${artistGets.toFixed(2)}G (63%)<br>Date: ${p.created_at || ''}</div><button class="approve" onclick="approveBuy('${p.id}')">✅ APPROVE & PAY ARTIST</button><button class="reject" onclick="rejectBuy('${p.id}')">Reject</button></div>`;
-  }).join('');
-}
-async function approveBuy(id){
-  if(!confirm("Approve this purchase? Artist will get 63% royalty now and song unlocks.")) return;
-  await approvePurchase(id);
-  await loadPurchases(); setStatus("✅ Purchase approved + artist paid 63%", "ok");
-}
-async function rejectBuy(id){
-  if(!confirm("Reject this purchase?")) return;
-  const { error } = await sb.from('purchases').update({ status: 'rejected' }).eq('id', id);
-  if(error) alert(error.message); else loadPurchases();
-}
-
-// --- WITHDRAWALS ---
-async function loadWithdrawals(){
-  const el = document.getElementById('withdrawals');
-  el.innerHTML = "Loading...";
-  const { data, error } = await sb.from('withdrawals').select('*, profiles(full_name,email,phone,grind_balance)').eq('status','pending').order('created_at',{ascending:false});
-  if(error){ el.innerHTML = "Error: " + error.message; return; }
-  if(!data || !data.length){ el.innerHTML = "<div class='card'>No pending withdrawals. All clear ✅</div>"; return; }
-  el.innerHTML = data.map(w => {
-    const p = w.profiles || {};
-    const amt = w.amount_grind ?? w.amount ?? 0;
-    const uid = w.user_id || w.artist_id;
-    return `<div class="card"><b>${amt} Grinds — ${w.receive_method || w.method || ''}</b><br><div class="muted">Artist: ${p.full_name || '—'}<br>Email: ${p.email || '—'} • Phone: ${p.phone || '—'}<br>Balance: ${p.grind_balance ?? 0}<br>ID: ${w.id}<br>Details: ${w.receive_details || w.phone || w.account || w.details || '(blank - old request)'}<br>Date: ${w.created_at || ''}</div><button class="approve" onclick="approveW('${w.id}','${uid}',${Number(amt)})">✅ APPROVE PAID</button><button class="reject" onclick="rejectW('${w.id}')">Reject</button></div>`;
-  }).join('');
-}
-async function approveW(id, userId, amountGrind){
-  if(!confirm("You already paid this person via M-PESA? This will deduct " + amountGrind + " from their wallet.")) return;
-  const { data: check } = await sb.from('withdrawals').select('status').eq('id', id).single();
-  if(check?.status !== 'pending'){ alert('Already handled: ' + check?.status); return loadWithdrawals(); }
-  const { data: prof } = await sb.from('profiles').select('grind_balance').eq('id', userId).single();
-  const cur = Number(prof?.grind_balance) || 0;
-  if(cur < Number(amountGrind)){ if(!confirm("Balance is only " + cur + " but withdraw is " + amountGrind + ". Approve anyway?")) return; }
-  const { error: e1 } = await sb.from('withdrawals').update({ status: 'approved' }).eq('id', id).eq('status','pending');
-  if(e1){ alert(e1.message); return; }
-  const { error: e2 } = await sb.from('profiles').update({ grind_balance: cur - Number(amountGrind) }).eq('id', userId);
-  if(e2){ alert("Withdraw marked approved but balance not deducted: " + e2.message); return; }
-  await loadWithdrawals(); setStatus("✅ Withdraw approved, balance deducted", "ok");
-}
-async function rejectW(id){
-  if(!confirm("Reject this withdrawal? Balance will NOT be deducted.")) return;
-  const { error } = await sb.from('withdrawals').update({ status: 'rejected' }).eq('id', id);
-  if(error) alert(error.message); else loadWithdrawals();
-}
-
-async function loadSongs(){
-  const el = document.getElementById('songs');
-  el.innerHTML = "Loading...";
-  const { data, error } = await sb.from('songs').select('*').order('created_at',{ascending:false});
-  if(error){ el.innerHTML = "Error: " + error.message; return; }
-  if(!data || !data.length){ el.innerHTML = "<div class='card'>No songs yet.</div>"; return; }
-  el.innerHTML = data.map(s => `<div class="card"><b>${s.title || 'Untitled'}</b> — ${s.artist_name || ''}<br><div class="muted">ID: ${s.id}<br>audio_path: ${s.audio_path || 'MISSING - will not play!'}<br>Price: ${s.price_grind ?? ''}</div><button class="reject" onclick="deleteSong('${s.id}')">Delete Song</button></div>`).join('');
-}
-async function deleteSong(id){
-  if(!confirm("Delete this song?")) return;
-  await sb.from('purchases').delete().eq('song_id', id);
-  const { error } = await sb.from('songs').delete().eq('id', id);
-  if(error) alert("Delete failed: " + error.message);
-  else { loadSongs(); loadPurchases(); }
-}
-init();
+initAdmin();
 </script>
 </body>
 </html>
