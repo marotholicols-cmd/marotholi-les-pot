@@ -80,38 +80,38 @@ async function doRegister(){
   if(!password || password.length < 6){ setMsg('rMsg','Password must be 6+ chars', true); return; }
 
   setMsg('rMsg','Creating account... please wait');
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA },
-      emailRedirectTo: location.origin + '/discover.html'
+  try{
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA },
+        emailRedirectTo: location.origin + '/discover.html'
+      }
+    });
+    if(error) throw error;
+    if(data?.user){
+      sb.from('profiles').upsert({
+        id: data.user.id,
+        email: email,
+        full_name: full_name,
+        phone: phone,
+        grind_balance: 0
+      }, { onConflict: 'id' }).then(()=>{});
     }
-  });
-  if(error){
-    if(error.message.toLowerCase().includes('already')){
+    if(data?.user && !data.session){
+      setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.');
+    } else {
+      setMsg('rMsg','✅ Account created! Logging you in...');
+      setTimeout(()=> location.href='discover.html', 800);
+    }
+  }catch(e){
+    if((e.message||'').toLowerCase().includes('already')){
       setMsg('rMsg','This email already has an account. Go to Login.', true);
       setTimeout(showLogin, 1200);
     } else {
-      setMsg('rMsg','Register failed: ' + error.message, true);
+      setMsg('rMsg','Register failed: ' + e.message, true);
     }
-    return;
-  }
-  if(data?.user){
-    // Don't await - don't block UI if RLS is slow, app.js ensureProfile will fix it on next page
-    sb.from('profiles').upsert({
-      id: data.user.id,
-      email: email,
-      full_name: full_name,
-      phone: phone,
-      grind_balance: 0
-    }, { onConflict: 'id' }).then(()=>{});
-  }
-  if(data?.user && !data.session){
-    setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.');
-  } else {
-    setMsg('rMsg','✅ Account created! Logging you in...');
-    setTimeout(()=> location.href='discover.html', 800);
   }
 }
 
@@ -122,9 +122,27 @@ async function doLogin(){
   setMsg('lMsg','Logging in...');
   document.getElementById('resendBtn').classList.add('hidden');
 
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){
-    let msg = error.message;
+  if(typeof sb === 'undefined' || !sb?.auth){
+    setMsg('lMsg','Connection not ready. Refresh page and try again (turn off VPN).', true);
+    return;
+  }
+
+  try{
+    const loginPromise = sb.auth.signInWithPassword({ email, password });
+    const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('TIMEOUT')), 10000));
+    const { data, error } = await Promise.race([loginPromise, timeout]);
+    if(error) throw error;
+
+    if(data?.user){
+      sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{});
+    }
+    setMsg('lMsg','✅ Logged in! Loading...');
+    setTimeout(()=> location.href='discover.html', 600);
+  }catch(e){
+    let msg = e.message || 'Login failed';
+    if(msg === 'TIMEOUT'){
+      msg = 'Supabase timed out. Turn OFF VPN, check data, refresh and try again.';
+    }
     if(msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')){
       msg = 'Email not confirmed. Check Gmail (and Spam) for link, or tap Resend below.';
       document.getElementById('resendBtn').classList.remove('hidden');
@@ -133,14 +151,7 @@ async function doLogin(){
       msg = 'Wrong email or password. Try again, or Register if you have no account.';
     }
     setMsg('lMsg', msg, true);
-    return;
   }
-  // FIXED: Don't await profile update - it was causing "Loading..." hang. Go straight to Discover, app.js will sync profile there.
-  if(data?.user){
-    sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{});
-  }
-  setMsg('lMsg','✅ Logged in! Loading...');
-  setTimeout(()=> location.href='discover.html', 600);
 }
 
 async function resendEmail(){
