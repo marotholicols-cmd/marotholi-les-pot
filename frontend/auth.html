@@ -48,9 +48,7 @@
   </div>
   <div class="footer">© MAROTHOLI GRINDERS • MAROTHOLI LES-POT • Les-Pot GrindPay</div>
 </div>
-
 <script>
-// *** SELF-CONTAINED - DOES NOT NEED app.js ***
 const SUPABASE_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -59,11 +57,7 @@ window.sb = sb;
 <script>
 function showReg(){ document.getElementById('loginCard').classList.add('hidden'); document.getElementById('regCard').classList.remove('hidden'); }
 function showLogin(){ document.getElementById('regCard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden'); }
-function setMsg(id, txt, isErr){
-  const el = document.getElementById(id);
-  el.textContent = txt;
-  el.className = isErr ? 'err' : 'ok';
-}
+function setMsg(id, txt, isErr){ const el = document.getElementById(id); el.textContent = txt; el.className = isErr ? 'err' : 'ok'; }
 async function doRegister(){
   const full_name = document.getElementById('rName').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
@@ -79,25 +73,14 @@ async function doRegister(){
   if(!password || password.length < 6){ setMsg('rMsg','Password must be 6+ chars', true); return; }
   setMsg('rMsg','Creating account... please wait');
   try{
-    const { data, error } = await sb.auth.signUp({
-      email, password,
-      options: { data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA }, emailRedirectTo: location.origin + '/discover.html' }
-    });
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA }, emailRedirectTo: location.origin + '/discover.html' } });
     if(error) throw error;
-    if(data?.user){
-      sb.from('profiles').upsert({ id: data.user.id, email: email, full_name: full_name, phone: phone, grind_balance: 0 }, { onConflict: 'id' }).then(()=>{});
-    }
-    if(data?.user && !data.session){
-      setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.');
-    } else {
-      setMsg('rMsg','✅ Account created! Logging you in...');
-      setTimeout(()=> location.href='discover.html', 800);
-    }
+    if(data?.user){ sb.from('profiles').upsert({ id: data.user.id, email: email, full_name: full_name, phone: phone, grind_balance: 0 }, { onConflict: 'id' }).then(()=>{}); }
+    if(data?.user && !data.session){ setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.'); }
+    else { setMsg('rMsg','✅ Account created! Logging you in...'); setTimeout(()=> location.href='discover.html', 800); }
   }catch(e){
-    if((e.message||'').toLowerCase().includes('already')){
-      setMsg('rMsg','This email already has an account. Go to Login.', true);
-      setTimeout(showLogin, 1200);
-    } else setMsg('rMsg','Register failed: ' + e.message, true);
+    if((e.message||'').toLowerCase().includes('already')){ setMsg('rMsg','This email already has an account. Go to Login.', true); setTimeout(showLogin, 1200); }
+    else setMsg('rMsg','Register failed: ' + e.message, true);
   }
 }
 async function doLogin(){
@@ -111,21 +94,14 @@ async function doLogin(){
     const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('TIMEOUT')), 15000));
     const { data, error } = await Promise.race([loginPromise, timeout]);
     if(error) throw error;
-    if(data?.user){
-      sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{});
-    }
+    if(data?.user){ sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{}); }
     setMsg('lMsg','✅ Logged in! Loading...');
     setTimeout(()=> location.href='discover.html', 600);
   }catch(e){
     let msg = e.message || 'Login failed';
     if(msg === 'TIMEOUT') msg = 'Supabase timed out. Turn OFF VPN, check data, refresh and try again.';
-    if(msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')){
-      msg = 'Email not confirmed. Check Gmail (and Spam) for link, or tap Resend below.';
-      document.getElementById('resendBtn').classList.remove('hidden');
-    }
-    if(msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')){
-      msg = 'Wrong email or password. Try again, or Register if you have no account.';
-    }
+    if(msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')){ msg = 'Email not confirmed. Check Gmail (and Spam) for link, or tap Resend below.'; document.getElementById('resendBtn').classList.remove('hidden'); }
+    if(msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')){ msg = 'Wrong email or password. Try again, or Register if you have no account.'; }
     setMsg('lMsg', msg, true);
   }
 }
@@ -145,9 +121,7 @@ async function forgotPass(){
   if(error) setMsg('lMsg','Reset failed: ' + error.message, true);
   else setMsg('lMsg','✅ Reset email sent to ' + email + '. Check Inbox + Spam.');
 }
-if(location.hash.includes('otp_expired') || location.search.includes('otp_expired') || location.hash.includes('error=access_denied')){
-  setMsg('lMsg','That email link expired. Login below and tap Resend Confirmation Email to get a fresh one.', true);
-}
+if(location.hash.includes('otp_expired') || location.search.includes('otp_expired') || location.hash.includes('error=access_denied')){ setMsg('lMsg','That email link expired. Login below and tap Resend Confirmation Email to get a fresh one.', true); }
 </script>
 </body>
 </html>
