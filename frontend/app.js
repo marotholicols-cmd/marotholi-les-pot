@@ -1,15 +1,24 @@
-// LES-POT - FULL FIXED app.js - BUY NOW SAVES PURCHASE
+// LES-POT - FULL FIXED app.js - FAST - BUY NOW SAVES PURCHASE
 const SUPABASE_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 window.sb = sb;
 
-async function getCurrentUser(){ const {data}=await sb.auth.getUser(); return data?.user||null; }
+let _profileCache = null;
+let _userCache = null;
+
+async function getCurrentUser(){
+  if(_userCache) return _userCache;
+  const {data}=await sb.auth.getUser();
+  _userCache = data?.user||null;
+  return _userCache;
+}
 async function ensureProfile(){
+  if(_profileCache) return _profileCache;
   const user = await getCurrentUser();
   if(!user) return null;
   const meta = user.user_metadata || {};
-  const { data: existing } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  const { data: existing } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if(existing){
     const patch = {};
     if(!existing.email) patch.email = user.email;
@@ -17,9 +26,11 @@ async function ensureProfile(){
     if(!existing.full_name && meta.name) patch.full_name = meta.name;
     if(!existing.phone && meta.phone) patch.phone = meta.phone;
     if(Object.keys(patch).length) await sb.from('profiles').update(patch).eq('id', user.id);
-    return { ...existing, ...patch };
+    _profileCache = { ...existing, ...patch };
+    return _profileCache;
   }
   const { data: created } = await sb.from('profiles').insert({ id: user.id, email: user.email, full_name: meta.full_name || meta.name || '', phone: meta.phone || '', grind_balance: 0, is_admin: false }).select().single();
+  _profileCache = created;
   return created;
 }
 async function getMyProfile(){
@@ -31,17 +42,21 @@ async function getMyProfile(){
 async function loadBalanceBadge(){
   const el=document.getElementById('bal');
   if(!el) return;
-  const {user,profile}=await getMyProfile();
-  if(!user){el.textContent='G 0.00';return;}
-  el.textContent=Number(profile?.grind_balance||0).toFixed(2)+' G';
+  try{
+    const {user,profile}=await getMyProfile();
+    if(!user){el.textContent='G 0.00';return;}
+    el.textContent=Number(profile?.grind_balance||0).toFixed(2)+' G';
+  }catch(e){ el.textContent='G 0.00'; }
 }
 async function loadWallet(){
-  const {user,profile}=await getMyProfile();
-  const b=document.getElementById('walletBalance')||document.getElementById('bal');
-  if(b&&profile) b.textContent=Number(profile.grind_balance||0).toFixed(2)+' G';
-  const b2=document.getElementById('balBig');
-  if(b2&&profile) b2.textContent=Number(profile.grind_balance||0).toFixed(2)+' G';
-  if(user){loadMyDeposits(user.id); loadMyWithdrawals(user.id);}
+  try{
+    const {user,profile}=await getMyProfile();
+    const b=document.getElementById('walletBalance')||document.getElementById('bal');
+    if(b&&profile) b.textContent=Number(profile.grind_balance||0).toFixed(2)+' G';
+    const b2=document.getElementById('balBig');
+    if(b2&&profile) b2.textContent=Number(profile.grind_balance||0).toFixed(2)+' G';
+    if(user){loadMyDeposits(user.id); loadMyWithdrawals(user.id);}
+  }catch(e){}
 }
 async function submitDeposit(amount, method, reference){
   const user=await getCurrentUser(); if(!user){alert('Login first'); location.href='auth.html'; return;}
@@ -63,6 +78,7 @@ async function approveDeposit(depositId){
   const bal=Number(prof?.grind_balance||0);
   const {error:updErr}=await sb.from('profiles').update({grind_balance:bal+amount}).eq('id',userId);
   if(updErr){alert('Credit failed: '+updErr.message+' - Deposit is marked approved, fix balance manually');return;}
+  _profileCache=null;
   alert(`✅ APPROVED +${amount} G. New balance: ${(bal+amount).toFixed(2)} G`); location.reload();
 }
 window.approveDeposit=approveDeposit;
@@ -94,6 +110,7 @@ async function approveWithdrawal(withdrawalId){
   if(updWd){alert('Approve failed: '+updWd.message);return;}
   const {error:dErr}=await sb.from('profiles').update({grind_balance:bal-amount}).eq('id',userId);
   if(dErr){alert('Deduct failed: '+dErr.message);return;}
+  _profileCache=null;
   alert(`✅ Withdrawal APPROVED -${amount} G. New: ${(bal-amount).toFixed(2)} G. Now pay M${(amount*10).toFixed(0)} via ${wd.receive_method} to ${wd.receive_details}`); location.reload();
 }
 window.approveWithdrawal=approveWithdrawal; window.approveWithdraw=approveWithdrawal;
@@ -123,6 +140,7 @@ async function buySongWithWallet(songId, price, artistId){
     console.error('PURCHASE INSERT FAILED:', purchaseError);
     return;
   }
+  _profileCache=null;
   if(artistId && artistId!==user.id){
     const {data:artist}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single();
     await sb.from('profiles').update({grind_balance:Number(artist?.grind_balance||0)+price*0.63}).eq('id',artistId);
@@ -147,7 +165,7 @@ async function loadLibrary(){
       const { data: pub } = sb.storage.from('songs').getPublicUrl(audioSrc);
       if(pub?.publicUrl) audioSrc = pub.publicUrl;
     }
-    return `<div class="card song"><b>${s.title}</b><small>${s.artist_name||''}</small><audio controls src="${audioSrc}" style="width:100%"></audio></div>`;
+    return `<div class="card song"><b>${s.title}</b><small>${s.artist_name||''}</small><audio controls preload="none" src="${audioSrc}" style="width:100%"></audio></div>`;
   }).join('');
 }
 async function loadAdmin(){
@@ -199,9 +217,8 @@ window.approvePurchase=approvePurchase;
 async function rejectPurchase(id){ await sb.from('purchases').update({status:'rejected'}).eq('id',id); location.reload(); } window.rejectPurchase=rejectPurchase;
 async function approveSong(id){ alert('Songs are auto-approved - no action needed'); } window.approveSong=approveSong;
 async function rejectSong(id){ alert('Delete song from Supabase > songs table if needed'); } window.rejectSong=rejectSong;
-document.addEventListener('DOMContentLoaded', async ()=>{
-  try{ await ensureProfile(); }catch(e){}
-  try{ loadBalanceBadge(); }catch(e){}
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadBalanceBadge().catch(()=>{});
   try{ if(document.getElementById('walletBalance')) loadWallet(); }catch(e){}
   try{ if(document.getElementById('pendingDeposits')||document.getElementById('pendingWithdrawals')) loadAdmin(); }catch(e){}
   try{ if(document.getElementById('librarySongs')) loadLibrary(); }catch(e){}
