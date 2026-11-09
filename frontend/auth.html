@@ -22,8 +22,6 @@
 <body>
 <header>MAROTHOLI LES-POT</header>
 <div class="wrap">
-
-  <!-- LOGIN -->
   <div class="card" id="loginCard">
     <h2>LOGIN</h2>
     <input id="lEmail" type="email" placeholder="Email - your real Gmail">
@@ -34,8 +32,6 @@
     <span class="link" onclick="showReg()">New? Register</span>
     <span class="link" style="color:#fff;opacity:.7" onclick="forgotPass()">Forgot Password? Send Reset Email</span>
   </div>
-
-  <!-- REGISTER -->
   <div class="card hidden" id="regCard">
     <h2>Register</h2>
     <input id="rName" placeholder="Full Name - e.g. Alinah Lebeko">
@@ -50,11 +46,16 @@
     <div id="rMsg"></div>
     <span class="link" onclick="showLogin()">Already have account? Login</span>
   </div>
-
   <div class="footer">© MAROTHOLI GRINDERS • MAROTHOLI LES-POT • Les-Pot GrindPay</div>
 </div>
 
-<script src="app.js"></script>
+<script>
+// *** SELF-CONTAINED - DOES NOT NEED app.js ***
+const SUPABASE_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.sb = sb;
+</script>
 <script>
 function showReg(){ document.getElementById('loginCard').classList.add('hidden'); document.getElementById('regCard').classList.remove('hidden'); }
 function showLogin(){ document.getElementById('regCard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden'); }
@@ -63,7 +64,6 @@ function setMsg(id, txt, isErr){
   el.textContent = txt;
   el.className = isErr ? 'err' : 'ok';
 }
-
 async function doRegister(){
   const full_name = document.getElementById('rName').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
@@ -73,31 +73,19 @@ async function doRegister(){
   const password = document.getElementById('rPass').value;
   const secQ = document.getElementById('rQ').value;
   const secA = document.getElementById('rA').value.trim();
-
   if(!full_name){ setMsg('rMsg','Enter your full name', true); return; }
   if(!phone){ setMsg('rMsg','Enter your Lesotho number', true); return; }
   if(!email || !email.includes('@')){ setMsg('rMsg','Enter a real email / Gmail', true); return; }
   if(!password || password.length < 6){ setMsg('rMsg','Password must be 6+ chars', true); return; }
-
   setMsg('rMsg','Creating account... please wait');
   try{
     const { data, error } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA },
-        emailRedirectTo: location.origin + '/discover.html'
-      }
+      email, password,
+      options: { data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA }, emailRedirectTo: location.origin + '/discover.html' }
     });
     if(error) throw error;
     if(data?.user){
-      sb.from('profiles').upsert({
-        id: data.user.id,
-        email: email,
-        full_name: full_name,
-        phone: phone,
-        grind_balance: 0
-      }, { onConflict: 'id' }).then(()=>{});
+      sb.from('profiles').upsert({ id: data.user.id, email: email, full_name: full_name, phone: phone, grind_balance: 0 }, { onConflict: 'id' }).then(()=>{});
     }
     if(data?.user && !data.session){
       setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.');
@@ -109,30 +97,20 @@ async function doRegister(){
     if((e.message||'').toLowerCase().includes('already')){
       setMsg('rMsg','This email already has an account. Go to Login.', true);
       setTimeout(showLogin, 1200);
-    } else {
-      setMsg('rMsg','Register failed: ' + e.message, true);
-    }
+    } else setMsg('rMsg','Register failed: ' + e.message, true);
   }
 }
-
 async function doLogin(){
   const email = document.getElementById('lEmail').value.trim().toLowerCase();
   const password = document.getElementById('lPass').value;
   if(!email || !password){ setMsg('lMsg','Enter email + password', true); return; }
   setMsg('lMsg','Logging in...');
   document.getElementById('resendBtn').classList.add('hidden');
-
-  if(typeof sb === 'undefined' || !sb?.auth){
-    setMsg('lMsg','Connection not ready. Refresh page and try again (turn off VPN).', true);
-    return;
-  }
-
   try{
     const loginPromise = sb.auth.signInWithPassword({ email, password });
-    const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('TIMEOUT')), 10000));
+    const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('TIMEOUT')), 15000));
     const { data, error } = await Promise.race([loginPromise, timeout]);
     if(error) throw error;
-
     if(data?.user){
       sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{});
     }
@@ -140,9 +118,7 @@ async function doLogin(){
     setTimeout(()=> location.href='discover.html', 600);
   }catch(e){
     let msg = e.message || 'Login failed';
-    if(msg === 'TIMEOUT'){
-      msg = 'Supabase timed out. Turn OFF VPN, check data, refresh and try again.';
-    }
+    if(msg === 'TIMEOUT') msg = 'Supabase timed out. Turn OFF VPN, check data, refresh and try again.';
     if(msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')){
       msg = 'Email not confirmed. Check Gmail (and Spam) for link, or tap Resend below.';
       document.getElementById('resendBtn').classList.remove('hidden');
@@ -153,7 +129,6 @@ async function doLogin(){
     setMsg('lMsg', msg, true);
   }
 }
-
 async function resendEmail(){
   const email = document.getElementById('lEmail').value.trim().toLowerCase();
   if(!email){ setMsg('lMsg','Enter your email first, then Resend', true); return; }
@@ -162,7 +137,6 @@ async function resendEmail(){
   if(error) setMsg('lMsg','Resend failed: ' + error.message, true);
   else setMsg('lMsg','✅ Fresh email sent to ' + email + '. Check Inbox + Spam. New link works 24h.');
 }
-
 async function forgotPass(){
   const email = document.getElementById('lEmail').value.trim().toLowerCase();
   if(!email){ setMsg('lMsg','Enter your email in Login box first, then tap Forgot Password', true); return; }
@@ -171,7 +145,6 @@ async function forgotPass(){
   if(error) setMsg('lMsg','Reset failed: ' + error.message, true);
   else setMsg('lMsg','✅ Reset email sent to ' + email + '. Check Inbox + Spam.');
 }
-
 if(location.hash.includes('otp_expired') || location.search.includes('otp_expired') || location.hash.includes('error=access_denied')){
   setMsg('lMsg','That email link expired. Login below and tap Resend Confirmation Email to get a fresh one.', true);
 }
