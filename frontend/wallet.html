@@ -7,46 +7,82 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
+*{box-sizing:border-box}
+body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;overflow-x:hidden}
 header{background:#d4ff3f;color:#000;padding:14px 16px;text-align:center;font-weight:900}
-header div{font-size:28px} header small{font-size:12px;opacity:.7}
-.wrap{max-width:520px;margin:0 auto;padding:16px}
-.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:14px;margin-bottom:12px}
-.card h3{margin:0 0 8px} .small{opacity:.7;font-size:13px}
+header div{font-size:28px;overflow-wrap:break-word}
+.wrap{max-width:520px;margin:0 auto;padding:16px;width:100%}
+.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:14px;margin-bottom:12px;overflow:hidden;word-break:break-word}
+.card h3{margin:0 0 8px}
+.small{opacity:.7;font-size:13px;line-height:1.5;overflow-wrap:break-word}
 input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;margin:6px 0;font-size:15px}
 button{width:100%;padding:13px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:15px}
-button.ghost{background:#333;color:#fff}
 .nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
 .nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
-.row{display:flex;gap:8px} .row button{flex:1}
-#bal{background:#000;color:#d4ff3f;padding:6px 10px;border-radius:20px;font-size:13px}
+.paybox{background:#000;border:1px solid #333;border-radius:10px;padding:12px;margin:8px 0;word-break:break-word;overflow-wrap:break-word;white-space:normal;line-height:1.6;display:none}
+.paybox.active{display:block}
+.paybox b{color:#d4ff3f;font-size:18px;word-break:break-all}
+.paytag{display:inline-block;background:#d4ff3f;color:#000;font-size:11px;font-weight:900;padding:3px 8px;border-radius:20px;margin-bottom:6px}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT — WALLET<div>YOUR BALANCE • 1G = M10</div><div id="walletBalance" style="font-size:36px">Loading...</div><div class="small" id="walletSub">M0.00 • Min withdraw 2.5 G • M25</div><br><span id="bal" style="display:none">G ...</span></header>
+<header>MAROTHOLI LES-POT — WALLET<div>YOUR BALANCE • 1G = M10</div><div id="walletBalance" style="font-size:36px">Loading...</div><div class="small" id="walletSub" style="font-weight:700">M0.00 • Min withdraw 2.5 G • M25</div></header>
 <div class="wrap">
 <div class="nav"><a href="discover.html">Discover</a><a href="library.html">Library</a><a href="wallet.html">Wallet</a><a href="upload.html">Upload</a><a href="admin.html">Admin</a><a href="auth.html">Logout</a></div>
 
 <div class="card">
-<h3>➕ Top Up / Deposit</h3><p class="small">Stack Grinds to buy songs instantly.</p>
+<h3>➕ Top Up / Deposit</h3><p class="small">Stack Grinds to buy songs instantly. Choose how you pay:</p>
 <label class="small">Amount in G</label>
 <input id="depAmount" type="number" step="0.01" placeholder="e.g. 5 = M50">
 <label class="small">How you will pay</label>
-<select id="depMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option><option value="Bank">Bank</option></select>
-<p class="small">Pay MAROTHOLI GRINDERS to:<br><b style="color:#d4ff3f">+266 5961 2345 (Mpesa) — Use EXACT amount</b><br>Pay EXACT amount. Keep OTP / Reference.</p>
+<select id="depMethod" onchange="showPaybox()">
+<option value="Mpesa">Mpesa</option>
+<option value="EcoCash">EcoCash</option>
+<option value="PayFast">PayFast</option>
+<option value="Postbank">Postbank</option>
+</select>
+
+<div id="pay-Mpesa" class="paybox active">
+<span class="paytag">MPESA</span><br>
+<span class="small">Pay MAROTHOLI GRINDERS to:</span><br>
+<b>+266 59070688</b><br>
+<span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
+</div>
+
+<div id="pay-EcoCash" class="paybox">
+<span class="paytag">ECOCASH</span><br>
+<span class="small">Pay MAROTHOLI GRINDERS to:</span><br>
+<b>+266 128235</b><br>
+<span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
+</div>
+
+<div id="pay-PayFast" class="paybox">
+<span class="paytag">PAYFAST</span><br>
+<span class="small">Pay via PayFast:</span><br>
+<b>1040278800016</b><br>
+<span class="small">Pay EXACT amount. Keep PayFast Reference.</span>
+</div>
+
+<div id="pay-Postbank" class="paybox">
+<span class="paytag">POSTBANK</span><br>
+<span class="small">Deposit to Postbank:</span><br>
+<b>Acc: 37129143</b><br>
+<span class="small">Acc Name: MAROTHOLI GRINDERS<br>Reference: Your Email / Username<br>Keep deposit slip.</span>
+</div>
+
 <label class="small">OTP / Reference from your payment</label>
-<input id="depRef" placeholder="e.g. MP250... / 17x123...">
+<input id="depRef" placeholder="e.g. MP250... / PayFast ID / Postbank slip no.">
 <button onclick="doDeposit()">SEND DEPOSIT FOR APPROVAL →</button>
 </div>
 
 <div class="card">
-<h3>🏧 Request Withdrawal</h3><p class="small">Artist royalties: Min 2.5 G = M25. You keep 63%, platform keeps 37% already taken at sale.</p>
+<h3>🏧 Request Withdrawal</h3><p class="small">Artist royalties: Min 2.5 G = M25. You keep 63%.</p>
 <label class="small">Amount in G (min 2.5)</label>
 <input id="wdAmount" type="number" step="0.01" placeholder="e.g. 2.5">
 <label class="small">Where to receive</label>
-<select id="wdMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option></select>
+<select id="wdMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option><option value="PayFast">PayFast</option><option value="Postbank">Postbank</option></select>
 <label class="small">Your number / account</label>
-<input id="wdNumber" placeholder="e.g. 59612345 / Acc number">
+<input id="wdNumber" placeholder="e.g. Mpesa 59070688 / EcoCash 128235 / Postbank Acc No.">
 <button onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
 </div>
 
@@ -55,6 +91,12 @@ button.ghost{background:#333;color:#fff}
 <div class="card"><h3>My Sales (63% Royalties)</h3><div id="mySales">Loading...</div></div>
 </div>
 <script>
+function showPaybox(){
+  const m = document.getElementById('depMethod').value;
+  document.querySelectorAll('.paybox').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('pay-'+m);
+  if(el) el.classList.add('active');
+}
 async function doDeposit(){
   const amt = document.getElementById('depAmount').value;
   const method = document.getElementById('depMethod').value;
@@ -95,7 +137,6 @@ async function fixWalletBalance(){
 document.addEventListener('DOMContentLoaded', ()=>{
   fixWalletBalance();
   loadSales();
-  // loadWallet from app.js already loads deposits/withdrawals
   setTimeout(fixWalletBalance, 1500);
 });
 </script>
