@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Discover - Marotholi Les-Pot</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js" defer></script>
+<script src="app.js"></script>
 <style>
 *{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0}
 header{background:#d4ff3f;color:#000;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:900}
@@ -27,34 +27,42 @@ audio{width:100%;margin-top:8px}
 <body>
 <header><span>MAROTHOLI LES-POT</span><span><span id="bal">G ...</span> <a href="wallet.html">Wallet</a></span></header>
 <div class="wrap">
-<div class="nav"><a href="discover.html">Discover</a><a href="library.html">Library</a><a href="wallet.html">Wallet</a><a href="upload.html">Upload</a><a href="auth.html">Logout</a></div>
+<div class="nav"><a href="discover.html">Discover</a><a href="library.html">Library</a><a href="wallet.html">Wallet</a><a href="upload.html">Upload</a><a href="admin.html">Admin</a><a href="auth.html">Logout</a></div>
 <input class="search" id="searchBox" placeholder="Search song or artist..." oninput="filterSongs()">
 <div id="songsList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
 <p class="small" id="statusMsg" style="text-align:center"></p>
 </div>
+<script>
+// SAFETY: if app.js didn't load yet, create sb ourselves
+if(typeof sb === 'undefined' || !window.sb){
+  var _sb2 = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co","sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP");
+  window.sb = _sb2;
+}
+var sb = window.sb;
+</script>
 <script>
 let ALL_SONGS = [];
 let OWNED_IDS = new Set();
 async function loadDiscover(){
   const list = document.getElementById('songsList');
   try{
-    const { data: songs, error } = await sb.from('songs').select('id,title,artist_name,artist_id,price_grind,total_buys,audio_path,audio_url,file_url,cover_url,created_at').order('created_at',{ascending:false}).limit(50);
+    const { data: songs, error } = await window.sb.from('songs').select('id,title,artist_name,artist_id,price_grind,total_buys,audio_path,audio_url,file_url,cover_url,created_at').order('created_at',{ascending:false}).limit(50);
     if(error) throw error;
     ALL_SONGS = songs || [];
     const user = await getCurrentUser().catch(()=>null);
     if(user){
-      const { data: pur } = await sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status','approved');
+      const { data: pur } = await window.sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status','approved');
       (pur||[]).forEach(p=>OWNED_IDS.add(p.song_id));
     }
     renderSongs(ALL_SONGS);
   }catch(e){
-    list.innerHTML = '<p>Failed to load songs: '+e.message+'<br><button class="ghost" onclick="loadDiscover()">Retry</button></p>';
+    list.innerHTML = '<p>Failed to load songs: '+e.message+'<br><br><button class="ghost" onclick="loadDiscover()">Retry</button></p>';
   }
 }
 function getAudio(s){
   let src = s.audio_path || s.audio_url || s.file_url || '';
   if(src && !src.startsWith('http')){
-    const { data: pub } = sb.storage.from('songs').getPublicUrl(src);
+    const { data: pub } = window.sb.storage.from('songs').getPublicUrl(src);
     if(pub?.publicUrl) src = pub.publicUrl;
   }
   return src;
@@ -75,7 +83,7 @@ function filterSongs(){
   if(!q) return renderSongs(ALL_SONGS);
   renderSongs(ALL_SONGS.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist_name||'').toLowerCase().includes(q)));
 }
-document.addEventListener('DOMContentLoaded', ()=>{ loadDiscover(); });
+loadDiscover();
 </script>
 </body>
 </html>
