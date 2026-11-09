@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Login - Marotholi Les-Pot</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
 <style>
   *{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding:0}
   header{background:#d4ff3f;color:#000;padding:16px;text-align:center;font-weight:900;font-size:20px}
@@ -55,6 +54,7 @@
   <div class="footer">© MAROTHOLI GRINDERS • MAROTHOLI LES-POT • Les-Pot GrindPay</div>
 </div>
 
+<script src="app.js"></script>
 <script>
 function showReg(){ document.getElementById('loginCard').classList.add('hidden'); document.getElementById('regCard').classList.remove('hidden'); }
 function showLogin(){ document.getElementById('regCard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden'); }
@@ -89,7 +89,6 @@ async function doRegister(){
     }
   });
   if(error){
-    // If user already exists, tell them to login
     if(error.message.toLowerCase().includes('already')){
       setMsg('rMsg','This email already has an account. Go to Login.', true);
       setTimeout(showLogin, 1200);
@@ -98,17 +97,16 @@ async function doRegister(){
     }
     return;
   }
-  // Create profile immediately with real name/phone/email - so Admin sees them even before email confirm
   if(data?.user){
-    await sb.from('profiles').upsert({
+    // Don't await - don't block UI if RLS is slow, app.js ensureProfile will fix it on next page
+    sb.from('profiles').upsert({
       id: data.user.id,
       email: email,
       full_name: full_name,
       phone: phone,
       grind_balance: 0
-    }, { onConflict: 'id' });
+    }, { onConflict: 'id' }).then(()=>{});
   }
-  // If Supabase requires email confirm, user needs to check inbox. If not, they are logged in.
   if(data?.user && !data.session){
     setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.');
   } else {
@@ -137,9 +135,9 @@ async function doLogin(){
     setMsg('lMsg', msg, true);
     return;
   }
-  // Ensure profile has email/name/phone filled
+  // FIXED: Don't await profile update - it was causing "Loading..." hang. Go straight to Discover, app.js will sync profile there.
   if(data?.user){
-    await sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id);
+    sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{});
   }
   setMsg('lMsg','✅ Logged in! Loading...');
   setTimeout(()=> location.href='discover.html', 600);
@@ -163,19 +161,9 @@ async function forgotPass(){
   else setMsg('lMsg','✅ Reset email sent to ' + email + '. Check Inbox + Spam.');
 }
 
-// If user came back from expired email link, show helpful message
 if(location.hash.includes('otp_expired') || location.search.includes('otp_expired') || location.hash.includes('error=access_denied')){
   setMsg('lMsg','That email link expired. Login below and tap Resend Confirmation Email to get a fresh one.', true);
 }
-
-// If already logged in, skip login
-(async ()=>{
-  const { data } = await sb.auth.getUser();
-  if(data?.user && !location.hash.includes('error')){
-    // Don't auto-redirect if they just landed from email link with error
-    // setMsg('lMsg','Already logged in as ' + data.user.email);
-  }
-})();
 </script>
 </body>
 </html>
