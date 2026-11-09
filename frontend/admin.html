@@ -80,7 +80,7 @@ async function loadDeposits(){
   el.innerHTML = data.map(d => {
     const p = d.profiles || {};
     const amt = d.amount_grind ?? d.amount ?? 0;
-    return `<div class="card"><b>${p.full_name || 'No Name Yet'}</b> <span class="pill">${amt} Grinds</span><br><div class="muted">Email: ${p.email || '—'}<br>Phone: ${p.phone || '—'}<br>Current Balance: ${p.grind_balance ?? 0}<br>Method: ${d.method || '-'} • Ref: ${d.reference || '-'}<br>ID: ${d.id}<br>Date: ${d.created_at || ''}</div><button class="approve" onclick="approveDeposit('${d.id}','${d.user_id}',${Number(amt)})">✅ APPROVE + CREDIT</button><button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button></div>`;
+    return `<div class="card"><b>${p.full_name || 'No Name Yet'}</b> <span class="pill">${amt} Grinds</span><br><div class="muted">Email: ${p.email || '—'}<br>Phone: ${p.phone || '—'}<br>Current Balance: ${p.grind_balance ?? 0}<br>Method: ${d.method || '-'} • Ref: ${d.reference || d.payment_ref || '-'}<br>ID: ${d.id}<br>Date: ${d.created_at || ''}</div><button class="approve" onclick="approveDeposit('${d.id}','${d.user_id}',${Number(amt)})">✅ APPROVE + CREDIT</button><button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button></div>`;
   }).join('');
 }
 async function approveDeposit(id, userId, amountGrind){
@@ -101,7 +101,7 @@ async function rejectDeposit(id){
   if(error) alert(error.message); else loadDeposits();
 }
 
-// --- PURCHASES - FIXED COLUMNS ---
+// --- PURCHASES - FIXED: payment_method + fees_grind ---
 async function loadPurchases(){
   const el = document.getElementById('purchases');
   el.innerHTML = "Loading...";
@@ -119,13 +119,14 @@ function renderPurchases(el, data){
     const buyer = p.profiles?.full_name || p.fan_id || 'unknown';
     const buyerEmail = p.profiles?.email ? ' • ' + p.profiles.email : '';
     const buyerPhone = p.profiles?.phone ? ' • Phone: ' + p.profiles.phone : '';
-    // FIXED: real columns = price_grind, pay_method, payment_ref
-    return `<div class="card"><b>${p.songs?.title || 'Unknown Song'}</b> — ${p.songs?.artist_name || ''}<br><div class="muted">Buyer: ${buyer}${buyerEmail}${buyerPhone}<br>Purchase ID: ${p.id}<br>Song ID: ${p.song_id}<br>Ref: ${p.payment_ref || '-'}<br>Amount: ${p.price_grind ?? '-'}G • Method: ${p.pay_method || '-'} • Artist gets: ${p.royalty_grind ?? ''}G (63%)<br>Date: ${p.created_at || ''}</div><button class="approve" onclick="approveBuy('${p.id}')">✅ APPROVE & PAY ARTIST</button><button class="reject" onclick="rejectBuy('${p.id}')">Reject</button></div>`;
+    // FIXED: payment_method (was pay_method) + fees_grind (was royalty_grind)
+    const method = p.payment_method || p.pay_method || '-';
+    const artistGets = Number(p.fees_grind ?? p.royalty_grind ?? (Number(p.price_grind||0)*0.63) || 0);
+    return `<div class="card"><b>${p.songs?.title || 'Unknown Song'}</b> — ${p.songs?.artist_name || ''}<br><div class="muted">Buyer: ${buyer}${buyerEmail}${buyerPhone}<br>Purchase ID: ${p.id}<br>Song ID: ${p.song_id}<br>Ref: ${p.payment_ref || p.reference || '-'}<br>Amount: ${p.price_grind ?? '-'}G • Method: ${method} • Artist gets: ${artistGets.toFixed(2)}G (63%)<br>Date: ${p.created_at || ''}</div><button class="approve" onclick="approveBuy('${p.id}')">✅ APPROVE & PAY ARTIST</button><button class="reject" onclick="rejectBuy('${p.id}')">Reject</button></div>`;
   }).join('');
 }
 async function approveBuy(id){
   if(!confirm("Approve this purchase? Artist will get 63% royalty now and song unlocks.")) return;
-  // FIXED: use app.js approvePurchase - it pays artist 63% + unlocks. Do NOT just update status.
   await approvePurchase(id);
   await loadPurchases(); setStatus("✅ Purchase approved + artist paid 63%", "ok");
 }
@@ -135,7 +136,7 @@ async function rejectBuy(id){
   if(error) alert(error.message); else loadPurchases();
 }
 
-// --- WITHDRAWALS - FIXED: receive_details / receive_method ---
+// --- WITHDRAWALS ---
 async function loadWithdrawals(){
   const el = document.getElementById('withdrawals');
   el.innerHTML = "Loading...";
@@ -146,7 +147,6 @@ async function loadWithdrawals(){
     const p = w.profiles || {};
     const amt = w.amount_grind ?? w.amount ?? 0;
     const uid = w.user_id || w.artist_id;
-    // FIXED: receive_details = number, receive_method = Mpesa/EcoCash
     return `<div class="card"><b>${amt} Grinds — ${w.receive_method || w.method || ''}</b><br><div class="muted">Artist: ${p.full_name || '—'}<br>Email: ${p.email || '—'} • Phone: ${p.phone || '—'}<br>Balance: ${p.grind_balance ?? 0}<br>ID: ${w.id}<br>Details: ${w.receive_details || w.phone || w.account || w.details || '(blank - old request)'}<br>Date: ${w.created_at || ''}</div><button class="approve" onclick="approveW('${w.id}','${uid}',${Number(amt)})">✅ APPROVE PAID</button><button class="reject" onclick="rejectW('${w.id}')">Reject</button></div>`;
   }).join('');
 }
