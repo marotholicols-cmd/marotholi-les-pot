@@ -1,4 +1,4 @@
-// LES-POT - FULL FIXED app.js - FAST - BUY NOW SAVES PURCHASE
+// LES-POT - FULL FIXED app.js - SYNTAX ERROR FIXED - BUY NOW SAVES PURCHASE
 const SUPABASE_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -201,7 +201,8 @@ async function approvePurchase(id){
     const {data:song}=await sb.from('songs').select('*').eq('id',p.song_id).single();
     if(song){
       const artistId=song.artist_id;
-      const royalty = Number(p.fees_grind ?? (Number(p.price_grind||0)*0.63) || 0);
+      const fallbackRoyalty = Number(p.price_grind||0)*0.63;
+      const royalty = Number((p.fees_grind !== null && p.fees_grind !== undefined ? p.fees_grind : fallbackRoyalty) || 0);
       if(artistId&&artistId!==p.fan_id){ const {data:a}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single(); await sb.from('profiles').update({grind_balance:Number(a?.grind_balance||0)+royalty}).eq('id',artistId); }
       try{ await sb.from('songs').update({ total_buys: Number(song.total_buys||0)+1 }).eq('id', p.song_id); }catch(e){ console.log('total_buys update skipped', e); }
     }
