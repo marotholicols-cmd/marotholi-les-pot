@@ -144,11 +144,13 @@ async function buySongWithWallet(songId, price, artistId){
   if(dErr){alert('Deduct failed: '+dErr.message);return;}
 
   // 4. *** THE MISSING STEP - INSERT PURCHASE ***
-  // Use only columns that definitely exist: fan_id, song_id, price_grind, status
+  // FIXED: Save fees_grind + payment_method so Admin/Wallet show correct royalty
   const {data:inserted, error:purchaseError} = await sb.from('purchases').insert({
     fan_id: user.id,
     song_id: songId,
     price_grind: price,
+    fees_grind: price * 0.63,
+    payment_method: 'Wallet',
     status: 'approved'
   }).select().single();
 
@@ -184,7 +186,12 @@ async function loadLibrary(){
   const ids=(purchases||[]).map(p=>p.song_id); if(!ids.length){el.innerHTML='<p class="small">No songs yet. Buy one in Discover.</p>';return;}
   const {data:songs}=await sb.from('songs').select('*').in('id',ids);
   el.innerHTML=(songs||[]).map(s=>{
-    const audioSrc = s.audio_path || s.audio_url || s.file_url || '';
+    let audioSrc = s.audio_path || s.audio_url || s.file_url || '';
+    // FIXED: audio_path is a storage path, not a URL - convert to public URL
+    if(audioSrc && !audioSrc.startsWith('http')){
+      const { data: pub } = sb.storage.from('songs').getPublicUrl(audioSrc);
+      if(pub?.publicUrl) audioSrc = pub.publicUrl;
+    }
     return `<div class="card song"><b>${s.title}</b><small>${s.artist_name||''}</small><audio controls src="${audioSrc}" style="width:100%"></audio></div>`;
   }).join('');
 }
@@ -223,7 +230,22 @@ async function approvePurchase(id){
   await sb.from('purchases').update({status:'approved'}).eq('id',id).eq('status','pending');
   if(p.payment_method !== 'Wallet'){
     const {data:song}=await sb.from('songs').select('*').eq('id',p.song_id).single();
-    if(song){ const artistId=song.artist_id; if(artistId&&artistId!==p.fan_id){ const {data:a}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single(); await sb.from('profiles').update({grind_balance:Number(a?.grind_balance||0)+Number(p.fees_grind||0)}).eq('id',artistId);} }
+    if(song){
+      const artistId=song.artist_id;
+      // FIXED: fees_grind may be null on old rows - fallback to 63% of price
+      const royalty = Number(p.fees_grind ?? (Number(p.price_grind||0)*0.63) || 0);
+      if(artistId&&artistId!==p.fan_id){ const {data:a}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single(); await sb.from('profiles').update({grind_balance:Number(a?.grind_balance||0)+royalty}).eq('id',artistId); }
+      // FIXED: Mpesa buys must ALSO count in Discover - was missing before
+      try{
+        await sb.from('songs').update({ total_buys: Number(song.total_buys||0)+1 }).eq('id', p.song_id);
+      }catch(e){ console.log('total_buys update skipped', e); }
+    }
+  } else {
+    // Wallet purchase approved via Admin (should not happen, but count it)
+    try{
+      const {data:song2}=await sb.from('songs').select('total_buys').eq('id',p.song_id).single();
+      if(song2) await sb.from('songs').update({ total_buys: Number(song2.total_buys||0)+1 }).eq('id', p.song_id);
+    }catch(e){}
   }
   alert('Purchase approved + unlocked'); location.reload();
 }
