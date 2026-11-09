@@ -33,20 +33,12 @@ audio{width:100%;margin-top:8px}
 <p class="small" id="statusMsg" style="text-align:center"></p>
 </div>
 <script>
-// SAFETY: if app.js didn't load yet, create sb ourselves
-if(typeof sb === 'undefined' || !window.sb){
-  var _sb2 = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co","sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP");
-  window.sb = _sb2;
-}
-var sb = window.sb;
-</script>
-<script>
 let ALL_SONGS = [];
 let OWNED_IDS = new Set();
 async function loadDiscover(){
   const list = document.getElementById('songsList');
   try{
-    const { data: songs, error } = await window.sb.from('songs').select('id,title,artist_name,artist_id,price_grind,total_buys,audio_path,audio_url,file_url,cover_url,created_at').order('created_at',{ascending:false}).limit(50);
+    const { data: songs, error } = await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
     if(error) throw error;
     ALL_SONGS = songs || [];
     const user = await getCurrentUser().catch(()=>null);
@@ -60,7 +52,7 @@ async function loadDiscover(){
   }
 }
 function getAudio(s){
-  let src = s.audio_path || s.audio_url || s.file_url || '';
+  let src = s.audio_path || '';
   if(src && !src.startsWith('http')){
     const { data: pub } = window.sb.storage.from('songs').getPublicUrl(src);
     if(pub?.publicUrl) src = pub.publicUrl;
