@@ -1,4 +1,4 @@
-// LES-POT - FULL FIXED app.js - SYNTAX ERROR FIXED - BUY NOW SAVES PURCHASE
+// LES-POT - FULL FIXED app.js - fees_grind GENERATED FIX - DO NOT INSERT fees_grind
 const SUPABASE_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -133,7 +133,7 @@ async function buySongWithWallet(songId, price, artistId){
   if(already){alert('You already own this. Go to Library.'); location.href='library.html'; return;}
   const {error:dErr}=await sb.from('profiles').update({grind_balance:bal-price}).eq('id',user.id);
   if(dErr){alert('Deduct failed: '+dErr.message);return;}
-  const {data:inserted, error:purchaseError} = await sb.from('purchases').insert({ fan_id: user.id, song_id: songId, price_grind: price, fees_grind: price * 0.63, payment_method: 'Wallet', status: 'approved' }).select().single();
+  const {data:inserted, error:purchaseError} = await sb.from('purchases').insert({ fan_id: user.id, song_id: songId, price_grind: price, payment_method: 'Wallet', status: 'approved' }).select().single();
   if(purchaseError){
     await sb.from('profiles').update({grind_balance: bal}).eq('id', user.id);
     alert('Purchase save failed: '+purchaseError.message+' - You were refunded. Screenshot this error and send to admin.');
@@ -160,7 +160,7 @@ async function loadLibrary(){
   const ids=(purchases||[]).map(p=>p.song_id); if(!ids.length){el.innerHTML='<p class="small">No songs yet. Buy one in Discover.</p>';return;}
   const {data:songs}=await sb.from('songs').select('*').in('id',ids);
   el.innerHTML=(songs||[]).map(s=>{
-    let audioSrc = s.audio_path || s.audio_url || s.file_url || '';
+    let audioSrc = s.audio_path || '';
     if(audioSrc && !audioSrc.startsWith('http')){
       const { data: pub } = sb.storage.from('songs').getPublicUrl(audioSrc);
       if(pub?.publicUrl) audioSrc = pub.publicUrl;
