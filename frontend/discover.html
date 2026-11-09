@@ -110,21 +110,30 @@ async function submitBuy(){
     return;
   }
 
-  // ===== EXTERNAL BUY - FIXED =====
+  // ===== EXTERNAL BUY - FIXED: payment_method + fees_grind + already-owned check =====
   const ref=document.getElementById('payRef').value.trim();
   if(!ref){msg.textContent="Paste your OTP / Reference first.";return}
   msg.textContent="Sending to owner for approval...";
+
+  // 1. Already own? Block double-buy
+  const {data:owned} = await sb.from('purchases').select('id').eq('fan_id', myUser.id).eq('song_id', selectedSong.id).eq('status','approved').maybeSingle();
+  if(owned){ msg.textContent="You already own this. Go to Library."; return; }
+
+  // 2. Already pending? Block duplicate OTP spam
   const {data:dup} = await sb.from('purchases').select('id').eq('fan_id', myUser.id).eq('song_id', selectedSong.id).eq('status','pending').maybeSingle();
   if(dup){ msg.textContent="You already sent this. Wait for approval."; return; }
+
+  // 3. Insert with CORRECT column names
   const {error}=await sb.from('purchases').insert({
     fan_id: myUser.id,
     song_id: selectedSong.id,
     price_grind: price,
-    pay_method: method,
+    payment_method: method, // FIXED: was pay_method
     payment_ref: ref,
+    fees_grind: price * 0.63, // FIXED: artist gets 63% on approval
     status: 'pending'
   });
-  if(error){msg.textContent=error.message;return}
+  if(error){msg.textContent="Failed: "+error.message; console.error(error); return}
   msg.textContent="✅ Sent! Wait for OWNER approval. Song unlocks in Library after approval.";
 }
 
