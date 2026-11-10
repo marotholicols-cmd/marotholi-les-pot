@@ -102,8 +102,7 @@ async function doUpload(){
     bar.style.width='85%';
     say("Saving song info...");
     const priceNum = parseFloat(priceVal);
-    // FIXED: Removed uploader_id - column does not exist, it broke every upload.
-    // Added price_maloti + total_buys so Discover shows correctly.
+    // ✅ FIXED BY TAURENTH: DO NOT SEND price_maloti - Supabase calculates it. Sending it broke every upload.
     const { error: dbErr } = await sb.from('songs').insert({
       title: title,
       artist_name: artist,
@@ -111,7 +110,6 @@ async function doUpload(){
       audio_path: audioPath,
       cover_url: coverUrl,
       price_grind: priceNum,
-      price_maloti: priceNum * 10,
       total_buys: 0,
       preview_start: 0
     });
