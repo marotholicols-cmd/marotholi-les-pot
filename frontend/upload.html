@@ -8,41 +8,134 @@
 <script src="app.js"></script>
 <link rel="stylesheet" href="style.css">
 <style>
-  header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
-  .wrap{max-width:500px;margin:0 auto;padding:16px}
+  header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px;position:sticky;top:0;z-index:10}
+  .wrap{max-width:520px;margin:0 auto;padding:16px;padding-bottom:100px}
   .back{display:block;text-align:center;color:#fff;opacity:.7;margin-top:14px;text-decoration:none;font-size:13px}
+  .card{background:#1e1e1e;border:1px solid #333;border-radius:16px;padding:16px}
+  label{font-size:13px;font-weight:700;display:block;margin:14px 0 6px;opacity:.9}
+  input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #333;background:#222;color:#fff;font-size:15px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#d4ff3f}
+  #btn{width:100%;margin-top:18px;padding:14px;border-radius:12px;background:#d4ff3f;color:#000;font-weight:900;font-size:16px;border:0;cursor:pointer}
+  #btn:disabled{opacity:.6}
+  .toggleRow{display:flex;gap:8px}
+  .toggleRow button{flex:1;padding:12px;border-radius:12px;border:1px solid #333;background:#222;color:#fff;cursor:pointer;font-weight:900}
+  .toggleRow button.on{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+  .previewCard{background:#111;border:1px solid #333;border-radius:14px;padding:12px;margin-top:14px;display:flex;gap:12px;align-items:center}
+  .previewCard img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#333}
+  .small{font-size:13px;opacity:.7}
+  .center{text-align:center}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT — UPLOAD</header>
+<header>MAROTHOLI LES-POT — UPLOAD 🔥</header>
 <div class="wrap">
   <div class="card">
-    <h3>⬆️ Upload Your Song</h3>
+    <h3 style="margin:0">⬆️ Upload Your Song</h3>
     <p class="small">MP3 only, max 15MB. You earn 63% on every sale. 1G = M10.</p>
+
+    <!-- 🔥 RELEASE TYPE -->
+    <label>🔥 Release Type</label>
+    <div class="toggleRow">
+      <button type="button" id="btnNow" class="on" onclick="setRelease('now')">🚀 DROP NOW<br><span style="font-size:11px;font-weight:400">Live in Discover now</span></button>
+      <button type="button" id="btnUpcoming" onclick="setRelease('upcoming')">🔥 UPCOMING DROP<br><span style="font-size:11px;font-weight:400">Hype in Upcoming</span></button>
+    </div>
+    <div id="upcomingHint" style="display:none;background:#2a1a00;border:1px solid #ffaa00;border-radius:10px;padding:10px;margin-top:10px;font-size:13px">🔥 This will show in <b>UPCOMING DROPS</b> at the top of Discover. Fans can Share + Hype + Pre-Buy it.</div>
+
     <label>Song Title</label>
-    <input id="title" placeholder="e.g. Test">
+    <input id="title" placeholder="e.g. Marotholi Anthem" oninput="updatePreview()">
+
     <label>Artist Name</label>
-    <input id="artist" placeholder="e.g. FlackoBird">
+    <input id="artist" placeholder="e.g. FlackoBird" oninput="updatePreview()">
+
+    <label>Genre</label>
+    <select id="genre">
+      <option>Hip Hop</option>
+      <option>Amapiano</option>
+      <option>Afrobeat</option>
+      <option>Gospel</option>
+      <option>R&B</option>
+      <option>House</option>
+      <option>Other</option>
+    </select>
+
     <label>Price in Grind (G) — e.g. 0.2 = M2</label>
-    <input id="price" type="number" step="0.01" min="0.1" placeholder="0.2">
+    <input id="price" type="number" step="0.01" min="0.1" placeholder="0.2" oninput="updatePreview()">
+
+    <label>Drop Date (for Upcoming only - optional)</label>
+    <input id="release_date" type="date">
+
+    <label>Description / Caption (optional)</label>
+    <textarea id="desc" rows="2" placeholder="e.g. This one is for Roma! 🔥"></textarea>
+
     <label>Cover Image (optional - JPG/PNG, max 2MB)</label>
-    <input id="cover" type="file" accept="image/*">
+    <input id="cover" type="file" accept="image/*" onchange="previewCover(event)">
+
     <label>Audio File — MP3</label>
     <input id="audio" type="file" accept="audio/*,.mp3">
+
+    <!-- LIVE PREVIEW -->
+    <div class="previewCard" id="previewCard">
+      <img id="previewImg" src="">
+      <div style="flex:1;min-width:0">
+        <b id="previewTitle">Your Song Title</b><br>
+        <span class="small" id="previewArtist">Your Name • 0 G • <span id="previewType">🚀 Dropping Now</span></span>
+      </div>
+      <span style="font-size:24px" id="previewEmoji">🚀</span>
+    </div>
+
     <button id="btn" onclick="doUpload()">UPLOAD SONG →</button>
     <div id="msg" class="small center" style="margin-top:12px;white-space:pre-wrap"></div>
     <div id="progress" style="height:8px;background:#222;border-radius:99px;overflow:hidden;margin-top:10px;display:none"><div id="bar" style="height:100%;width:0%;background:linear-gradient(90deg,#d4ff3f,#00ff88);transition:.3s"></div></div>
+
+    <div id="afterUpload" style="display:none;margin-top:14px;text-align:center">
+      <p style="font-weight:900">✅ Uploaded! Share it now:</p>
+      <button onclick="shareLastSong()" style="width:100%;padding:12px;border-radius:99px;background:#fff;color:#000;font-weight:900;border:0;cursor:pointer">🔗 Share This Song</button>
+      <button onclick="location.href='discover.html'" style="width:100%;padding:12px;border-radius:99px;background:#333;color:#fff;font-weight:900;border:0;cursor:pointer;margin-top:8px">🔥 See It In Discover →</button>
+    </div>
   </div>
   <a class="back" href="discover.html">← Back to Discover</a>
 </div>
 <div class="bottomnav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="upload.html" class="active">⬆️ Upload</a><a href="wallet.html">💰 Wallet</a><a href="admin.html">🛠️ Admin</a><a href="account.html">👤 Account</a></div>
 
 <script>
+let RELEASE_TYPE = 'now';
+let LAST_SONG_ID = null;
+
+function setRelease(type){
+  RELEASE_TYPE = type;
+  document.getElementById('btnNow').classList.toggle('on', type==='now');
+  document.getElementById('btnUpcoming').classList.toggle('on', type==='upcoming');
+  document.getElementById('upcomingHint').style.display = type==='upcoming' ? 'block' : 'none';
+  document.getElementById('previewType').textContent = type==='upcoming' ? '🔥 Upcoming Drop' : '🚀 Dropping Now';
+  document.getElementById('previewEmoji').textContent = type==='upcoming' ? '🔥' : '🚀';
+  document.getElementById('btn').textContent = type==='upcoming' ? '🔥 UPLOAD AS UPCOMING DROP →' : 'UPLOAD SONG →';
+  updatePreview();
+}
+function updatePreview(){
+  const t = document.getElementById('title').value || 'Your Song Title';
+  const a = document.getElementById('artist').value || 'Your Name';
+  const p = document.getElementById('price').value || '0';
+  document.getElementById('previewTitle').textContent = t;
+  document.getElementById('previewArtist').textContent = a + ' • ' + p + ' G • ';
+  document.getElementById('previewArtist').appendChild(document.getElementById('previewType'));
+}
+function previewCover(e){
+  const f = e.target.files[0];
+  if(f){ document.getElementById('previewImg').src = URL.createObjectURL(f); }
+}
+function shareLastSong(){
+  if(!LAST_SONG_ID) return;
+  const link = window.location.origin + '/discover.html?song=' + LAST_SONG_ID;
+  if(navigator.share){ navigator.share({title:'My new song on Les-Pot', text:'🔥 Listen to my new song on Marotholi Les-Pot', url:link}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(link); alert('🔗 Link copied:\n'+link); }
+}
+
 (async ()=>{
   const {data:{user}} = await sb.auth.getUser();
   if(user){
     const {data:p} = await sb.from('profiles').select('full_name').eq('id', user.id).single();
     if(p?.full_name) document.getElementById('artist').value = p.full_name;
+    updatePreview();
   }
 })();
 
@@ -58,6 +151,8 @@ async function doUpload(){
   const priceVal = document.getElementById('price').value;
   const audioFile = document.getElementById('audio').files[0];
   const coverFile = document.getElementById('cover').files[0];
+  const genre = document.getElementById('genre').value;
+  const releaseDate = document.getElementById('release_date').value || null;
 
   if(!title || !artist){ say("Fill title + artist"); return; }
   if(!audioFile){ say("Pick an MP3 file first"); return; }
@@ -102,8 +197,8 @@ async function doUpload(){
     bar.style.width='85%';
     say("Saving song info...");
     const priceNum = parseFloat(priceVal);
-    // ✅ FIXED BY TAURENTH: DO NOT SEND price_maloti - Supabase calculates it. Sending it broke every upload.
-    const { error: dbErr } = await sb.from('songs').insert({
+    // Status: upcoming or available - Discover reads this for UPCOMING DROPS section
+    const insertData = {
       title: title,
       artist_name: artist,
       artist_id: user.id,
@@ -111,13 +206,32 @@ async function doUpload(){
       cover_url: coverUrl,
       price_grind: priceNum,
       total_buys: 0,
-      preview_start: 0
-    });
-    if(dbErr) throw dbErr;
+      preview_start: 0,
+      status: RELEASE_TYPE === 'upcoming' ? 'upcoming' : 'available',
+      is_upcoming: RELEASE_TYPE === 'upcoming'
+    };
+    // Only send release_date if your table has it - if it errors, retry without it
+    let { data: inserted, error: dbErr } = await sb.from('songs').insert(insertData).select().single();
+    if(dbErr && dbErr.message.includes('column')){
+      // Fallback: your songs table doesn't have status/is_upcoming yet - insert without them
+      const { data: inserted2, error: dbErr2 } = await sb.from('songs').insert({
+        title: title, artist_name: artist, artist_id: user.id, audio_path: audioPath, cover_url: coverUrl, price_grind: priceNum, total_buys: 0, preview_start: 0
+      }).select().single();
+      if(dbErr2) throw dbErr2;
+      inserted = inserted2;
+      say("⚠️ Uploaded, but add 'status' column in Supabase to make Upcoming work. See below.");
+    } else if(dbErr) throw dbErr;
 
+    if(inserted?.id) LAST_SONG_ID = inserted.id;
     bar.style.width='100%';
-    say("✅ UPLOADED! Go to Discover to see it.");
-    setTimeout(()=> location.href = 'discover.html', 1200);
+    if(RELEASE_TYPE==='upcoming'){
+      say("🔥 UPLOADED AS UPCOMING DROP! Fans can now Hype + Share it in Discover.");
+    } else {
+      say("✅ UPLOADED! Go to Discover to see it.");
+    }
+    document.getElementById('afterUpload').style.display='block';
+    btn.disabled = false;
+    setTimeout(()=>{ if(RELEASE_TYPE==='now') location.href='discover.html'; }, 1500);
 
   }catch(e){
     console.error(e);
