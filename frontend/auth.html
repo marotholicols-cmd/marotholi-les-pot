@@ -58,10 +58,19 @@ window.sb = sb;
 function showReg(){ document.getElementById('loginCard').classList.add('hidden'); document.getElementById('regCard').classList.remove('hidden'); }
 function showLogin(){ document.getElementById('regCard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden'); }
 function setMsg(id, txt, isErr){ const el = document.getElementById(id); el.textContent = txt; el.className = isErr ? 'err' : 'ok'; }
+
+// Map country name -> code exactly like your table already uses (LS)
+function countryCode(v){
+  if(v==='Lesotho') return 'LS';
+  if(v==='South Africa') return 'ZA';
+  return v;
+}
+
 async function doRegister(){
   const full_name = document.getElementById('rName').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
-  const country = document.getElementById('rCountry').value;
+  const countryRaw = document.getElementById('rCountry').value;
+  const country = countryCode(countryRaw);
   const gender = document.getElementById('rGender').value;
   const email = document.getElementById('rEmail').value.trim().toLowerCase();
   const password = document.getElementById('rPass').value;
@@ -69,13 +78,35 @@ async function doRegister(){
   const secA = document.getElementById('rA').value.trim();
   if(!full_name){ setMsg('rMsg','Enter your full name', true); return; }
   if(!phone){ setMsg('rMsg','Enter your Lesotho number', true); return; }
+  if(!gender){ setMsg('rMsg','Select Gender', true); return; }
+  if(!secA){ setMsg('rMsg','Enter Security Answer - you will need it if you forget password', true); return; }
   if(!email || !email.includes('@')){ setMsg('rMsg','Enter a real email / Gmail', true); return; }
   if(!password || password.length < 6){ setMsg('rMsg','Password must be 6+ chars', true); return; }
   setMsg('rMsg','Creating account... please wait');
   try{
     const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name, phone, country, gender, security_question: secQ, security_answer: secA }, emailRedirectTo: location.origin + '/discover.html' } });
     if(error) throw error;
-    if(data?.user){ sb.from('profiles').upsert({ id: data.user.id, email: email, full_name: full_name, phone: phone, grind_balance: 0 }, { onConflict: 'id' }).then(()=>{}); }
+    if(data?.user){
+      // ✅ FIX: Save ALL fields exactly as typed - no more NULL
+      const profileData = {
+        id: data.user.id,
+        email: email,
+        full_name: full_name,
+        name: full_name,
+        phone: phone,
+        country: country,
+        gender: gender,
+        security_question: secQ,
+        security_q: secQ,
+        security_answer: secA,
+        security_a: secA,
+        grind_balance: 0,
+        balance_grind: 0,
+        balance: 0
+      };
+      const { error: pErr } = await sb.from('profiles').upsert(profileData, { onConflict: 'id' });
+      if(pErr) console.warn('Profile save warning:', pErr.message);
+    }
     if(data?.user && !data.session){ setMsg('rMsg','✅ Account created! Check your Gmail for confirmation link (check Spam too). Then Login.'); }
     else { setMsg('rMsg','✅ Account created! Logging you in...'); setTimeout(()=> location.href='discover.html', 800); }
   }catch(e){
@@ -94,7 +125,18 @@ async function doLogin(){
     const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('TIMEOUT')), 15000));
     const { data, error } = await Promise.race([loginPromise, timeout]);
     if(error) throw error;
-    if(data?.user){ sb.from('profiles').update({ email: data.user.email }).eq('id', data.user.id).then(()=>{}); }
+    if(data?.user){
+      // ✅ FIX: On login, backfill any missing profile fields from auth metadata (for old users who signed up before fix)
+      const meta = data.user.user_metadata || {};
+      const updates = { email: data.user.email };
+      if(meta.full_name) { updates.full_name = meta.full_name; updates.name = meta.full_name; }
+      if(meta.phone) updates.phone = meta.phone;
+      if(meta.country) updates.country = meta.country;
+      if(meta.gender) updates.gender = meta.gender;
+      if(meta.security_question) { updates.security_question = meta.security_question; updates.security_q = meta.security_question; }
+      if(meta.security_answer) { updates.security_answer = meta.security_answer; updates.security_a = meta.security_answer; }
+      await sb.from('profiles').update(updates).eq('id', data.user.id);
+    }
     setMsg('lMsg','✅ Logged in! Loading...');
     setTimeout(()=> location.href='discover.html', 600);
   }catch(e){
