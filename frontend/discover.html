@@ -36,8 +36,6 @@ audio{width:100%;margin-top:8px}
 <header><span>MAROTHOLI LES-POT 🔥</span><span><span id="bal">G ...</span> <a href="wallet.html">Wallet</a></span></header>
 <div class="wrap">
 <div class="nav"><a href="discover.html" class="active">🔍 Discover</a><a href="library.html">📚 Library</a><a href="wallet.html">👛 Wallet</a><a href="upload.html">⬆️ Upload</a><a href="admin.html">⚙️ Admin</a><a href="auth.html">Logout</a></div>
-
-<!-- 🔥 UPCOMING DROPS -->
 <div id="upcomingWrap" style="display:none">
   <div style="background:linear-gradient(90deg,#d4ff3f,#00ff88,#ff00aa,#d4ff3f);background-size:300% 100%;animation:grad 4s linear infinite;padding:2px;border-radius:18px">
     <div style="background:#111;border-radius:16px;padding:14px">
@@ -51,17 +49,20 @@ audio{width:100%;margin-top:8px}
   </div>
 </div>
 <style>@keyframes grad{0%{background-position:0% 0}100%{background-position:300% 0}}</style>
-
 <div class="sectionTitle">🎵 All Songs</div>
 <input class="search" id="searchBox" placeholder="🔍 Search song or artist..." oninput="filterSongs()">
 <div id="songsList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
 <p class="small" id="statusMsg" style="text-align:center"></p>
 </div>
-
 <script>
 let ALL_SONGS = [];
 let OWNED_IDS = new Set();
+let AUDIO_URLS = {};
 let HYPED = JSON.parse(localStorage.getItem('lespot_hyped')||'[]');
+
+async function getCurrentUserSafe(){
+  try{ const r = await window.sb.auth.getUser(); return r.data.user || null; }catch(e){ return null; }
+}
 
 async function loadDiscover(){
   const list = document.getElementById('songsList');
@@ -69,11 +70,20 @@ async function loadDiscover(){
     const { data: songs, error } = await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
     if(error) throw error;
     ALL_SONGS = songs || [];
-    const user = await getCurrentUser().catch(()=>null);
+    const user = await getCurrentUserSafe();
     if(user){
       const { data: pur } = await window.sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status','approved');
       (pur||[]).forEach(p=>OWNED_IDS.add(p.song_id));
     }
+    // ✅ FIX: Use SIGNED URLs, not public URLs - fixes Firefox OpaqueResponseBlocking
+    await Promise.all(ALL_SONGS.map(async (s)=>{
+      if(!s.audio_path) return;
+      if(s.audio_path.startsWith('http')){ AUDIO_URLS[s.id]=s.audio_path; return; }
+      try{
+        const { data, error } = await window.sb.storage.from('songs').createSignedUrl(s.audio_path, 3600);
+        if(data?.signedUrl) AUDIO_URLS[s.id]=data.signedUrl;
+      }catch(e){}
+    }));
     renderUpcoming();
     renderSongs(ALL_SONGS);
     checkShareLink();
@@ -81,20 +91,10 @@ async function loadDiscover(){
     list.innerHTML = '<p>Failed to load songs: '+e.message+'<br><br><button class="ghost" onclick="loadDiscover()">Retry</button></p>';
   }
 }
-
-function getAudio(s){
-  let src = s.audio_path || '';
-  if(src && !src.startsWith('http')){
-    const { data: pub } = window.sb.storage.from('songs').getPublicUrl(src);
-    if(pub?.publicUrl) src = pub.publicUrl;
-  }
-  return src;
-}
-
+function getAudio(s){ return AUDIO_URLS[s.id] || ''; }
 function renderUpcoming(){
   const wrap = document.getElementById('upcomingWrap');
   const list = document.getElementById('upcomingList');
-  // Upcoming = status='upcoming' OR is_upcoming=true. If none, show latest 3 as teaser so section is never empty
   let ups = ALL_SONGS.filter(s=> s.status==='upcoming' || s.is_upcoming===true);
   if(!ups.length) ups = ALL_SONGS.slice(0,3);
   if(!ups.length){ wrap.style.display='none'; return; }
@@ -121,7 +121,6 @@ function renderUpcoming(){
   }).join('');
   attachPreviewLimit();
 }
-
 function renderSongs(rows){
   const list = document.getElementById('songsList');
   if(!rows.length){ list.innerHTML='<p class="small">No songs yet. Be the first to upload!</p>'; return; }
@@ -140,15 +139,12 @@ function renderSongs(rows){
   }).join('');
   attachPreviewLimit();
 }
-
 function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
 function filterSongs(){
   const q = document.getElementById('searchBox').value.toLowerCase().trim();
   if(!q) return renderSongs(ALL_SONGS);
   renderSongs(ALL_SONGS.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist_name||'').toLowerCase().includes(q)));
 }
-
 function shareSong(id){
   const s = ALL_SONGS.find(x=> String(x.id)===String(id));
   const title = s ? (s.title + ' - ' + (s.artist_name||'')) : 'Song';
@@ -158,48 +154,33 @@ function shareSong(id){
   else if(navigator.clipboard){ navigator.clipboard.writeText(link).then(()=> alert('🔗 Link copied!\nSend it to anyone:\n'+link)); }
   else { prompt('Copy this link:', link); }
 }
-
 function toggleHype(id, btn){
   const idStr = String(id);
   if(HYPED.includes(idStr)){ HYPED = HYPED.filter(x=>x!==idStr); btn.classList.remove('on'); btn.textContent='🔥 Hype'; }
   else { HYPED.push(idStr); btn.classList.add('on'); btn.textContent='❤️ Hyped!'; }
   localStorage.setItem('lespot_hyped', JSON.stringify(HYPED));
 }
-
 function checkShareLink(){
   const params = new URLSearchParams(window.location.search);
   const songId = params.get('song');
   if(!songId) return;
   setTimeout(()=>{
     const el = document.getElementById('song-' + songId);
-    if(el){
-      el.scrollIntoView({behavior:'smooth', block:'center'});
-      el.classList.add('highlight');
-      setTimeout(()=> el.classList.remove('highlight'), 4000);
-    } else {
-      // If song is in Upcoming, scroll to top
-      document.getElementById('upcomingWrap').scrollIntoView({behavior:'smooth'});
-    }
+    if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('highlight'); setTimeout(()=> el.classList.remove('highlight'), 4000); }
+    else { document.getElementById('upcomingWrap').scrollIntoView({behavior:'smooth'}); }
   }, 500);
 }
-
 function attachPreviewLimit(){
   document.querySelectorAll('audio').forEach(a=>{
     if(a.dataset.previewBound) return;
     a.dataset.previewBound='1';
     a.addEventListener('timeupdate', ()=>{
       const isOwned = a.getAttribute('data-owned')==='1';
-      if(!isOwned && a.currentTime >= 30){
-        a.pause(); a.currentTime=0;
-        alert('🔒 30-sec preview ended — Buy to listen full song');
-      }
+      if(!isOwned && a.currentTime >= 30){ a.pause(); a.currentTime=0; alert('🔒 30-sec preview ended — Buy to listen full song'); }
     });
-    a.addEventListener('play', ()=>{
-      document.querySelectorAll('audio').forEach(o=>{ if(o!==a) o.pause(); });
-    });
+    a.addEventListener('play', ()=>{ document.querySelectorAll('audio').forEach(o=>{ if(o!==a) o.pause(); }); });
   });
 }
-
 loadDiscover();
 </script>
 </body>
