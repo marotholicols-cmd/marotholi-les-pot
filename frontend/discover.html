@@ -66,6 +66,14 @@ let COVER_URLS = {};
 let HYPED = JSON.parse(localStorage.getItem('lespot_hyped')||'[]');
 async function getCurrentUserSafe(){ try{ const r = await window.sb.auth.getUser(); return r.data.user || null; }catch(e){ return null; } }
 function getCoverField(s){ return s.cover_url || s.cover_art || s.cover_path || s.image_url || s.artwork_url || s.cover_image || s.thumbnail || s.artwork || s.cover || ''; }
+// ✅ FIX: Extract storage path from a public URL so we can make a signed URL
+function extractCoverPath(raw){
+  if(!raw) return null;
+  if(raw.includes('/storage/v1/object/public/covers/')) return decodeURIComponent(raw.split('/storage/v1/object/public/covers/')[1].split('?')[0]);
+  if(raw.includes('/storage/v1/object/public/songs/')) return decodeURIComponent(raw.split('/storage/v1/object/public/songs/')[1].split('?')[0]);
+  if(raw.includes('/covers/')) return decodeURIComponent(raw.split('/covers/').pop().split('?')[0]);
+  return null;
+}
 async function loadDiscover(){
   const list = document.getElementById('songsList');
   try{
@@ -83,17 +91,22 @@ async function loadDiscover(){
       } else if(s.audio_path){ AUDIO_URLS[s.id]=s.audio_path; }
       const coverRaw = getCoverField(s);
       if(!coverRaw) return;
-      if(coverRaw.startsWith('http')){ COVER_URLS[s.id]=coverRaw; return; }
-      // Try covers bucket first, then songs bucket, then public fallback
-      try{
-        const r1 = await window.sb.storage.from('covers').createSignedUrl(coverRaw, 3600);
-        if(r1.data?.signedUrl){ COVER_URLS[s.id]=r1.data.signedUrl; return; }
-      }catch(e){}
-      try{
-        const r2 = await window.sb.storage.from('songs').createSignedUrl(coverRaw, 3600);
-        if(r2.data?.signedUrl){ COVER_URLS[s.id]=r2.data.signedUrl; return; }
-      }catch(e){}
-      try{ const { data: pub } = window.sb.storage.from('covers').getPublicUrl(coverRaw); if(pub?.publicUrl) COVER_URLS[s.id]=pub.publicUrl; }catch(e){}
+      // Case 1: already a plain path like "userId/123_cover.jpg" -> signed
+      if(!coverRaw.startsWith('http')){
+        for(const bucket of ['covers','songs']){
+          try{ const r = await window.sb.storage.from(bucket).createSignedUrl(coverRaw, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
+        }
+        return;
+      }
+      // Case 2: public URL from Upload -> extract path -> signed URL (FIX for private bucket)
+      const path = extractCoverPath(coverRaw);
+      if(path){
+        for(const bucket of ['covers','songs']){
+          try{ const r = await window.sb.storage.from(bucket).createSignedUrl(path, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
+        }
+      }
+      // Case 3: truly public external URL (e.g. https://...) -> use as-is
+      COVER_URLS[s.id]=coverRaw;
     }));
     renderUpcoming();
     renderSongs(ALL_SONGS);
