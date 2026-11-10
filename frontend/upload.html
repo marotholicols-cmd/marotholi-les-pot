@@ -33,7 +33,6 @@
     <h3 style="margin:0">⬆️ Upload Your Song</h3>
     <p class="small">MP3 only, max 15MB. You earn 63% on every sale. 1G = M10.</p>
 
-    <!-- 🔥 RELEASE TYPE -->
     <label>🔥 Release Type</label>
     <div class="toggleRow">
       <button type="button" id="btnNow" class="on" onclick="setRelease('now')">🚀 DROP NOW<br><span style="font-size:11px;font-weight:400">Live in Discover now</span></button>
@@ -73,7 +72,6 @@
     <label>Audio File — MP3</label>
     <input id="audio" type="file" accept="audio/*,.mp3">
 
-    <!-- LIVE PREVIEW -->
     <div class="previewCard" id="previewCard">
       <img id="previewImg" src="">
       <div style="flex:1;min-width:0">
@@ -179,6 +177,7 @@ async function doUpload(){
     if(upErr) throw new Error("Storage upload failed: " + upErr.message + "\nCheck: Supabase > Storage > songs bucket exists and is PUBLIC.");
 
     let coverUrl = null;
+    let coverBucketUsed = null;
     if(coverFile){
       bar.style.width='65%';
       say("Uploading cover...");
@@ -186,18 +185,23 @@ async function doUpload(){
       const coverPath = user.id + "/" + Date.now() + "_cover_" + cName;
       const { error: cErr } = await sb.storage.from('covers').upload(coverPath, coverFile);
       if(!cErr){
-        const {data:pub} = sb.storage.from('covers').getPublicUrl(coverPath);
-        coverUrl = pub.publicUrl;
+        // ✅ FIX: Save PATH, not public URL - Discover will create signed URL for private bucket
+        coverUrl = coverPath;
+        coverBucketUsed = 'covers';
       } else {
         const { error: cErr2 } = await sb.storage.from('songs').upload(coverPath, coverFile);
-        if(!cErr2){ const {data:pub2} = sb.storage.from('songs').getPublicUrl(coverPath); coverUrl = pub2.publicUrl; }
+        if(!cErr2){
+          coverUrl = coverPath;
+          coverBucketUsed = 'songs';
+        } else {
+          console.warn("Cover upload failed, continuing without cover:", cErr.message, cErr2.message);
+        }
       }
     }
 
     bar.style.width='85%';
     say("Saving song info...");
     const priceNum = parseFloat(priceVal);
-    // Status: upcoming or available - Discover reads this for UPCOMING DROPS section
     const insertData = {
       title: title,
       artist_name: artist,
@@ -210,10 +214,8 @@ async function doUpload(){
       status: RELEASE_TYPE === 'upcoming' ? 'upcoming' : 'available',
       is_upcoming: RELEASE_TYPE === 'upcoming'
     };
-    // Only send release_date if your table has it - if it errors, retry without it
     let { data: inserted, error: dbErr } = await sb.from('songs').insert(insertData).select().single();
     if(dbErr && dbErr.message.includes('column')){
-      // Fallback: your songs table doesn't have status/is_upcoming yet - insert without them
       const { data: inserted2, error: dbErr2 } = await sb.from('songs').insert({
         title: title, artist_name: artist, artist_id: user.id, audio_path: audioPath, cover_url: coverUrl, price_grind: priceNum, total_buys: 0, preview_start: 0
       }).select().single();
