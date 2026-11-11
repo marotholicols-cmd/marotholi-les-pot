@@ -13,7 +13,7 @@ header a{color:#000;text-decoration:none;font-size:13px;background:#fff;padding:
 .wrap{max-width:520px;margin:0 auto;padding:16px}
 .search{width:100%;padding:13px;border-radius:12px;border:1px solid #333;background:#1a1a1a;color:#fff;margin-bottom:14px;font-size:15px;outline:none}
 .search:focus{border-color:#d4ff3f}
-.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start}
+.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 4px 20px rgba(0,0,0,.25)}
 .card.highlight{border:2px solid #d4ff3f;box-shadow:0 0 24px rgba(212,255,63,.45)}
 .card b{font-size:16px} .small{opacity:.7;font-size:13px}
 button{padding:11px 14px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:14px}
@@ -34,12 +34,16 @@ audio{width:100%;margin-top:8px}
 .coverBig{width:72px;height:72px;min-width:72px;border-radius:14px;object-fit:cover;background:#333;border:1px solid #444}
 .coverPlaceholder{width:64px;height:64px;min-width:64px;border-radius:12px;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:28px}
 .coverPlaceholderBig{width:72px;height:72px;min-width:72px;border-radius:14px;background:linear-gradient(135deg,#ff00aa,#d4ff3f);display:flex;align-items:center;justify-content:center;font-size:30px}
+.sharedBanner{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;line-height:1.5;display:none}
+.sharedBanner b{color:#d4ff3f}
+.priceTag{color:#d4ff3f;font-weight:800}
 </style>
 </head>
 <body>
 <header><span>MAROTHOLI LES-POT 🔥</span><span><span id="bal">G ...</span> <a href="wallet.html">Wallet</a></span></header>
 <div class="wrap">
 <div class="nav"><a href="discover.html" class="active">🔍 Discover</a><a href="library.html">📚 Library</a><a href="wallet.html">👛 Wallet</a><a href="upload.html">⬆️ Upload</a><a href="admin.html">⚙️ Admin</a><a href="auth.html">Logout</a></div>
+<div id="sharedBanner" class="sharedBanner"><b>🔗 Shared Song</b><br><span class="small">Someone shared this song with you. Preview 30 seconds, then buy to own it in your Library.</span></div>
 <div id="upcomingWrap" style="display:none">
   <div style="background:linear-gradient(90deg,#d4ff3f,#00ff88,#ff00aa,#d4ff3f);background-size:300% 100%;animation:grad 4s linear infinite;padding:2px;border-radius:18px">
     <div style="background:#111;border-radius:16px;padding:14px">
@@ -66,13 +70,17 @@ let COVER_URLS = {};
 let HYPED = JSON.parse(localStorage.getItem('lespot_hyped')||'[]');
 async function getCurrentUserSafe(){ try{ const r = await window.sb.auth.getUser(); return r.data.user || null; }catch(e){ return null; } }
 function getCoverField(s){ return s.cover_url || s.cover_art || s.cover_path || s.image_url || s.artwork_url || s.cover_image || s.thumbnail || s.artwork || s.cover || ''; }
-// ✅ FIX: Extract storage path from a public URL so we can make a signed URL
 function extractCoverPath(raw){
   if(!raw) return null;
   if(raw.includes('/storage/v1/object/public/covers/')) return decodeURIComponent(raw.split('/storage/v1/object/public/covers/')[1].split('?')[0]);
   if(raw.includes('/storage/v1/object/public/songs/')) return decodeURIComponent(raw.split('/storage/v1/object/public/songs/')[1].split('?')[0]);
   if(raw.includes('/covers/')) return decodeURIComponent(raw.split('/covers/').pop().split('?')[0]);
   return null;
+}
+function formatDropDate(s){
+  const d = s.release_date || s.drop_date || s.drops_at || s.scheduled_at;
+  if(!d) return 'Drops Soon';
+  try{ return 'Drops ' + new Date(d).toLocaleDateString(); }catch(e){ return 'Drops Soon'; }
 }
 async function loadDiscover(){
   const list = document.getElementById('songsList');
@@ -91,21 +99,18 @@ async function loadDiscover(){
       } else if(s.audio_path){ AUDIO_URLS[s.id]=s.audio_path; }
       const coverRaw = getCoverField(s);
       if(!coverRaw) return;
-      // Case 1: already a plain path like "userId/123_cover.jpg" -> signed
       if(!coverRaw.startsWith('http')){
         for(const bucket of ['covers','songs']){
           try{ const r = await window.sb.storage.from(bucket).createSignedUrl(coverRaw, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
         }
         return;
       }
-      // Case 2: public URL from Upload -> extract path -> signed URL (FIX for private bucket)
       const path = extractCoverPath(coverRaw);
       if(path){
         for(const bucket of ['covers','songs']){
           try{ const r = await window.sb.storage.from(bucket).createSignedUrl(path, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
         }
       }
-      // Case 3: truly public external URL (e.g. https://...) -> use as-is
       COVER_URLS[s.id]=coverRaw;
     }));
     renderUpcoming();
@@ -125,27 +130,26 @@ function coverHtml(s, big){
 function renderUpcoming(){
   const wrap = document.getElementById('upcomingWrap');
   const list = document.getElementById('upcomingList');
-  let ups = ALL_SONGS.filter(s=> s.status==='upcoming' || s.is_upcoming===true);
-  if(!ups.length) ups = ALL_SONGS.slice(0,3);
+  const ups = ALL_SONGS.filter(s=> s.status==='upcoming' || s.is_upcoming===true);
   if(!ups.length){ wrap.style.display='none'; return; }
   wrap.style.display='block';
   list.innerHTML = ups.map((s,i)=>{
     const audio = getAudio(s);
     const price = Number(s.price_grind||0);
     const hyped = HYPED.includes(String(s.id));
-    const hypeCount = (Number(s.total_buys||0) + 12 + i*7 + (hyped?1:0));
+    const hypeCount = Number(s.hype_count||s.total_hypes||0) + (hyped?1:0);
     return `<div class="upcomingCard">
       ${coverHtml(s,true)}
       <div style="flex:1;min-width:0">
         <b>#${i+1} ${escapeHtml(s.title||'Untitled')}</b><br>
-        <span class="small">${escapeHtml(s.artist_name||'Unknown')} • ${price} G • DROPS SOON</span><br>
-        <span class="small" style="color:#d4ff3f">⏳ Drops in 2 days • 🔥 ${hypeCount} hyped</span>
-        ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="none" src="${audio}" data-owned="0"></audio>`:''}
+        <span class="small">${escapeHtml(s.artist_name||'Unknown')} • <span class="priceTag">${price} G • M${(price*10).toFixed(0)}</span> • DROPS SOON</span><br>
+        <span class="small" style="color:#d4ff3f">⏳ ${escapeHtml(formatDropDate(s))} • 🔥 ${hypeCount} hyped</span>
+        ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="metadata" src="${audio}" data-owned="0"></audio>`:`<p class="small">Preview loading...</p>`}
         <div style="display:flex;gap:6px;margin-top:8px">
           <button onclick="shareSong('${s.id}')" style="flex:1;background:#fff;color:#000;padding:8px;border-radius:99px;font-size:12px">🔗 Share Drop</button>
           <button onclick="toggleHype('${s.id}',this)" class="hypeBtn ${hyped?'on':''}" style="flex:1">${hyped?'❤️ Hyped!':'🔥 Hype'}</button>
         </div>
-        ${!OWNED_IDS.has(s.id) ? `<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%;margin-top:8px">Pre-Buy for ${price} G</button>` : `<button class="ghost" onclick="location.href='library.html'" style="width:100%;margin-top:8px">✅ Owned - Play in Library</button>`}
+        ${!OWNED_IDS.has(s.id) ? `<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%;margin-top:8px">Pre-Buy for ${price} G • M${(price*10).toFixed(0)}</button>` : `<button class="ghost" onclick="location.href='library.html'" style="width:100%;margin-top:8px">✅ Owned - Play in Library</button>`}
       </div>
     </div>`;
   }).join('');
@@ -153,7 +157,7 @@ function renderUpcoming(){
 }
 function renderSongs(rows){
   const list = document.getElementById('songsList');
-  if(!rows.length){ list.innerHTML='<p class="small">No songs yet. Be the first to upload!</p>'; return; }
+  if(!rows.length){ list.innerHTML='<p class="small">No songs found. Try a different search or be the first to upload!</p>'; return; }
   list.innerHTML = rows.map(s=>{
     const owned = OWNED_IDS.has(s.id);
     const price = Number(s.price_grind||0);
@@ -162,10 +166,10 @@ function renderSongs(rows){
       ${coverHtml(s,false)}
       <div style="flex:1;min-width:0">
       <b>${escapeHtml(s.title||'Untitled')}</b><br>
-      <span class="small">${escapeHtml(s.artist_name||'Unknown')} • ${s.total_buys||0} buys • ${price} G</span>
-      ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="none" src="${audio}" data-owned="${owned?'1':'0'}"></audio>`:''}
+      <span class="small">${escapeHtml(s.artist_name||'Unknown')} • ${s.total_buys||0} buys • <span class="priceTag">${price} G • M${(price*10).toFixed(0)}</span></span>
+      ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="metadata" src="${audio}" data-owned="${owned?'1':'0'}"></audio>`:`<p class="small">Preview loading...</p>`}
       <br><br>
-      ${owned?`<button class="ghost" onclick="location.href='library.html'" style="width:100%">✅ Owned - Play in Library</button>`:`<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%">Buy for ${price} G</button>`}
+      ${owned?`<button class="ghost" onclick="location.href='library.html'" style="width:100%">✅ Owned - Play in Library</button>`:`<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%">Buy for ${price} G • M${(price*10).toFixed(0)}</button>`}
       <button class="shareBtn" onclick="shareSong('${s.id}')">🔗 Share This Song</button>
       </div>
     </div>`;
@@ -197,6 +201,8 @@ function checkShareLink(){
   const params = new URLSearchParams(window.location.search);
   const songId = params.get('song');
   if(!songId) return;
+  const banner = document.getElementById('sharedBanner');
+  if(banner) banner.style.display='block';
   setTimeout(()=>{
     const el = document.getElementById('song-' + songId);
     if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('highlight'); setTimeout(()=> el.classList.remove('highlight'), 4000); }
