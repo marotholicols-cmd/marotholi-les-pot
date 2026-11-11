@@ -3,23 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Deposit - Marotholi Les-Pot</title>
+<title>Top Up - Marotholi Les-Pot</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:14px;padding:14px;font-size:14px;line-height:1.9;margin-bottom:12px}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:14px;line-height:2}
   .payBox b{color:#d4ff3f}
-  .payBox.active{border-color:#d4ff3f;box-shadow:0 0 0 2px rgba(212,255,63,.25)}
-  .copyBtn{width:auto;padding:8px 14px;font-size:12px;border-radius:999px;margin-top:6px}
-  .stepNum{background:#d4ff3f;color:#000;font-weight:900;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px}
-  .status-pending{color:#ffcc00;font-weight:800}
-  .status-approved{color:#00ff88;font-weight:800}
-  .status-rejected{color:#ff5252;font-weight:800}
-  .depRow{padding:12px 0;border-bottom:1px solid #222}
-  .depRow:last-child{border-bottom:none}
+  .payBox button{margin-top:8px}
+  .calcBox{background:#1a1a22;border:1px solid #c8ff00;border-radius:12px;padding:14px;text-align:center;margin-top:14px}
+  .calcBox b{font-size:24px;color:#d4ff3f}
+  .stepBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:13px;line-height:2}
+  .stepBox b{color:#d4ff3f}
 </style>
 </head>
 <body>
@@ -31,62 +28,66 @@
 
 <div class="wrap">
 
+  <div class="card center">
+    <h2>💳 Top Up Wallet</h2>
+    <p class="small" style="margin-top:6px">1 Grind = M10 • Grinds are added AFTER admin approves your deposit</p>
+  </div>
+
+  <!-- STEP 1 -->
   <div class="card">
-    <h2>Top Up Wallet</h2>
-    <p class="small" style="margin-top:6px">1 Grind = M10 • Min 1 Grind • ONLY these 2 accounts work</p>
-
-    <div style="margin-top:16px">
-      <p><span class="stepNum">1</span><b>Choose payment method below</b></p>
-      <p><span class="stepNum">2</span><b>Send money</b> to that account</p>
-      <p><span class="stepNum">3</span><b>Copy the Reference</b> from your SMS / receipt</p>
-      <p><span class="stepNum">4</span><b>Paste it below + amount</b> and send for approval</p>
+    <h3>STEP 1 — Send Money (ONLY THESE 2)</h3>
+    <div class="payBox" style="margin-top:10px">
+      <b>Option 1 — EcoCash:</b><br>
+      Merchant Number: <b style="font-size:18px">128235</b><br>
+      Name: Marotholi Lespot MSU<br>
+      <button class="ghost" onclick="copyText('128235')">📋 Copy 128235</button>
+      <br><br>
+      <b>Option 2 — Postbank Visa:</b><br>
+      Account: <b style="font-size:18px">1040278800016</b><br>
+      Name: Marotholi Lespot<br>
+      <button class="ghost" onclick="copyText('1040278800016')">📋 Copy 1040278800016</button>
     </div>
+    <p class="small" style="margin-top:10px">⚠️ Do NOT send to any other number. Only these 2 work. Save your EcoCash / Bank SMS reference!</p>
+  </div>
 
-    <label style="margin-top:16px">Payment Method — Choose One</label>
-    <select id="dMethod" onchange="showPayInfo()">
-      <option value="EcoCash">EcoCash — Pay Merchant</option>
-      <option value="Postbank">Postbank — Visa Account</option>
+  <!-- STEP 2 -->
+  <div class="card">
+    <h3>STEP 2 — Submit Deposit</h3>
+    <p class="small" style="margin-top:6px">Enter the EXACT amount you sent and the reference from your SMS.</p>
+
+    <label>How did you pay?</label>
+    <select id="method">
+      <option value="EcoCash">EcoCash — 128235</option>
+      <option value="Postbank">Postbank — 1040278800016</option>
     </select>
 
-    <div id="payInfo" class="payBox"></div>
-
-    <label>Amount in Grinds</label>
-    <input id="dAmt" type="number" min="1" placeholder="e.g. 3 = M30">
-    <p class="small" id="amtPreview">M0</p>
-
-    <label>Reference</label>
-    <input id="dRef" placeholder="EcoCash Ref / Postbank Ref — e.g. EC123...">
-    <p class="small">Do NOT reuse an old reference. Each deposit needs its own new reference.</p>
-
-    <button onclick="doDeposit()" id="depBtn">Send Deposit for Approval</button>
-    <p class="small" id="dMsg" style="margin-top:10px;text-align:center;min-height:20px"></p>
-  </div>
-
-  <div class="card">
-    <h3>💳 Official Accounts — ONLY THESE WORK</h3>
-    <div class="payBox">
-      <b>EcoCash Pay Merchant:</b><br>
-      128235<br>
-      Marotholi Lespot MSU<br>
-      <button class="copyBtn" onclick="copyText('128235')">Copy 128235</button>
+    <label>Amount You Sent (M)</label>
+    <input id="amount" type="number" min="10" step="10" placeholder="e.g. 100" oninput="calcGrinds()">
+    <div class="calcBox">
+      You will get: <b id="grindPreview">0 Grinds</b><br>
+      <small class="small">M10 = 1 Grind • M100 = 10 Grinds • M500 = 50 Grinds</small>
     </div>
-    <div class="payBox">
-      <b>Postbank Visa Account:</b><br>
-      1040278800016<br>
-      Marotholi Lespot<br>
-      <button class="copyBtn" onclick="copyText('1040278800016')">Copy 1040278800016</button>
-    </div>
-    <p class="small">If you send to any other number, your money will NOT be found and Grinds will NOT be added. Use only these two.</p>
+
+    <label>Reference / Transaction ID (from SMS)</label>
+    <input id="reference" placeholder="e.g. EC123456789 or PB98765">
+
+    <label>Your Phone / Name (optional)</label>
+    <input id="sender" placeholder="e.g. 59123456 - Thabo">
+
+    <button id="submitBtn" onclick="submitDeposit()">Submit Deposit → Wait For Approval</button>
+    <p class="small center" style="margin-top:10px" id="depositMsg"></p>
   </div>
 
+  <!-- STEP 3 -->
   <div class="card">
-    <h3>📜 My Deposits</h3>
-    <div id="myDeposits" style="margin-top:10px">Loading...</div>
-  </div>
-
-  <div class="card center">
-    <a href="discover.html">← Back to Discover</a><br><br>
-    <a href="wallet.html">Go to Wallet →</a>
+    <h3>STEP 3 — Wait For Approval</h3>
+    <div class="stepBox" style="margin-top:10px">
+      <b>1.</b> You submit here<br>
+      <b>2.</b> Admin checks EcoCash / Postbank<br>
+      <b>3.</b> Admin clicks APPROVE<br>
+      <b>4.</b> Grinds appear in your <a href="wallet.html">Wallet</a> automatically
+    </div>
+    <button class="ghost" onclick="location.href='wallet.html'">Check My Wallet →</button>
   </div>
 
 </div>
@@ -107,51 +108,68 @@ if(!window.sb && window.supabase){
 }
 
 function copyText(t){
-  if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>alert('Copied: ' + t));
-  else prompt('Copy this:', t);
+  navigator.clipboard.writeText(t).then(()=> alert('Copied: ' + t)).catch(()=> alert(t));
 }
 
-function showPayInfo(){
-  const m = document.getElementById('dMethod').value;
-  const el = document.getElementById('payInfo');
-  if(m === 'EcoCash'){
-    el.innerHTML = '<b>EcoCash — Pay Merchant</b><br>Merchant Number: <b>128235</b><br>Name: Marotholi Lespot MSU<br><span class="small">Open EcoCash → Pay Merchant → Enter 128235 → Enter Amount → Copy the Reference SMS</span><br><button class="copyBtn" onclick="copyText(\'128235\')">Copy 128235</button>';
-  } else {
-    el.innerHTML = '<b>Postbank — Visa Account</b><br>Account Number: <b>1040278800016</b><br>Name: Marotholi Lespot<br><span class="small">Transfer to Postbank Visa 1040278800016 → Copy the Reference from your receipt / SMS</span><br><button class="copyBtn" onclick="copyText(\'1040278800016\')">Copy 1040278800016</button>';
+function calcGrinds(){
+  const amt = parseFloat(document.getElementById('amount').value) || 0;
+  const grinds = Math.floor(amt / 10);
+  document.getElementById('grindPreview').textContent = grinds + ' Grinds';
+  return grinds;
+}
+
+async function submitDeposit(){
+  const btn = document.getElementById('submitBtn');
+  const msg = document.getElementById('depositMsg');
+  const method = document.getElementById('method').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const reference = document.getElementById('reference').value.trim();
+  const sender = document.getElementById('sender').value.trim();
+
+  if(!amount || amount < 10){ alert('Minimum deposit is M10 = 1 Grind'); return; }
+  if(!reference){ alert('Paste your EcoCash / Postbank reference from SMS'); return; }
+
+  const {user, profile} = await getMyProfile();
+  if(!user){ alert('Please log in first'); location.href='auth.html'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msg.textContent = '';
+
+  const grinds = Math.floor(amount / 10);
+
+  try{
+    // SAVES TO SAME TABLE WALLET + ADMIN READ FROM
+    const {error} = await sb.from('deposits').insert([{
+      user_id: user.id,
+      user_email: user.email || '',
+      method: method,
+      amount_maloti: amount,
+      grinds: grinds,
+      reference: reference,
+      sender_info: sender,
+      status: 'pending'
+    }]);
+    if(error) throw error;
+
+    msg.textContent = '✅ Deposit submitted! ' + grinds + ' Grinds pending approval. Check Wallet.';
+    alert('✅ Deposit submitted!\n\nM' + amount + ' = ' + grinds + ' Grinds\nMethod: ' + method + '\nRef: ' + reference + '\n\nWait for admin to approve. Then check Wallet.');
+    document.getElementById('amount').value = '';
+    document.getElementById('reference').value = '';
+    document.getElementById('sender').value = '';
+    calcGrinds();
+    setTimeout(()=> location.href='wallet.html', 1200);
+  }catch(e){
+    msg.textContent = 'Error: ' + e.message;
+    alert('Could not submit: ' + e.message);
   }
-  el.classList.add('active');
-}
-
-function updateAmtPreview(){
-  const amt = parseInt(document.getElementById('dAmt').value || 0);
-  document.getElementById('amtPreview').textContent = amt > 0 ? ('You are paying: M' + (amt * 10) + ' for ' + amt + ' Grind(s)') : 'M0';
-}
-
-async function doDeposit(){
-  const amt = document.getElementById('dAmt').value;
-  const method = document.getElementById('dMethod').value;
-  const ref = document.getElementById('dRef').value.trim();
-  const msg = document.getElementById('dMsg');
-  const btn = document.getElementById('depBtn');
-  if(!amt || parseInt(amt) < 1){ msg.textContent = 'Enter amount — min 1 Grind (M10)'; msg.style.color = '#ff5252'; return; }
-  if(!ref){ msg.textContent = 'Enter your Reference from EcoCash / Postbank'; msg.style.color = '#ff5252'; return; }
-  if(ref.length < 4){ msg.textContent = 'Reference looks too short. Copy the full reference.'; msg.style.color = '#ff5252'; return; }
-  btn.disabled = true; btn.textContent = 'Sending...';
-  msg.textContent = 'Sending deposit...'; msg.style.color = '#fff';
-  await submitDeposit(amt, method, ref);
-  btn.disabled = false; btn.textContent = 'Send Deposit for Approval';
-  document.getElementById('dAmt').value = '';
-  document.getElementById('dRef').value = '';
-  updateAmtPreview();
+  btn.disabled = false;
+  btn.textContent = 'Submit Deposit → Wait For Approval';
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
-  showPayInfo();
-  document.getElementById('dAmt').addEventListener('input', updateAmtPreview);
-  const {user, profile} = await getMyProfile();
-  if(!user) return location.href='auth.html';
+  const {profile} = await getMyProfile();
   if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
-  loadMyDeposits(user.id);
 });
 </script>
 </body>
