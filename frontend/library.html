@@ -53,10 +53,9 @@ async function loadLibrary(){
   const user=await getCurrentUser();
   if(!user){list.innerHTML="<div class='card'>Login to see your bought songs.<br><button class='btn' style='margin-top:10px' onclick=\"location.href='auth.html'\">Login →</button></div>";return;}
   try{
-    const {data:purchases,error}=await window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
+    const {data:purchases,[STRIPPED] window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
     if(error) throw error;
     let songs=(purchases||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
-    // FIXED: Removed user_id fallback - that column does not exist in purchases, it was crashing Buy
     mySongs=songs;
     if(!songs.length){list.innerHTML="<div class='card'>No bought songs yet.<br><span class='small'>Go to Discover, preview 30s, buy, it appears here FULL.</span><br><button class='btn' style='margin-top:10px' onclick=\"location.href='discover.html'\">Go to Discover →</button></div>";return;}
     list.innerHTML=songs.map(function(s){
@@ -68,7 +67,6 @@ async function loadLibrary(){
 async function playFull(id){
   const s=mySongs.find(function(x){return String(x.id)===String(id);});
   if(!s){ alert('Song not found'); return; }
-  // FIXED: Use audio_url directly, bypass broken getSongStreamUrl + playWithPlayer
   let url = s.audio_url;
   if(!url || !String(url).startsWith('http')){
     alert('No audio_url for this song');
@@ -85,6 +83,20 @@ async function playFull(id){
   if(coverEl && s.cover_url) coverEl.src = s.cover_url;
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
+  // FIXED: Show real song + artist + cover on lock screen / notification
+  if('mediaSession' in navigator){
+    try{
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: s.title || 'Unknown Song',
+        artist: s.artist_name || 'Marotholi Les-Pot',
+        album: 'Marotholi Les-Pot',
+        artwork: s.cover_url ? [{src: s.cover_url, sizes: '512x512', type: 'image/jpeg'}] : []
+      });
+      navigator.mediaSession.setActionHandler('play', function(){ const a=document.getElementById('mainAudio'); a.play(); const b=document.getElementById('playerBtn'); if(b) b.textContent='⏸'; });
+      navigator.mediaSession.setActionHandler('pause', function(){ const a=document.getElementById('mainAudio'); a.pause(); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; });
+      navigator.mediaSession.setActionHandler('stop', function(){ stopPlayer(); });
+    }catch(e){}
+  }
   audio.src = url;
   audio.currentTime = 0;
   try{
@@ -93,7 +105,6 @@ async function playFull(id){
   }catch(e){
     alert('Play failed: ' + e.message);
   }
-  // NO 30s limit here - FULL song
 }
 function togglePlayer(){
   const audio = document.getElementById('mainAudio');
@@ -107,6 +118,7 @@ function stopPlayer(){
   audio.pause(); audio.src='';
   if(bar) bar.classList.remove('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
+  if('mediaSession' in navigator){ try{ navigator.mediaSession.metadata = null; }catch(e){} }
 }
 document.addEventListener('DOMContentLoaded',loadLibrary);
 </script>
