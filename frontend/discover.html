@@ -1,69 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Discover — Marotholi Les-Pot</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discover - Marotholi Les-Pot</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#d4ff3f">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+  .searchBox{display:flex;gap:10px;margin-bottom:14px}
+  .searchBox input{flex:1;margin:0}
+  .searchBox button{width:auto;padding:14px 20px;white-space:nowrap}
+  .filterRow{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px}
+  .filterRow button{width:auto;padding:9px 16px;font-size:13px;border-radius:999px;white-space:nowrap}
+  .filterRow button.active{background:#d4ff3f;color:#000}
+  .songCard{padding:0;overflow:hidden}
+  .songTop{display:flex;gap:14px;align-items:center;padding:18px 18px 0 18px}
+  .songTop img{width:72px;height:72px;border-radius:14px;object-fit:cover;background:#222;border:1px solid #333;flex-shrink:0}
+  .songTop .meta{flex:1;min-width:0}
+  .songTop .meta b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .songTop .meta small{color:#9a9aab;font-size:12px;line-height:1.6;display:block}
+  .songBtns{display:flex;gap:10px;padding:16px 18px 18px 18px}
+  .songBtns button{flex:1;padding:12px;font-size:14px}
+  .ownedBadge{background:#00ff88;color:#000;font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;display:inline-block;margin-top:6px}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
+  .payBox b{color:#d4ff3f}
+</style>
 </head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">🇱🇸 LESOTHO</span></div>
-<div class="hero"><h1>New Drops.<br>Local Heat.</h1><p>Buy with Grinds. Support Lesotho artists. 1 Grind = M10</p><span class="price">🔥 TRENDING NOW</span></div>
+
+<div class="topbar">
+  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
+  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
+</div>
+
 <div class="wrap">
-<div class="card">
-<input id="searchInput" placeholder="🔍 Search song or artist..." oninput="filterSongs()">
-<select id="genreFilter" onchange="filterSongs()"><option value="">🎵 All Genres</option><option value="Amapiano">Amapiano</option><option value="Hip Hop">Hip Hop</option><option value="Gospel">Gospel</option><option value="Afro">Afro</option><option value="House">House</option><option value="R&B">R&B</option><option value="Traditional">Traditional</option><option value="Other">Other</option></select>
-<div class="flex"><span class="pill" id="songCount">Loading...</span><button class="small ghost" style="width:auto" onclick="loadSongs()">↻ Refresh</button></div>
-</div>
-<div id="trendingBox" class="card hidden"><h3>🔥 Trending This Week</h3><div id="trendingList"></div></div>
-<div id="songList"></div>
-<div id="emptyMsg" class="card center hidden"><h3>No songs found</h3><p>Try another search or genre.</p></div>
-<div class="card center"><p>Want to sell your music?</p><a href="upload.html"><button>📤 Upload Your Song</button></a></div>
-</div>
-<div id="player"></div>
-<nav class="bottomnav"><a href="discover.html" class="active">🏠<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">💰<br>Wallet</a><a href="upload.html">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
-<script src="app.js"></script><script src="player.js"></script>
-<script>
-let ALL_SONGS=[];
-async function loadSongs(){
-  const list=document.getElementById('songList');
-  list.innerHTML='<div class="card center">Loading songs...</div>';
-  try{
-    const songs=await window.LES_POT.getSongs();
-    ALL_SONGS=songs||[];
-    renderSongs(ALL_SONGS);
-    renderTrending(ALL_SONGS);
-  }catch(e){ list.innerHTML='<div class="card center">Failed to load. <a href="#" onclick="loadSongs()">Retry</a></div>'; }
-}
-function renderSongs(songs){
-  const list=document.getElementById('songList');
-  document.getElementById('songCount').textContent=songs.length+' songs';
-  document.getElementById('emptyMsg').classList.toggle('hidden',songs.length>0);
-  if(!songs.length){list.innerHTML='';return;}
-  list.innerHTML=songs.map(s=>`
-  <div class="card"><div class="song">
-    ${s.cover_url?`<img src="${s.cover_url}">`:`<div class="coverPlaceholder">🎵</div>`}
-    <div class="meta"><b>${escapeHtml(s.title||'Untitled')}</b><small>${escapeHtml(s.artist||'Unknown')} • ${escapeHtml(s.genre||'Other')} • ${s.price_grinds||1} Grinds</small><div><span class="pill">${escapeHtml(s.genre||'Other')}</span></div></div>
-    <div style="text-align:right"><div class="price-tag">${s.price_grinds||1}G</div><button class="playBtn" onclick="playSong('${s.id}')">▶ Play</button></div>
+  <h2 style="font-size:24px;font-weight:900">🎵 Discover</h2>
+  <p class="small" style="margin-top:6px">30 seconds preview free. Full song = Grinds. Support Marotholi artists.</p>
+
+  <div class="searchBox" style="margin-top:16px">
+    <input id="searchInput" placeholder="Search song or artist..." oninput="filterSongs()">
+    <button onclick="filterSongs()">🔍</button>
   </div>
-  <div class="flex" style="margin-top:12px"><button onclick="buySong('${s.id}')">🛒 Buy • ${s.price_grinds||1} Grinds</button><button class="ghost" onclick="shareSong('${escapeHtml(s.title||'') }','${s.id}')">📤 Share</button></div></div>`).join('');
+
+  <div class="filterRow">
+    <button class="active" id="fAll" onclick="setFilter('all')">All</button>
+    <button id="fNew" onclick="setFilter('new')">Newest</button>
+    <button id="fCheap" onclick="setFilter('cheap')">Cheapest</button>
+    <button id="fMine" onclick="setFilter('mine')">My Purchases</button>
+  </div>
+
+  <div class="card">
+    <h3>💳 Need Grinds?</h3>
+    <div class="payBox">
+      <b>M-PESA:</b> 62674307 (Marotholi)<br>
+      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+    </div>
+    <br>
+    <button onclick="location.href='deposit.html'">+ Top Up Wallet</button>
+  </div>
+
+  <div id="songList">Loading songs...</div>
+
+  <div class="card center">
+    <p class="small">No song you want? Ask your favourite artist to upload on Marotholi Les-Pot.</p>
+    <br>
+    <button class="ghost" onclick="location.href='upload.html'">⬆️ Upload Song</button>
+  </div>
+</div>
+
+<div id="miniPlayer" class="hidden">
+  <img id="pCover" src="icon.svg" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
+  <div style="flex:1;min-width:0"><b id="pTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block"></b><small id="pArtist"></small></div>
+  <button class="playBtn" id="pPlayBtn" onclick="togglePlay()">⏸</button>
+  <button class="playBtn" onclick="stopSong()">⏹</button>
+</div>
+
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html" class="active">🎵<br>Discover</a>
+  <a href="wallet.html">👛<br>Wallet</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="auth.html">👤<br>Account</a>
+</nav>
+
+<script src="player.js"></script>
+<script>
+// Supabase keys - also in app.js, kept here so Discover works even if app.js fails
+const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
+const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase){
+  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
 }
-function renderTrending(songs){
-  const box=document.getElementById('trendingBox');
-  if(!songs.length){box.classList.add('hidden');return;}
-  const top=[...songs].sort((a,b)=>(b.plays||0)-(a.plays||0)).slice(0,3);
-  box.classList.remove('hidden');
-  document.getElementById('trendingList').innerHTML=top.map((s,i)=>`<div class="flex" style="padding:8px 0;border-bottom:1px solid #222"><b>#${i+1} ${escapeHtml(s.title||'')}</b><span>${escapeHtml(s.artist||'')}</span><button class="small" style="width:auto" onclick="playSong('${s.id}')">▶</button></div>`).join('');
+
+let ALL_SONGS = [];
+let MY_PURCHASES = [];
+let CURRENT_FILTER = 'all';
+let MY_PROFILE = null;
+let MY_USER = null;
+
+function setFilter(f){
+  CURRENT_FILTER = f;
+  document.querySelectorAll('.filterRow button').forEach(b=>b.classList.remove('active'));
+  if(f==='all') document.getElementById('fAll').classList.add('active');
+  if(f==='new') document.getElementById('fNew').classList.add('active');
+  if(f==='cheap') document.getElementById('fCheap').classList.add('active');
+  if(f==='mine') document.getElementById('fMine').classList.add('active');
+  renderSongs();
 }
-function filterSongs(){
-  const q=(document.getElementById('searchInput').value||'').toLowerCase();
-  const g=document.getElementById('genreFilter').value;
-  const f=ALL_SONGS.filter(s=>{const matchQ=!q||(s.title||'').toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q);const matchG=!g||s.genre===g;return matchQ&&matchG;});
-  renderSongs(f);
+
+function filterSongs(){ renderSongs(); }
+
+function renderSongs(){
+  const list = document.getElementById('songList');
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  let songs = [...ALL_SONGS];
+
+  if(CURRENT_FILTER === 'cheap') songs.sort((a,b)=>(a.price_grinds||1)-(b.price_grinds||1));
+  if(CURRENT_FILTER === 'new') songs.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
+  if(CURRENT_FILTER === 'mine') songs = songs.filter(s=> MY_PURCHASES.includes(s.id));
+  if(q) songs = songs.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q));
+
+  if(!songs.length){
+    list.innerHTML = '<div class="card">No songs found. Try another search or filter.</div>';
+    return;
+  }
+
+  list.innerHTML = songs.map(s=>{
+    const owned = MY_PURCHASES.includes(s.id);
+    const safeTitle = (s.title||'Untitled').replace(/'/g,'');
+    const safeArtist = (s.artist||'Marotholi').replace(/'/g,'');
+    return `
+    <div class="card songCard">
+      <div class="songTop">
+        <img src="${s.cover_url || 'icon.svg'}" onerror="this.src='icon.svg'">
+        <div class="meta">
+          <b>${s.title || 'Untitled'}</b>
+          <small>${s.artist || 'Marotholi'} • ${s.price_grinds || 1} Grind (M${(s.price_grinds||1)*10})</small>
+          ${owned ? '<span class="ownedBadge">✅ OWNED - PLAY FULL</span>' : ''}
+        </div>
+      </div>
+      <div class="songBtns">
+        ${owned
+          ? `<button onclick="playSong('${s.audio_url}','${safeTitle}','${safeArtist}','${s.cover_url||''}',false)">▶ Play Full</button>`
+          : `<button class="ghost" onclick="playSong('${s.audio_url}','${safeTitle}','${safeArtist}','${s.cover_url||''}',true)">▶ 30s Preview</button>
+             <button onclick="buySong('${s.id}',${s.price_grinds||1},'${safeTitle}')">Buy - ${s.price_grinds||1} Grind</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
 }
-function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function shareSong(title,id){const url=location.origin+location.pathname.replace('discover.html','')+'discover.html?song='+id;window.open('https://wa.me/?text='+encodeURIComponent('🔥 Listen: '+title+' on LES-POT '+url));}
-loadSongs();
+
+async function buySong(id, price, title){
+  if(!MY_USER) return location.href='auth.html';
+  const bal = MY_PROFILE ? (MY_PROFILE.grind_balance || 0) : 0;
+  if(bal < price){
+    alert('Not enough Grinds. You have ' + bal + ' Grinds. Need ' + price + '. Top up in Wallet.');
+    location.href='deposit.html';
+    return;
+  }
+  if(!confirm('Buy "' + title + '" for ' + price + ' Grind(s)?')) return;
+  const {error: upErr} = await sb.from('profiles').update({grind_balance: bal - price}).eq('id', MY_USER.id);
+  if(upErr) return alert('Buy failed: ' + upErr.message);
+  const {error: pErr} = await sb.from('purchases').insert({user_id: MY_USER.id, song_id: id, price_grinds: price});
+  if(pErr) console.warn('Purchase record warning:', pErr.message);
+  alert('✅ Purchased! Full song unlocked. Play it now.');
+  MY_PROFILE.grind_balance = bal - price;
+  MY_PURCHASES.push(id);
+  document.getElementById('topBal').textContent = MY_PROFILE.grind_balance + ' Grinds';
+  renderSongs();
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const res = await getMyProfile();
+    MY_USER = res.user; MY_PROFILE = res.profile;
+    if(MY_PROFILE) document.getElementById('topBal').textContent = (MY_PROFILE.grind_balance||0) + ' Grinds';
+    if(MY_USER){
+      const {data: pur} = await sb.from('purchases').select('song_id').eq('user_id', MY_USER.id);
+      if(pur) MY_PURCHASES = pur.map(p=>p.song_id);
+    }
+  }catch(e){ console.log(e); }
+
+  try{
+    const {data, error} = await sb.from('songs').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    ALL_SONGS = data || [];
+    renderSongs();
+  }catch(e){
+    document.getElementById('songList').innerHTML = '<div class="card">Could not load songs: ' + e.message + '<br><br><button onclick="location.reload()">Retry</button></div>';
+  }
+});
 </script>
 </body>
 </html>
