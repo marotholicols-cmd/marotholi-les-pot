@@ -9,22 +9,12 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="player.js"></script>
 <style>
-  .searchBox{display:flex;gap:10px;margin-bottom:14px}
-  .searchBox input{flex:1;margin:0}
-  .searchBox button{width:auto;padding:14px 20px;white-space:nowrap}
-  .filterRow{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px}
-  .filterRow button{width:auto;padding:9px 16px;font-size:13px;border-radius:999px;white-space:nowrap}
-  .filterRow button.active{background:#d4ff3f;color:#000}
-  .songCard{padding:0;overflow:hidden}
-  .songTop{display:flex;gap:14px;align-items:center;padding:18px 18px 0 18px}
-  .songTop img{width:72px;height:72px;border-radius:14px;object-fit:cover;background:#222;border:1px solid #333;flex-shrink:0}
-  .songTop .meta{flex:1;min-width:0}
-  .songTop .meta b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .songTop .meta small{color:#9a9aab;font-size:12px;line-height:1.6;display:block}
-  .songBtns{display:flex;gap:10px;padding:16px 18px 18px 18px}
-  .songBtns button{flex:1;padding:12px;font-size:14px}
-  .ownedBadge{background:#00ff88;color:#000;font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;display:inline-block;margin-top:6px}
+  .searchRow{display:flex;gap:8px}
+  .searchRow input{flex:1}
+  .searchRow button{width:auto;padding:13px 16px;margin-top:0}
+  .chipRow{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
   .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
   .payBox b{color:#d4ff3f}
 </style>
@@ -37,46 +27,49 @@
 </div>
 
 <div class="wrap">
-  <h2 style="font-size:24px;font-weight:900">🎵 Discover</h2>
-  <p class="small" style="margin-top:6px">30 seconds preview free. Full song = Grinds. Support Marotholi artists.</p>
 
-  <div class="searchBox" style="margin-top:16px">
-    <input id="searchInput" placeholder="Search song or artist..." oninput="filterSongs()">
-    <button onclick="filterSongs()">🔍</button>
-  </div>
+  <div class="card">
+    <h2>🎵 Discover Music</h2>
+    <p class="small" style="margin-top:6px">Play 30s preview free. Buy with Grinds to unlock full song. 1 Grind = M10.</p>
 
-  <div class="filterRow">
-    <button class="active" id="fAll" onclick="setFilter('all')">All</button>
-    <button id="fNew" onclick="setFilter('new')">Newest</button>
-    <button id="fCheap" onclick="setFilter('cheap')">Cheapest</button>
-    <button id="fMine" onclick="setFilter('mine')">My Purchases</button>
+    <div class="searchRow" style="margin-top:14px">
+      <input id="searchInput" placeholder="Search song or artist...">
+      <button onclick="loadSongs()">Search</button>
+    </div>
+
+    <div class="chipRow">
+      <button class="chip active" style="width:auto;margin-top:0" onclick="filterGenre('',this)">All</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Amapiano',this)">Amapiano</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Hip Hop',this)">Hip Hop</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Afrobeat',this)">Afrobeat</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Gospel',this)">Gospel</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Sesotho Traditional',this)">Sesotho</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('R&B',this)">R&B</button>
+      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('House',this)">House</button>
+    </div>
   </div>
 
   <div class="card">
-    <h3>💳 Need Grinds?</h3>
+    <div id="songList" style="margin-top:4px">Loading songs...</div>
+  </div>
+
+  <div class="card">
+    <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
     <div class="payBox">
-      <b>M-PESA:</b> 62674307 (Marotholi)<br>
       <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
       <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
     </div>
     <br>
-    <button onclick="location.href='deposit.html'">+ Top Up Wallet</button>
+    <button onclick="location.href='deposit.html'">Top Up Now</button>
   </div>
 
-  <div id="songList">Loading songs...</div>
-
-  <div class="card center">
-    <p class="small">No song you want? Ask your favourite artist to upload on Marotholi Les-Pot.</p>
-    <br>
-    <button class="ghost" onclick="location.href='upload.html'">⬆️ Upload Song</button>
-  </div>
 </div>
 
-<div id="miniPlayer" class="hidden">
-  <img id="pCover" src="icon.svg" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
-  <div style="flex:1;min-width:0"><b id="pTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block"></b><small id="pArtist"></small></div>
-  <button class="playBtn" id="pPlayBtn" onclick="togglePlay()">⏸</button>
-  <button class="playBtn" onclick="stopSong()">⏹</button>
+<div class="miniPlayer hidden" id="miniPlayer">
+  <img id="pCover" src="icon.svg">
+  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
+  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
+  <button class="closeBtn" onclick="stopSong(true)">✕</button>
 </div>
 
 <nav class="bottomnav">
@@ -87,9 +80,7 @@
   <a href="auth.html">👤<br>Account</a>
 </nav>
 
-<script src="player.js"></script>
 <script>
-// Supabase keys - also in app.js, kept here so Discover works even if app.js fails
 const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase){
@@ -98,101 +89,79 @@ if(!window.sb && window.supabase){
 
 let ALL_SONGS = [];
 let MY_PURCHASES = [];
-let CURRENT_FILTER = 'all';
-let MY_PROFILE = null;
-let MY_USER = null;
+let CURRENT_GENRE = '';
+let CURRENT_USER_ID = null;
 
-function setFilter(f){
-  CURRENT_FILTER = f;
-  document.querySelectorAll('.filterRow button').forEach(b=>b.classList.remove('active'));
-  if(f==='all') document.getElementById('fAll').classList.add('active');
-  if(f==='new') document.getElementById('fNew').classList.add('active');
-  if(f==='cheap') document.getElementById('fCheap').classList.add('active');
-  if(f==='mine') document.getElementById('fMine').classList.add('active');
+function esc(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function filterGenre(g, btn){
+  CURRENT_GENRE = g;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
   renderSongs();
 }
 
-function filterSongs(){ renderSongs(); }
-
 function renderSongs(){
-  const list = document.getElementById('songList');
+  const box = document.getElementById('songList');
   const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-  let songs = [...ALL_SONGS];
-
-  if(CURRENT_FILTER === 'cheap') songs.sort((a,b)=>(a.price_grinds||1)-(b.price_grinds||1));
-  if(CURRENT_FILTER === 'new') songs.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
-  if(CURRENT_FILTER === 'mine') songs = songs.filter(s=> MY_PURCHASES.includes(s.id));
-  if(q) songs = songs.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q));
-
-  if(!songs.length){
-    list.innerHTML = '<div class="card">No songs found. Try another search or filter.</div>';
-    return;
-  }
-
-  list.innerHTML = songs.map(s=>{
+  let list = ALL_SONGS.filter(s=>{
+    if(CURRENT_GENRE && s.genre !== CURRENT_GENRE) return false;
+    if(q && !((s.title||'').toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if(!list.length){ box.innerHTML = 'No songs found. <a href="upload.html">Be the first to upload!</a>'; return; }
+  box.innerHTML = list.map(s=>{
     const owned = MY_PURCHASES.includes(s.id);
-    const safeTitle = (s.title||'Untitled').replace(/'/g,'');
-    const safeArtist = (s.artist||'Marotholi').replace(/'/g,'');
+    const price = s.price_grinds || 1;
+    const cover = esc(s.cover_url || 'icon.svg');
+    const title = esc(s.title || 'Untitled');
+    const artist = esc(s.artist || 'Unknown');
+    const audio = esc(s.audio_url || '');
     return `
-    <div class="card songCard">
-      <div class="songTop">
-        <img src="${s.cover_url || 'icon.svg'}" onerror="this.src='icon.svg'">
-        <div class="meta">
-          <b>${s.title || 'Untitled'}</b>
-          <small>${s.artist || 'Marotholi'} • ${s.price_grinds || 1} Grind (M${(s.price_grinds||1)*10})</small>
-          ${owned ? '<span class="ownedBadge">✅ OWNED - PLAY FULL</span>' : ''}
-        </div>
-      </div>
-      <div class="songBtns">
+    <div class="songCard">
+      <img src="${cover}" onerror="this.src='icon.svg'">
+      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${price} Grind${price>1?'s':''} = M${price*10}</small><br><small>${owned ? '✅ Owned — Full Song' : '🎧 30s Preview Free'}</small></div>
+      <div class="actions">
         ${owned
-          ? `<button onclick="playSong('${s.audio_url}','${safeTitle}','${safeArtist}','${s.cover_url||''}',false)">▶ Play Full</button>`
-          : `<button class="ghost" onclick="playSong('${s.audio_url}','${safeTitle}','${safeArtist}','${s.cover_url||''}',true)">▶ 30s Preview</button>
-             <button onclick="buySong('${s.id}',${s.price_grinds||1},'${safeTitle}')">Buy - ${s.price_grinds||1} Grind</button>`
+          ? `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button>`
+          : `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',true)">▶ Preview</button><button class="buyBtn" onclick="buyThis('${s.id}',${price},'${title}')">Buy ${price}G</button>`
         }
       </div>
     </div>`;
   }).join('');
 }
 
-async function buySong(id, price, title){
-  if(!MY_USER) return location.href='auth.html';
-  const bal = MY_PROFILE ? (MY_PROFILE.grind_balance || 0) : 0;
-  if(bal < price){
-    alert('Not enough Grinds. You have ' + bal + ' Grinds. Need ' + price + '. Top up in Wallet.');
-    location.href='deposit.html';
-    return;
+async function buyThis(id, price, title){
+  const ok = await buySongById(id, price, title);
+  if(ok){
+    MY_PURCHASES.push(id);
+    renderSongs();
+    const {profile} = await getMyProfile();
+    if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
   }
-  if(!confirm('Buy "' + title + '" for ' + price + ' Grind(s)?')) return;
-  const {error: upErr} = await sb.from('profiles').update({grind_balance: bal - price}).eq('id', MY_USER.id);
-  if(upErr) return alert('Buy failed: ' + upErr.message);
-  const {error: pErr} = await sb.from('purchases').insert({user_id: MY_USER.id, song_id: id, price_grinds: price});
-  if(pErr) console.warn('Purchase record warning:', pErr.message);
-  alert('✅ Purchased! Full song unlocked. Play it now.');
-  MY_PROFILE.grind_balance = bal - price;
-  MY_PURCHASES.push(id);
-  document.getElementById('topBal').textContent = MY_PROFILE.grind_balance + ' Grinds';
-  renderSongs();
 }
 
-document.addEventListener('DOMContentLoaded', async ()=>{
-  try{
-    const res = await getMyProfile();
-    MY_USER = res.user; MY_PROFILE = res.profile;
-    if(MY_PROFILE) document.getElementById('topBal').textContent = (MY_PROFILE.grind_balance||0) + ' Grinds';
-    if(MY_USER){
-      const {data: pur} = await sb.from('purchases').select('song_id').eq('user_id', MY_USER.id);
-      if(pur) MY_PURCHASES = pur.map(p=>p.song_id);
-    }
-  }catch(e){ console.log(e); }
-
+async function loadSongs(){
+  const box = document.getElementById('songList');
   try{
     const {data, error} = await sb.from('songs').select('*').order('created_at',{ascending:false});
     if(error) throw error;
     ALL_SONGS = data || [];
     renderSongs();
-  }catch(e){
-    document.getElementById('songList').innerHTML = '<div class="card">Could not load songs: ' + e.message + '<br><br><button onclick="location.reload()">Retry</button></div>';
+  }catch(e){ box.innerHTML = 'Could not load songs: ' + e.message; }
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  document.getElementById('searchInput').addEventListener('input', renderSongs);
+  const {user, profile} = await getMyProfile();
+  if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
+  if(user){
+    CURRENT_USER_ID = user.id;
+    MY_PURCHASES = await getMyPurchases(user.id);
   }
+  loadSongs();
 });
 </script>
 </body>
