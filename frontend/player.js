@@ -1,147 +1,112 @@
-// ============================================================
-// MAROTHOLI LES-POT - player.js - MUSIC PLAYER
-// 30s preview for non-owners, full song for owners
-// ============================================================
-
-let audio = null;
+// Marotholi Les-Pot - player.js - FINAL FIXED VERSION
+// Works with Supabase Bucket 'songs', audio_path + audio_url, no false popup
+let audio = new Audio();
 let currentSong = null;
+let isPreview = false;
 let previewTimer = null;
-let isPreviewMode = false;
-let isPlaying = false;
 
-const PREVIEW_SECONDS = 30;
-
-function getMiniPlayerEls() {
-  return {
-    bar: document.getElementById('miniPlayer'),
-    cover: document.getElementById('pCover'),
-    title: document.getElementById('pTitle'),
-    artist: document.getElementById('pArtist'),
-    playBtn: document.getElementById('pPlayBtn')
-  };
+function showPlayer(title, artist, cover){
+  const mp = document.getElementById('miniPlayer');
+  if(!mp) return;
+  mp.classList.remove('hidden');
+  const t = document.getElementById('pTitle');
+  const a = document.getElementById('pArtist');
+  const img = document.getElementById('pCover');
+  if(t) t.textContent = title || 'No song';
+  if(a) a.textContent = artist || 'Marotholi';
+  if(img) img.src = cover || 'icon.svg';
 }
 
-function showMiniPlayer() {
-  const els = getMiniPlayerEls();
-  if (els.bar) els.bar.classList.remove('hidden');
-}
-
-function hideMiniPlayer() {
-  const els = getMiniPlayerEls();
-  if (els.bar) els.bar.classList.add('hidden');
-}
-
-function updatePlayBtn() {
-  const els = getMiniPlayerEls();
-  if (els.playBtn) els.playBtn.textContent = isPlaying ? '⏸' : '▶';
-}
-
-function clearPreviewTimer() {
-  if (previewTimer) {
-    clearTimeout(previewTimer);
-    previewTimer = null;
+function fixAudioUrl(raw){
+  if(!raw) return '';
+  raw = String(raw).trim();
+  if(!raw || raw === 'undefined' || raw === 'null') return '';
+  if(raw.startsWith('http')){
+    // Fix spaces in Supabase bucket URLs
+    if(raw.includes('/songs/')){
+      const parts = raw.split('/songs/');
+      if(parts.length === 2){
+        return parts[0] + '/songs/' + encodeURIComponent(decodeURIComponent(parts[1]));
+      }
+    }
+    return raw;
   }
+  // Only filename saved - build full bucket URL
+  return 'https://mmkxiniybctmgoozaecp.supabase.co/storage/v1/object/public/songs/' + encodeURIComponent(raw);
 }
 
-// Main function - called from index.html / discover.html
-// playSong(audioUrl, title, artist, coverUrl, isPreview)
-function playSong(url, title, artist, cover, isPreview) {
-  if (!url) {
-    alert('This song has no audio link.');
+function playSong(url, title, artist, cover, preview){
+  const fixedUrl = fixAudioUrl(url);
+  if(!fixedUrl){
+    alert('NO AUDIO LINK for: ' + (title || 'this song') + '\n\nArtist needs to re-upload it via Upload page.');
     return;
   }
-
-  // Stop old song
-  stopSong(false);
-
-  currentSong = { url: url, title: title || 'Untitled', artist: artist || 'Marotholi', cover: cover || '' };
-  isPreviewMode = !!isPreview;
-
-  const els = getMiniPlayerEls();
-  if (els.cover) {
-    els.cover.src = currentSong.cover || 'icon.svg';
-    els.cover.onerror = function () { this.src = 'icon.svg'; };
-  }
-  if (els.title) els.title.textContent = currentSong.title + (isPreviewMode ? ' — 30s Preview' : ' — Full Song');
-  if (els.artist) els.artist.textContent = currentSong.artist;
-  showMiniPlayer();
-
-  audio = new Audio(url);
+  clearTimeout(previewTimer);
+  try{ audio.pause(); }catch(e){}
+  audio = new Audio();
+  currentSong = {url: fixedUrl, title, artist, cover};
+  isPreview = !!preview;
+  showPlayer(title, artist, cover);
+  const btn = document.getElementById('pPlayBtn');
+  if(btn) btn.textContent = '⏸';
+  audio.src = fixedUrl;
   audio.preload = 'auto';
 
-  audio.onplay = function () {
-    isPlaying = true;
-    updatePlayBtn();
-  };
-  audio.onpause = function () {
-    isPlaying = false;
-    updatePlayBtn();
-  };
-  audio.onended = function () {
-    isPlaying = false;
-    updatePlayBtn();
-    clearPreviewTimer();
-  };
-  audio.onerror = function () {
-    alert('Could not play this song. The audio link may be broken. Ask the artist to re-upload.');
-    isPlaying = false;
-    updatePlayBtn();
+  // Only show error if REALLY fails - not false alarm
+  audio.onerror = function(){
+    setTimeout(()=>{
+      if(audio.error && audio.paused && audio.currentTime === 0 && currentSong && currentSong.url === fixedUrl){
+        alert('Could not play: ' + title + '\nLink: ' + fixedUrl + '\n\nCheck: Supabase -> Storage -> songs -> file exists? Bucket PUBLIC?');
+        if(btn) btn.textContent = '▶';
+      }
+    }, 1500);
   };
 
-  // Preview limit - stop at 30s and prompt to buy
-  if (isPreviewMode) {
-    clearPreviewTimer();
-    previewTimer = setTimeout(function () {
-      if (audio) audio.pause();
-      isPlaying = false;
-      updatePlayBtn();
-      alert('⏱ 30s preview ended.\n\nBuy "' + currentSong.title + '" to listen to the full song.\n\nTop up: EcoCash 128235 • Postbank 1040278800016');
-    }, PREVIEW_SECONDS * 1000);
-  }
+  audio.onplay = function(){
+    if(btn) btn.textContent = '⏸';
+    if(isPreview){
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(()=>{
+        try{ audio.pause(); }catch(e){}
+        alert('⏱️ 30s Preview ended.\nBuy with Grinds to unlock FULL song.');
+        if(btn) btn.textContent = '▶';
+      }, 30000);
+    }
+  };
+  audio.onpause = function(){ if(btn) btn.textContent = '▶'; };
+  audio.onended = function(){ if(btn) btn.textContent = '▶'; };
 
-  audio.play().catch(function (err) {
-    console.warn('Play blocked:', err);
-    alert('Tap Play again to start the song.');
+  audio.play().catch(()=>{
+    // Browser blocked autoplay - user must tap Play again, no popup
+    if(btn) btn.textContent = '▶';
   });
-  isPlaying = true;
-  updatePlayBtn();
 }
 
-function togglePlay() {
-  if (!audio) return;
-  if (audio.paused) {
-    audio.play().catch(function () {});
-    isPlaying = true;
+function togglePlay(){
+  if(!currentSong) return;
+  const btn = document.getElementById('pPlayBtn');
+  if(audio.paused){
+    audio.play().catch(()=>{});
+    if(btn) btn.textContent = '⏸';
   } else {
     audio.pause();
-    isPlaying = false;
+    if(btn) btn.textContent = '▶';
   }
-  updatePlayBtn();
 }
 
-function stopSong(hideBar) {
-  clearPreviewTimer();
-  if (audio) {
-    try { audio.pause(); } catch (e) {}
-    try { audio.src = ''; } catch (e) {}
-    audio = null;
-  }
-  isPlaying = false;
+function stopSong(hide){
+  clearTimeout(previewTimer);
+  try{ audio.pause(); audio.currentTime = 0; }catch(e){}
   currentSong = null;
-  updatePlayBtn();
-  if (hideBar !== false) hideMiniPlayer();
-}
-
-function resumeSong() {
-  if (audio && audio.paused) {
-    audio.play().catch(function () {});
-    isPlaying = true;
-    updatePlayBtn();
+  if(hide){
+    const mp = document.getElementById('miniPlayer');
+    if(mp) mp.classList.add('hidden');
   }
+  const btn = document.getElementById('pPlayBtn');
+  if(btn) btn.textContent = '▶';
 }
 
-// Expose globally
 window.playSong = playSong;
 window.togglePlay = togglePlay;
 window.stopSong = stopSong;
-window.resumeSong = resumeSong;
+window.fixAudioUrl = fixAudioUrl;
