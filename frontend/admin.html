@@ -26,6 +26,12 @@ input,select{width:100%;padding:11px;border-radius:10px;border:1px solid #333;ba
 .badge.admin{background:#d4ff3f;color:#000}
 .badge.blocked{background:#ff2d55;color:#fff}
 .badge.null{background:#ffaa00;color:#000}
+.badge.paused{background:#ffaa00;color:#000}
+.statRow{display:flex;gap:8px;margin-bottom:12px}
+.statBox{flex:1;background:#111;border:1px solid #333;border-radius:12px;padding:10px;text-align:center}
+.statBox b{font-size:16px;color:#d4ff3f}
+.statBox div{font-size:11px;opacity:.7}
+.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -33,11 +39,16 @@ input,select{width:100%;padding:11px;border-radius:10px;border:1px solid #333;ba
 <div class="wrap">
 <div id="statusMsg">Loading admin...</div>
 <div id="adminContent" style="display:none">
+<div class="pausedBox"><b>🔒 M-Pesa & PayFast Paused</b><br><span class="small">Do NOT approve or pay via M-Pesa / PayFast. Use EcoCash / Postbank only until business account is ready.</span></div>
+<div class="statRow">
+  <div class="statBox"><b id="statUsers">0</b><div>👥 Users</div></div>
+  <div class="statBox"><b id="statDep">0</b><div>💰 Pending Deposits</div></div>
+  <div class="statBox"><b id="statWd">0</b><div>🏧 Pending Withdrawals</div></div>
+</div>
 
-<!-- ✅ NEW: USERS - SEARCH + FIX NULLS + RESET PASSWORD -->
 <h3>👥 Users - Find & Help</h3>
 <input id="userSearch" placeholder="🔍 Search by name / phone / email..." oninput="filterUsers()">
-<div class="small" style="margin-bottom:10px">Tip: If user forgot password, tap <b>Send Reset Link</b> — they get email to set new one. You never see their password.</div>
+<div class="small" style="margin-bottom:10px">Tip: If user forgot password, tap <b>Send Reset Link</b> — they get email to set new one. You never see their password. Security answers are never shown.</div>
 <div id="usersList"><p class="small">Loading users...</p></div>
 <button class="ghost" onclick="loadUsers()">↻ Refresh Users</button>
 
@@ -48,18 +59,11 @@ input,select{width:100%;padding:11px;border-radius:10px;border:1px solid #333;ba
 </div>
 </div>
 <script>
-if(typeof sb === 'undefined' || !window.sb){
-  var _sb2 = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co","sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP");
-  window.sb = _sb2;
-}
-var sb = window.sb;
-</script>
-<script>
 let ALL_USERS = [];
 let ALL_SONGS_ADMIN = [];
-
 function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function showVal(v){ return (v===null||v===undefined||v==='') ? '<span class="badge null">NULL - missing</span>' : esc(v); }
+function isPaused(m){ return ['mpesa','m-pesa','payfast'].includes(String(m||'').toLowerCase().trim()); }
 
 async function initAdmin(){
   const status = document.getElementById('statusMsg');
@@ -75,24 +79,22 @@ async function initAdmin(){
     status.style.display = 'none';
     await loadAdmin();
   }catch(e){
-    status.innerHTML = 'Admin failed: ' + e.message + '<br><br><button class="ghost" onclick="initAdmin()">Retry</button>';
+    status.innerHTML = 'Admin failed: ' + esc(e.message) + '<br><br><button class="ghost" onclick="initAdmin()">Retry</button>';
   }
 }
-
 async function loadAdmin(){
   await Promise.all([loadUsers(), loadPending()]);
 }
-
 async function loadUsers(){
   const el = document.getElementById('usersList');
   try{
     const { data, error } = await window.sb.from('profiles').select('*').order('created_at',{ascending:false}).limit(100);
     if(error) throw error;
     ALL_USERS = data || [];
+    const su = document.getElementById('statUsers'); if(su) su.textContent = ALL_USERS.length;
     renderUsers(ALL_USERS);
   }catch(e){ el.innerHTML = '<p class="small">Users failed: '+esc(e.message)+'</p>'; }
 }
-
 function renderUsers(rows){
   const el = document.getElementById('usersList');
   if(!rows.length){ el.innerHTML = '<p class="small">No users found.</p>'; return; }
@@ -108,8 +110,7 @@ function renderUsers(rows){
       <b>${esc(name||'No Name')}</b> ${u.is_admin?'<span class="badge admin">ADMIN</span>':''} ${isBlocked?'<span class="badge blocked">BLOCKED</span>':''}<br>
       <span class="small">📞 Phone: ${showVal(phone)}</span><br>
       <span class="small">📧 Email: ${showVal(email)}</span><br>
-      <span class="small">👤 Gender: ${showVal(gender)} • 🌍 Country: ${showVal(country)} • 💰 Balance: ${bal} G</span><br>
-      <span class="small">🔒 Security Q: ${showVal(u.security_question||u.security_q)} • Answer: ${showVal(u.security_answer||u.security_a)}</span><br>
+      <span class="small">👤 Gender: ${showVal(gender)} • 🌍 Country: ${showVal(country)} • 💰 Balance: ${bal} G • M${(Number(bal||0)*10).toFixed(0)}</span><br>
       <span class="small">🆔 ${u.id}</span><br><br>
       <button onclick="editUser('${u.id}')">✏️ Edit / Fill Missing</button>
       <button class="blue" onclick="sendReset('${u.id}')">🔑 Send Reset Link</button>
@@ -120,15 +121,14 @@ function renderUsers(rows){
         <input id="e-email-${u.id}" placeholder="Email" value="${esc(email)}">
         <select id="e-gender-${u.id}"><option value="">Select Gender</option><option value="Male" ${gender==='Male'?'selected':''}>Male</option><option value="Female" ${gender==='Female'?'selected':''}>Female</option><option value="Other" ${gender==='Other'?'selected':''}>Other</option></select>
         <select id="e-country-${u.id}"><option value="LS" ${country==='LS'?'selected':''}>Lesotho (LS)</option><option value="ZA" ${country==='ZA'?'selected':''}>South Africa (ZA)</option><option value="Other" ${country==='Other'?'selected':''}>Other</option></select>
-        <input id="e-q-${u.id}" placeholder="Security Question" value="${esc(u.security_question||u.security_q||'')}">
-        <input id="e-a-${u.id}" placeholder="Security Answer" value="${esc(u.security_answer||u.security_a||'')}">
+        <input id="e-q-${u.id}" placeholder="Security Question (answer is never shown)" value="${esc(u.security_question||u.security_q||'')}">
+        <p class="small">Security answer is hidden for safety. Leave blank to keep existing answer.</p>
         <button onclick="saveUser('${u.id}')">💾 Save</button>
         <button class="ghost" onclick="document.getElementById('edit-${u.id}').style.display='none'">Cancel</button>
       </div>
     </div>`;
   }).join('');
 }
-
 function filterUsers(){
   const q = document.getElementById('userSearch').value.toLowerCase().trim();
   if(!q) return renderUsers(ALL_USERS);
@@ -138,12 +138,10 @@ function filterUsers(){
     (u.email||'').toLowerCase().includes(q)
   ));
 }
-
 function editUser(id){
   const box = document.getElementById('edit-'+id);
   box.style.display = box.style.display==='none' ? 'block' : 'none';
 }
-
 async function saveUser(id){
   const full_name = document.getElementById('e-name-'+id).value.trim();
   const phone = document.getElementById('e-phone-'+id).value.trim();
@@ -151,17 +149,16 @@ async function saveUser(id){
   const gender = document.getElementById('e-gender-'+id).value;
   const country = document.getElementById('e-country-'+id).value;
   const secQ = document.getElementById('e-q-'+id).value.trim();
-  const secA = document.getElementById('e-a-'+id).value.trim();
   if(!full_name){ alert('Enter full name'); return; }
-  const updates = { full_name, name: full_name, phone, email, gender, country, security_question: secQ, security_q: secQ, security_answer: secA, security_a: secA };
+  const updates = { full_name, name: full_name, phone, email, gender, country };
+  if(secQ){ updates.security_question = secQ; updates.security_q = secQ; }
+  // Never overwrite security_answer from admin - it stays hidden and unchanged
   const { error } = await window.sb.from('profiles').update(updates).eq('id', id);
   if(error){ alert('Save failed: '+error.message); return; }
-  alert('✅ Saved! No more NULL for this user.');
+  alert('✅ Saved!');
   await loadUsers();
-  // keep search if any
   filterUsers();
 }
-
 async function sendReset(id){
   const u = ALL_USERS.find(x=> String(x.id)===String(id));
   const email = u?.email;
@@ -171,39 +168,33 @@ async function sendReset(id){
   if(error) alert('Reset failed: '+error.message);
   else alert('✅ Reset email sent to '+email+'\nTell them to check Inbox + Spam.');
 }
-
 async function toggleBlock(id, currentlyBlocked){
   const { error } = await window.sb.from('profiles').update({ blocked: !currentlyBlocked }).eq('id', id);
   if(error){ alert('Failed: '+error.message); return; }
   await loadUsers();
 }
-
-// ---- Pending sections (kept from your app, generic safe loaders) ----
+// Pending sections - use REAL functions from app.js for approve/reject so balances actually update.
+// Do NOT redefine approveDeposit / approveWithdrawal / approvePurchase here - app.js owns them.
 async function loadPending(){
-  // Deposits
   try{
     const { data } = await window.sb.from('deposits').select('*').eq('status','pending').order('created_at',{ascending:false}).limit(20);
-    document.getElementById('pendingDeposits').innerHTML = (data&&data.length) ? data.map(d=>`<div class="card">💰 ${esc(d.amount||d.amount_grind||'')} G • ${esc(d.user_email||d.email||d.user_id||'')} • ${esc(d.created_at||'')} <br><button onclick="approveDeposit('${d.id}')">Approve</button><button class="ghost" onclick="rejectDeposit('${d.id}')">Reject</button></div>`).join('') : '<p class="small">No pending deposits</p>';
-  }catch(e){ document.getElementById('pendingDeposits').innerHTML = '<p class="small">Deposits table: '+esc(e.message)+'</p>'; }
+    const sd = document.getElementById('statDep'); if(sd) sd.textContent = (data||[]).length;
+    document.getElementById('pendingDeposits').innerHTML = (data&&data.length) ? data.map(d=>`<div class="card">💰 <b>${esc(d.amount_grind||d.amount||'')} G • M${((Number(d.amount_grind||d.amount||0))*10).toFixed(0)}</b> • ${esc(d.method||'')} ${isPaused(d.method)?'<span class="badge paused">PAUSED METHOD - DO NOT APPROVE VIA MPESA/PAYFAST</span>':''}<br><span class="small">Ref: ${esc(d.reference||'')} • ${esc(d.user_id||'')} • ${new Date(d.created_at).toLocaleString()}</span><br><br><button onclick="approveDeposit('${d.id}')">✅ Approve + Credit</button><button class="ghost" onclick="rejectDeposit('${d.id}')">Reject</button></div>`).join('') : '<p class="small">No pending deposits</p>';
+  }catch(e){ document.getElementById('pendingDeposits').innerHTML = '<p class="small">Deposits: '+esc(e.message)+'</p>'; }
   try{
     const { data } = await window.sb.from('withdrawals').select('*').eq('status','pending').order('created_at',{ascending:false}).limit(20);
-    document.getElementById('pendingWithdrawals').innerHTML = (data&&data.length) ? data.map(w=>`<div class="card">🏧 ${esc(w.amount||'')} G • ${esc(w.user_id||'')} <br><button onclick="approveWithdrawal('${w.id}')">Approve</button><button class="ghost" onclick="rejectWithdrawal('${w.id}')">Reject</button></div>`).join('') : '<p class="small">No pending withdrawals</p>';
+    const sw = document.getElementById('statWd'); if(sw) sw.textContent = (data||[]).length;
+    document.getElementById('pendingWithdrawals').innerHTML = (data&&data.length) ? data.map(w=>`<div class="card">🏧 <b>${esc(w.amount_grind||w.amount||'')} G • M${((Number(w.amount_grind||w.amount||0))*10).toFixed(0)}</b><br><span class="small">${esc(w.receive_method||w.method||'')} ${isPaused(w.receive_method||w.method)?'<span class="badge paused">PAUSED - DO NOT PAY VIA THIS METHOD</span>':''} • Pay to: <b>${esc(w.receive_details||w.receive_number||w.number||'')}</b> • ${esc(w.artist_id||w.user_id||'')} • ${new Date(w.created_at).toLocaleString()}</span><br><br><button onclick="approveWithdrawal('${w.id}')">✅ Approve + Deduct</button><button class="ghost" onclick="rejectWithdrawal('${w.id}')">Reject</button></div>`).join('') : '<p class="small">No pending withdrawals</p>';
   }catch(e){ document.getElementById('pendingWithdrawals').innerHTML = '<p class="small">Withdrawals: '+esc(e.message)+'</p>'; }
   try{
     const { data } = await window.sb.from('purchases').select('*').eq('status','pending').order('created_at',{ascending:false}).limit(20);
-    document.getElementById('pendingPurchases').innerHTML = (data&&data.length) ? data.map(p=>`<div class="card">🎵 Song: ${esc(p.song_id||'')} • Fan: ${esc(p.fan_id||'')} • ${esc(p.amount||p.price_grind||'')} G <br><button onclick="approvePurchase('${p.id}')">Approve</button></div>`).join('') : '<p class="small">No pending purchases</p>';
+    document.getElementById('pendingPurchases').innerHTML = (data&&data.length) ? data.map(p=>`<div class="card">🎵 Song: ${esc(p.song_id||'')} • Fan: ${esc(p.fan_id||'')} • ${esc(p.price_grind||p.amount||'')} G <br><button onclick="approvePurchase('${p.id}')">Approve Unlock</button> <button class="ghost" onclick="rejectPurchase('${p.id}')">Reject</button></div>`).join('') : '<p class="small">No pending purchases</p>';
   }catch(e){ document.getElementById('pendingPurchases').innerHTML = '<p class="small">Purchases: '+esc(e.message)+'</p>'; }
   try{
     const { data } = await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(20);
-    document.getElementById('pendingSongs').innerHTML = (data&&data.length) ? data.map(s=>`<div class="card">🎵 ${esc(s.title||'')} - ${esc(s.artist_name||'')} • ${esc(s.price_grind||'')} G • ${esc(s.status||'')}</div>`).join('') : '<p class="small">No songs</p>';
+    document.getElementById('pendingSongs').innerHTML = (data&&data.length) ? data.map(s=>`<div class="card">🎵 ${esc(s.title||'')} - ${esc(s.artist_name||'')} • ${esc(s.price_grind||'')} G • ${esc(s.status||'')} • Buys: ${esc(s.total_buys||0)}</div>`).join('') : '<p class="small">No songs</p>';
   }catch(e){ document.getElementById('pendingSongs').innerHTML = '<p class="small">Songs: '+esc(e.message)+'</p>'; }
 }
-async function approveDeposit(id){ const { error } = await window.sb.from('deposits').update({status:'approved'}).eq('id',id); if(error) alert(error.message); else loadPending(); }
-async function rejectDeposit(id){ const { error } = await window.sb.from('deposits').update({status:'rejected'}).eq('id',id); if(error) alert(error.message); else loadPending(); }
-async function approveWithdrawal(id){ const { error } = await window.sb.from('withdrawals').update({status:'approved'}).eq('id',id); if(error) alert(error.message); else loadPending(); }
-async function rejectWithdrawal(id){ const { error } = await window.sb.from('withdrawals').update({status:'rejected'}).eq('id',id); if(error) alert(error.message); else loadPending(); }
-async function approvePurchase(id){ const { error } = await window.sb.from('purchases').update({status:'approved'}).eq('id',id); if(error) alert(error.message); else loadPending(); }
-
 initAdmin();
 </script>
 </body>
