@@ -60,6 +60,6 @@ async function loadWallet(){
   document.getElementById('purchases').innerHTML=!purs||!purs.length?"<p class='small'>No purchases yet.</p>":purs.map(function(p){return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>"+escHtml(p.songs?.title||'Song')+"</b> • "+Number(p.price_grind||0).toFixed(2)+" G</div>";}).join('');
 }
 document.addEventListener('DOMContentLoaded',loadWallet);
-</script>
+<script src="player.js"></script>
 </body>
 </html>
