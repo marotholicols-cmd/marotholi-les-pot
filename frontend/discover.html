@@ -1,226 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Discover - Marotholi Les-Pot</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
-<style>
-*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:80px}
-header{background:#d4ff3f;color:#000;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:900;position:sticky;top:0;z-index:10}
-header a{color:#000;text-decoration:none;font-size:13px;background:#fff;padding:6px 10px;border-radius:20px}
-.wrap{max-width:520px;margin:0 auto;padding:16px}
-.search{width:100%;padding:13px;border-radius:12px;border:1px solid #333;background:#1a1a1a;color:#fff;margin-bottom:14px;font-size:15px;outline:none}
-.search:focus{border-color:#d4ff3f}
-.card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 4px 20px rgba(0,0,0,.25)}
-.card.highlight{border:2px solid #d4ff3f;box-shadow:0 0 24px rgba(212,255,63,.45)}
-.card b{font-size:16px} .small{opacity:.7;font-size:13px}
-button{padding:11px 14px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:14px}
-button.ghost{background:#333;color:#fff}
-button.shareBtn{background:#222;color:#fff;border:1px solid #444;width:100%;margin-top:8px}
-audio{width:100%;margin-top:8px}
-.nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
-.nav a.active{background:#d4ff3f;color:#000;font-weight:900}
-#bal{background:#000;color:#d4ff3f;padding:6px 10px;border-radius:20px;font-size:13px}
-.skel{background:#222;height:110px;border-radius:14px;margin-bottom:12px;animation:pulse 1.2s infinite}
-@keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-.upcomingCard{background:#1e1e1e;border:1px solid #333;border-radius:12px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
-.hypeBtn{background:#333;color:#fff;padding:8px;border-radius:99px;font-size:12px;flex:1}
-.hypeBtn.on{background:#ff2d55;color:#fff}
-.sectionTitle{font-size:18px;font-weight:900;margin:18px 0 10px}
-.cover{width:64px;height:64px;min-width:64px;border-radius:12px;object-fit:cover;background:#333;border:1px solid #444}
-.coverBig{width:72px;height:72px;min-width:72px;border-radius:14px;object-fit:cover;background:#333;border:1px solid #444}
-.coverPlaceholder{width:64px;height:64px;min-width:64px;border-radius:12px;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:28px}
-.coverPlaceholderBig{width:72px;height:72px;min-width:72px;border-radius:14px;background:linear-gradient(135deg,#ff00aa,#d4ff3f);display:flex;align-items:center;justify-content:center;font-size:30px}
-.sharedBanner{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;line-height:1.5;display:none}
-.sharedBanner b{color:#d4ff3f}
-.priceTag{color:#d4ff3f;font-weight:800}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Discover — Marotholi Les-Pot</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#d4ff3f">
 </head>
 <body>
-<header><span>MAROTHOLI LES-POT 🔥</span><span><span id="bal">G ...</span> <a href="wallet.html">Wallet</a></span></header>
+<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">🇱🇸 LESOTHO</span></div>
+<div class="hero"><h1>New Drops.<br>Local Heat.</h1><p>Buy with Grinds. Support Lesotho artists. 1 Grind = M10</p><span class="price">🔥 TRENDING NOW</span></div>
 <div class="wrap">
-<div class="nav"><a href="discover.html" class="active">🔍 Discover</a><a href="library.html">📚 Library</a><a href="wallet.html">👛 Wallet</a><a href="upload.html">⬆️ Upload</a><a href="admin.html">⚙️ Admin</a><a href="auth.html">Logout</a></div>
-<div id="sharedBanner" class="sharedBanner"><b>🔗 Shared Song</b><br><span class="small">Someone shared this song with you. Preview 30 seconds, then buy to own it in your Library.</span></div>
-<div id="upcomingWrap" style="display:none">
-  <div style="background:linear-gradient(90deg,#d4ff3f,#00ff88,#ff00aa,#d4ff3f);background-size:300% 100%;animation:grad 4s linear infinite;padding:2px;border-radius:18px">
-    <div style="background:#111;border-radius:16px;padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <b style="font-size:18px">🔥 UPCOMING DROPS</b>
-        <span style="background:#d4ff3f;color:#000;font-size:11px;font-weight:900;padding:4px 10px;border-radius:99px">COMING SOON</span>
-      </div>
-      <p class="small" style="margin:6px 0 12px">Be first. Share it. Hype it. Preview only — no download.</p>
-      <div id="upcomingList"></div>
-    </div>
-  </div>
+<div class="card">
+<input id="searchInput" placeholder="🔍 Search song or artist..." oninput="filterSongs()">
+<select id="genreFilter" onchange="filterSongs()"><option value="">🎵 All Genres</option><option value="Amapiano">Amapiano</option><option value="Hip Hop">Hip Hop</option><option value="Gospel">Gospel</option><option value="Afro">Afro</option><option value="House">House</option><option value="R&B">R&B</option><option value="Traditional">Traditional</option><option value="Other">Other</option></select>
+<div class="flex"><span class="pill" id="songCount">Loading...</span><button class="small ghost" style="width:auto" onclick="loadSongs()">↻ Refresh</button></div>
 </div>
-<style>@keyframes grad{0%{background-position:0% 0}100%{background-position:300% 0}}</style>
-<div class="sectionTitle">🎵 All Songs</div>
-<input class="search" id="searchBox" placeholder="🔍 Search song or artist..." oninput="filterSongs()">
-<div id="songsList"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-<p class="small" id="statusMsg" style="text-align:center"></p>
+<div id="trendingBox" class="card hidden"><h3>🔥 Trending This Week</h3><div id="trendingList"></div></div>
+<div id="songList"></div>
+<div id="emptyMsg" class="card center hidden"><h3>No songs found</h3><p>Try another search or genre.</p></div>
+<div class="card center"><p>Want to sell your music?</p><a href="upload.html"><button>📤 Upload Your Song</button></a></div>
 </div>
+<div id="player"></div>
+<nav class="bottomnav"><a href="discover.html" class="active">🏠<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">💰<br>Wallet</a><a href="upload.html">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
+<script src="app.js"></script><script src="player.js"></script>
 <script>
-let ALL_SONGS = [];
-let OWNED_IDS = new Set();
-let AUDIO_URLS = {};
-let COVER_URLS = {};
-let HYPED = JSON.parse(localStorage.getItem('lespot_hyped')||'[]');
-async function getCurrentUserSafe(){ try{ const r = await window.sb.auth.getUser(); return r.data.user || null; }catch(e){ return null; } }
-function getCoverField(s){ return s.cover_url || s.cover_art || s.cover_path || s.image_url || s.artwork_url || s.cover_image || s.thumbnail || s.artwork || s.cover || ''; }
-function extractCoverPath(raw){
-  if(!raw) return null;
-  if(raw.includes('/storage/v1/object/public/covers/')) return decodeURIComponent(raw.split('/storage/v1/object/public/covers/')[1].split('?')[0]);
-  if(raw.includes('/storage/v1/object/public/songs/')) return decodeURIComponent(raw.split('/storage/v1/object/public/songs/')[1].split('?')[0]);
-  if(raw.includes('/covers/')) return decodeURIComponent(raw.split('/covers/').pop().split('?')[0]);
-  return null;
-}
-function formatDropDate(s){
-  const d = s.release_date || s.drop_date || s.drops_at || s.scheduled_at;
-  if(!d) return 'Drops Soon';
-  try{ return 'Drops ' + new Date(d).toLocaleDateString(); }catch(e){ return 'Drops Soon'; }
-}
-async function loadDiscover(){
-  const list = document.getElementById('songsList');
+let ALL_SONGS=[];
+async function loadSongs(){
+  const list=document.getElementById('songList');
+  list.innerHTML='<div class="card center">Loading songs...</div>';
   try{
-    const { data: songs, error } = await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
-    if(error) throw error;
-    ALL_SONGS = songs || [];
-    const user = await getCurrentUserSafe();
-    if(user){
-      const { data: pur } = await window.sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status','approved');
-      (pur||[]).forEach(p=>OWNED_IDS.add(p.song_id));
-    }
-    await Promise.all(ALL_SONGS.map(async (s)=>{
-      if(s.audio_path && !s.audio_path.startsWith('http')){
-        try{ const { data } = await window.sb.storage.from('songs').createSignedUrl(s.audio_path, 3600); if(data?.signedUrl) AUDIO_URLS[s.id]=data.signedUrl; }catch(e){}
-      } else if(s.audio_path){ AUDIO_URLS[s.id]=s.audio_path; }
-      const coverRaw = getCoverField(s);
-      if(!coverRaw) return;
-      if(!coverRaw.startsWith('http')){
-        for(const bucket of ['covers','songs']){
-          try{ const r = await window.sb.storage.from(bucket).createSignedUrl(coverRaw, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
-        }
-        return;
-      }
-      const path = extractCoverPath(coverRaw);
-      if(path){
-        for(const bucket of ['covers','songs']){
-          try{ const r = await window.sb.storage.from(bucket).createSignedUrl(path, 3600); if(r.data?.signedUrl){ COVER_URLS[s.id]=r.data.signedUrl; return; } }catch(e){}
-        }
-      }
-      COVER_URLS[s.id]=coverRaw;
-    }));
-    renderUpcoming();
+    const songs=await window.LES_POT.getSongs();
+    ALL_SONGS=songs||[];
     renderSongs(ALL_SONGS);
-    checkShareLink();
-  }catch(e){
-    list.innerHTML = '<p>Failed to load songs: '+e.message+'<br><br><button class="ghost" onclick="loadDiscover()">Retry</button></p>';
-  }
+    renderTrending(ALL_SONGS);
+  }catch(e){ list.innerHTML='<div class="card center">Failed to load. <a href="#" onclick="loadSongs()">Retry</a></div>'; }
 }
-function getAudio(s){ return AUDIO_URLS[s.id] || ''; }
-function getCover(s){ return COVER_URLS[s.id] || ''; }
-function coverHtml(s, big){
-  const c = getCover(s);
-  if(c) return `<img src="${c}" class="${big?'coverBig':'cover'}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="cover"><div class="${big?'coverPlaceholderBig':'coverPlaceholder'}" style="display:none">🎵</div>`;
-  return `<div class="${big?'coverPlaceholderBig':'coverPlaceholder'}">🎵</div>`;
+function renderSongs(songs){
+  const list=document.getElementById('songList');
+  document.getElementById('songCount').textContent=songs.length+' songs';
+  document.getElementById('emptyMsg').classList.toggle('hidden',songs.length>0);
+  if(!songs.length){list.innerHTML='';return;}
+  list.innerHTML=songs.map(s=>`
+  <div class="card"><div class="song">
+    ${s.cover_url?`<img src="${s.cover_url}">`:`<div class="coverPlaceholder">🎵</div>`}
+    <div class="meta"><b>${escapeHtml(s.title||'Untitled')}</b><small>${escapeHtml(s.artist||'Unknown')} • ${escapeHtml(s.genre||'Other')} • ${s.price_grinds||1} Grinds</small><div><span class="pill">${escapeHtml(s.genre||'Other')}</span></div></div>
+    <div style="text-align:right"><div class="price-tag">${s.price_grinds||1}G</div><button class="playBtn" onclick="playSong('${s.id}')">▶ Play</button></div>
+  </div>
+  <div class="flex" style="margin-top:12px"><button onclick="buySong('${s.id}')">🛒 Buy • ${s.price_grinds||1} Grinds</button><button class="ghost" onclick="shareSong('${escapeHtml(s.title||'') }','${s.id}')">📤 Share</button></div></div>`).join('');
 }
-function renderUpcoming(){
-  const wrap = document.getElementById('upcomingWrap');
-  const list = document.getElementById('upcomingList');
-  const ups = ALL_SONGS.filter(s=> s.status==='upcoming' || s.is_upcoming===true);
-  if(!ups.length){ wrap.style.display='none'; return; }
-  wrap.style.display='block';
-  list.innerHTML = ups.map((s,i)=>{
-    const audio = getAudio(s);
-    const price = Number(s.price_grind||0);
-    const hyped = HYPED.includes(String(s.id));
-    const hypeCount = Number(s.hype_count||s.total_hypes||0) + (hyped?1:0);
-    return `<div class="upcomingCard">
-      ${coverHtml(s,true)}
-      <div style="flex:1;min-width:0">
-        <b>#${i+1} ${escapeHtml(s.title||'Untitled')}</b><br>
-        <span class="small">${escapeHtml(s.artist_name||'Unknown')} • <span class="priceTag">${price} G • M${(price*10).toFixed(0)}</span> • DROPS SOON</span><br>
-        <span class="small" style="color:#d4ff3f">⏳ ${escapeHtml(formatDropDate(s))} • 🔥 ${hypeCount} hyped</span>
-        ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="metadata" src="${audio}" data-owned="0"></audio>`:`<p class="small">Preview loading...</p>`}
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button onclick="shareSong('${s.id}')" style="flex:1;background:#fff;color:#000;padding:8px;border-radius:99px;font-size:12px">🔗 Share Drop</button>
-          <button onclick="toggleHype('${s.id}',this)" class="hypeBtn ${hyped?'on':''}" style="flex:1">${hyped?'❤️ Hyped!':'🔥 Hype'}</button>
-        </div>
-        ${!OWNED_IDS.has(s.id) ? `<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%;margin-top:8px">Pre-Buy for ${price} G • M${(price*10).toFixed(0)}</button>` : `<button class="ghost" onclick="location.href='library.html'" style="width:100%;margin-top:8px">✅ Owned - Play in Library</button>`}
-      </div>
-    </div>`;
-  }).join('');
-  attachPreviewLimit();
+function renderTrending(songs){
+  const box=document.getElementById('trendingBox');
+  if(!songs.length){box.classList.add('hidden');return;}
+  const top=[...songs].sort((a,b)=>(b.plays||0)-(a.plays||0)).slice(0,3);
+  box.classList.remove('hidden');
+  document.getElementById('trendingList').innerHTML=top.map((s,i)=>`<div class="flex" style="padding:8px 0;border-bottom:1px solid #222"><b>#${i+1} ${escapeHtml(s.title||'')}</b><span>${escapeHtml(s.artist||'')}</span><button class="small" style="width:auto" onclick="playSong('${s.id}')">▶</button></div>`).join('');
 }
-function renderSongs(rows){
-  const list = document.getElementById('songsList');
-  if(!rows.length){ list.innerHTML='<p class="small">No songs found. Try a different search or be the first to upload!</p>'; return; }
-  list.innerHTML = rows.map(s=>{
-    const owned = OWNED_IDS.has(s.id);
-    const price = Number(s.price_grind||0);
-    const audio = getAudio(s);
-    return `<div class="card" id="song-${s.id}">
-      ${coverHtml(s,false)}
-      <div style="flex:1;min-width:0">
-      <b>${escapeHtml(s.title||'Untitled')}</b><br>
-      <span class="small">${escapeHtml(s.artist_name||'Unknown')} • ${s.total_buys||0} buys • <span class="priceTag">${price} G • M${(price*10).toFixed(0)}</span></span>
-      ${audio?`<audio controls controlsList="nodownload" oncontextmenu="return false" preload="metadata" src="${audio}" data-owned="${owned?'1':'0'}"></audio>`:`<p class="small">Preview loading...</p>`}
-      <br><br>
-      ${owned?`<button class="ghost" onclick="location.href='library.html'" style="width:100%">✅ Owned - Play in Library</button>`:`<button onclick="buySongWithWallet('${s.id}', ${price}, '${s.artist_id||''}')" style="width:100%">Buy for ${price} G • M${(price*10).toFixed(0)}</button>`}
-      <button class="shareBtn" onclick="shareSong('${s.id}')">🔗 Share This Song</button>
-      </div>
-    </div>`;
-  }).join('');
-  attachPreviewLimit();
-}
-function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function filterSongs(){
-  const q = document.getElementById('searchBox').value.toLowerCase().trim();
-  if(!q) return renderSongs(ALL_SONGS);
-  renderSongs(ALL_SONGS.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist_name||'').toLowerCase().includes(q)));
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const g=document.getElementById('genreFilter').value;
+  const f=ALL_SONGS.filter(s=>{const matchQ=!q||(s.title||'').toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q);const matchG=!g||s.genre===g;return matchQ&&matchG;});
+  renderSongs(f);
 }
-function shareSong(id){
-  const s = ALL_SONGS.find(x=> String(x.id)===String(id));
-  const title = s ? (s.title + ' - ' + (s.artist_name||'')) : 'Song';
-  const link = window.location.origin + '/discover.html?song=' + id;
-  const text = '🔥 Listen to ' + title + ' on Marotholi Les-Pot';
-  if(navigator.share){ navigator.share({title:title, text:text, url:link}).catch(()=>{}); }
-  else if(navigator.clipboard){ navigator.clipboard.writeText(link).then(()=> alert('🔗 Link copied!\nSend it to anyone:\n'+link)); }
-  else { prompt('Copy this link:', link); }
-}
-function toggleHype(id, btn){
-  const idStr = String(id);
-  if(HYPED.includes(idStr)){ HYPED = HYPED.filter(x=>x!==idStr); btn.classList.remove('on'); btn.textContent='🔥 Hype'; }
-  else { HYPED.push(idStr); btn.classList.add('on'); btn.textContent='❤️ Hyped!'; }
-  localStorage.setItem('lespot_hyped', JSON.stringify(HYPED));
-}
-function checkShareLink(){
-  const params = new URLSearchParams(window.location.search);
-  const songId = params.get('song');
-  if(!songId) return;
-  const banner = document.getElementById('sharedBanner');
-  if(banner) banner.style.display='block';
-  setTimeout(()=>{
-    const el = document.getElementById('song-' + songId);
-    if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('highlight'); setTimeout(()=> el.classList.remove('highlight'), 4000); }
-    else { document.getElementById('upcomingWrap').scrollIntoView({behavior:'smooth'}); }
-  }, 500);
-}
-function attachPreviewLimit(){
-  document.querySelectorAll('audio').forEach(a=>{
-    if(a.dataset.previewBound) return;
-    a.dataset.previewBound='1';
-    a.addEventListener('timeupdate', ()=>{
-      const isOwned = a.getAttribute('data-owned')==='1';
-      if(!isOwned && a.currentTime >= 30){ a.pause(); a.currentTime=0; alert('🔒 30-sec preview ended — Buy to listen full song'); }
-    });
-    a.addEventListener('play', ()=>{ document.querySelectorAll('audio').forEach(o=>{ if(o!==a) o.pause(); }); });
-  });
-}
-loadDiscover();
+function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function shareSong(title,id){const url=location.origin+location.pathname.replace('discover.html','')+'discover.html?song='+id;window.open('https://wa.me/?text='+encodeURIComponent('🔥 Listen: '+title+' on LES-POT '+url));}
+loadSongs();
 </script>
 </body>
 </html>
