@@ -9,67 +9,81 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="player.js"></script>
 <style>
-  .balBig{font-size:48px;font-weight:900;line-height:1;text-align:center}
-  .balBig span{color:#d4ff3f;font-size:28px}
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:14px;line-height:2}
+  .balBig{background:linear-gradient(135deg,#1a1a22 0%,#2a2a00 100%);border:1px solid #c8ff00;border-radius:18px;padding:22px;text-align:center}
+  .balBig b{font-size:42px;color:#d4ff3f;display:block}
+  .balBig small{color:#9a9aab}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
   .payBox b{color:#d4ff3f}
-  .payRow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #222}
-  .payRow:last-child{border-bottom:none}
-  .payRow small{color:#9a9aab}
+  .histItem{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #222;font-size:13px}
+  .histItem:last-child{border-bottom:none}
+  .histItem small{color:#9a9aab}
   .status-pending{color:#ffcc00;font-weight:800}
-  .status-approved{color:#00ff88;font-weight:800}
-  .status-rejected{color:#ff5252;font-weight:800}
-  .copyBtn{width:auto;padding:8px 14px;font-size:12px;border-radius:999px}
+  .status-approved{color:#c8ff00;font-weight:800}
+  .status-rejected{color:#ff4444;font-weight:800}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="logo">MAROTHOLI <span>LES-POT</span></div>
-  <span class="badge" id="topBal">0 Grinds</span>
+  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
 </div>
 
 <div class="wrap">
 
-  <div class="card center">
-    <p class="small">YOUR BALANCE</p>
-    <div class="balBig" style="margin-top:10px"><span id="balBig">0</span> <span style="font-size:20px;color:#fff">Grinds</span></div>
-    <p class="small" id="balRand" style="margin-top:8px">M0 value</p>
-    <p class="small" id="walletUser" style="margin-top:6px"></p>
-    <br>
-    <button onclick="location.href='deposit.html'">+ Top Up Wallet</button>
-  </div>
-
-  <div class="card">
-    <h3>💳 How To Pay — ONLY THESE 2 WORK</h3>
-    <div class="payBox">
-      <b>1. EcoCash Pay Merchant:</b><br>
-      128235 — Marotholi Lespot MSU<br>
-      <button class="copyBtn" onclick="copyText('128235')">Copy 128235</button>
-      <br><br>
-      <b>2. Postbank Visa Account:</b><br>
-      1040278800016 — Marotholi Lespot<br>
-      <button class="copyBtn" onclick="copyText('1040278800016')">Copy 1040278800016</button>
+  <!-- BALANCE -->
+  <div class="balBig">
+    <small>YOUR BALANCE</small>
+    <b id="bigBal">0</b>
+    <small>Grinds • 1 Grind = M10 • <span id="balRand">M0</span></small>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button style="margin-top:0" onclick="location.href='deposit.html'">💳 Top Up</button>
+      <button class="ghost" style="margin-top:0" onclick="location.href='discover.html'">🎵 Buy Music</button>
     </div>
-    <p class="small" style="margin-top:12px">1 Grind = M10 • Min 1 Grind<br>Send money to EcoCash OR Postbank above, then submit your Reference in Deposit page for approval.<br>No other number works.</p>
   </div>
 
+  <!-- TOP UP INFO - SAME AS BEFORE -->
   <div class="card">
-    <h3>📜 My Deposits</h3>
-    <p class="small">Pending = waiting for admin approval. Approved = Grinds added.</p>
-    <div id="myDeposits" style="margin-top:12px">Loading...</div>
+    <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
+    <div class="payBox" style="margin-top:10px">
+      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+    </div>
+    <button onclick="location.href='deposit.html'">Top Up Now →</button>
+    <p class="small center" style="margin-top:8px">Send money → Copy Reference → Paste in Deposit → Admin approves → Grinds added to THIS wallet</p>
   </div>
 
+  <!-- MY SONGS -->
   <div class="card">
-    <h3>🛒 My Purchases</h3>
-    <div id="myPurchases" style="margin-top:12px">Loading...</div>
+    <h3>🎵 My Songs — Owned</h3>
+    <div id="mySongs" style="margin-top:10px">Loading...</div>
+  </div>
+
+  <!-- DEPOSITS -->
+  <div class="card">
+    <h3>💰 My Deposits</h3>
+    <div id="myDeposits" style="margin-top:10px">Loading...</div>
+  </div>
+
+  <!-- PURCHASES -->
+  <div class="card">
+    <h3>🧾 My Purchases</h3>
+    <div id="myPurchasesList" style="margin-top:10px">Loading...</div>
   </div>
 
   <div class="card center">
-    <p class="small">© MAROTHOLI LES-POT<br>EcoCash 128235 • Postbank 1040278800016</p>
+    <button class="ghost" onclick="logoutUser()">Log Out</button>
   </div>
 
+</div>
+
+<div class="miniPlayer hidden" id="miniPlayer">
+  <img id="pCover" src="icon.svg">
+  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
+  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
+  <button class="closeBtn" onclick="stopSong(true)">✕</button>
 </div>
 
 <nav class="bottomnav">
@@ -86,28 +100,72 @@ const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase){
   window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
 }
-function copyText(t){
-  if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>alert('Copied: ' + t));
-  else { prompt('Copy this:', t); }
+
+function esc(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-document.addEventListener('DOMContentLoaded', async ()=>{
+
+async function loadWallet(){
   const {user, profile} = await getMyProfile();
-  if(!user) return location.href='auth.html';
+  if(!user){
+    document.getElementById('mySongs').innerHTML = 'Please <a href="auth.html">log in</a> to see wallet.';
+    document.getElementById('myDeposits').innerHTML = 'Please <a href="auth.html">log in</a>.';
+    document.getElementById('myPurchasesList').innerHTML = 'Please <a href="auth.html">log in</a>.';
+    return;
+  }
+
+  // BALANCE - SAME SOURCE AS INDEX / DISCOVER - profile.grind_balance
   const bal = profile ? (profile.grind_balance || 0) : 0;
+  document.getElementById('bigBal').textContent = bal;
+  document.getElementById('balRand').textContent = 'M' + (bal * 10);
   document.getElementById('topBal').textContent = bal + ' Grinds';
-  document.getElementById('balBig').textContent = bal;
-  document.getElementById('balRand').textContent = 'M' + (bal * 10) + ' value';
-  document.getElementById('walletUser').textContent = (profile.full_name || profile.email || '') + ' • ' + (profile.phone || '');
-  loadMyDeposits(user.id);
+
+  // MY SONGS - from purchases + songs
   try{
-    const {data: pur} = await sb.from('purchases').select('*,songs(title,artist)').eq('user_id', user.id).order('created_at',{ascending:false});
-    const box = document.getElementById('myPurchases');
-    if(!pur || !pur.length){ box.innerHTML = 'No purchases yet.'; }
-    else {
-      box.innerHTML = pur.map(p=>`<div class="payRow"><div><b>${p.songs ? p.songs.title : 'Song'}</b><br><small>${p.songs ? p.songs.artist : ''} • ${p.price_grinds} Grind</small></div><span class="status-approved">OWNED</span></div>`).join('');
+    const {data: purchases} = await sb.from('purchases').select('song_id,price_grinds,created_at').eq('user_id', user.id).order('created_at',{ascending:false});
+    if(!purchases || !purchases.length){
+      document.getElementById('mySongs').innerHTML = 'No songs yet. <a href="discover.html">Buy one →</a>';
+      document.getElementById('myPurchasesList').innerHTML = 'No purchases yet.';
+    } else {
+      const ids = purchases.map(p=>p.song_id);
+      const {data: songs} = await sb.from('songs').select('*').in('id', ids);
+      const songMap = {};
+      (songs||[]).forEach(s=> songMap[s.id]=s);
+      document.getElementById('mySongs').innerHTML = purchases.map(p=>{
+        const s = songMap[p.song_id];
+        if(!s) return '';
+        const cover = esc(s.cover_url || 'icon.svg');
+        const title = esc(s.title || 'Untitled');
+        const artist = esc(s.artist || 'Unknown');
+        const audio = esc(s.audio_url || '');
+        return `<div class="songCard"><img src="${cover}" onerror="this.src='icon.svg'"><div class="info"><b>${title}</b><small>${artist} • Owned • Full Song</small></div><div class="actions"><button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button></div></div>`;
+      }).join('');
+      document.getElementById('myPurchasesList').innerHTML = purchases.map(p=>{
+        const s = songMap[p.song_id];
+        return `<div class="histItem"><div><b>${esc(s ? s.title : 'Song')}</b><br><small>${new Date(p.created_at).toLocaleDateString()}</small></div><div><b>-${p.price_grinds}G</b></div></div>`;
+      }).join('');
     }
-  }catch(e){ document.getElementById('myPurchases').innerHTML = 'Could not load purchases.'; }
-});
+  }catch(e){
+    document.getElementById('mySongs').innerHTML = 'Could not load songs: ' + e.message;
+  }
+
+  // MY DEPOSITS - from deposits table
+  try{
+    const {data: deps} = await sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
+    if(!deps || !deps.length){
+      document.getElementById('myDeposits').innerHTML = 'No deposits yet. <a href="deposit.html">Top up →</a>';
+    } else {
+      document.getElementById('myDeposits').innerHTML = deps.map(d=>{
+        const st = (d.status || 'pending').toLowerCase();
+        return `<div class="histItem"><div><b>M${d.amount_maloti || 0} → ${d.grinds || Math.floor((d.amount_maloti||0)/10)} Grinds</b><br><small>${esc(d.method || '')} • Ref: ${esc(d.reference || '')} • ${new Date(d.created_at).toLocaleDateString()}</small></div><div class="status-${st}">${st.toUpperCase()}</div></div>`;
+      }).join('');
+    }
+  }catch(e){
+    document.getElementById('myDeposits').innerHTML = 'Could not load deposits: ' + e.message;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadWallet);
 </script>
 </body>
 </html>
