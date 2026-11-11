@@ -1,23 +1,13 @@
 {
   "name": "Marotholi Les-Pot",
   "short_name": "Les-Pot",
-  "description": "Marotholi Les-Pot - Lesotho Music. Buy songs with Grinds. Top up with EcoCash 128235 or Postbank 1040278800016. 1 Grind = M10.",
+  "description": "Lesotho Music - Buy, Listen, Support Artists. 1G = M10. Preview 30s, Buy Full.",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0a0a10",
-  "theme_color": "#c8ff00",
+  "background_color": "#0f0f0f",
+  "theme_color": "#d4ff3f",
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
