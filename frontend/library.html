@@ -10,7 +10,7 @@
   *{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:180px}
   header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;position:sticky;top:0;z-index:10}
   .wrap{max-width:600px;margin:0 auto;padding:16px}
-  .card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:center}
+  .card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.25)}
   .card.playing{border:2px solid #d4ff3f;box-shadow:0 0 20px rgba(212,255,63,.35)}
   .info{flex:1;min-width:0} .info b{font-size:16px} .info div{font-size:13px;opacity:.7}
   .playBtn{background:#d4ff3f;color:#000;border:0;padding:10px 18px;border-radius:99px;font-weight:900;cursor:pointer;white-space:nowrap}
@@ -31,19 +31,21 @@
   .top{ display:flex; justify-content:space-between; align-items:center; }
   .badge{background:#d4ff3f;color:#000;padding:4px 10px;border-radius:10px;font-weight:900;font-size:12px}
   .cover{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#333;flex-shrink:0}
+  .coverPlaceholder{width:56px;height:56px;min-width:56px;border-radius:10px;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .emptyBox{background:#1e1e1e;border:1px solid #333;border-radius:16px;padding:20px;text-align:center}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT — LIBRARY 🔥</header>
 <div class="wrap">
   <div class="top"><h2 style="margin:4px 0 2px">My Bought Songs</h2><span class="badge" id="bal">G 0.00</span></div>
-  <p style="opacity:.6;font-size:13px;margin:0 0 14px">Full songs. Stream in app only. Never leaves app.</p>
+  <p style="opacity:.6;font-size:13px;margin:0 0 14px">Full songs you own. Play in app only. Saved in your Library.</p>
   <div style="display:flex;gap:8px;margin-bottom:14px">
     <button onclick="playAll(false)" style="flex:1">▶️ Play All</button>
     <button onclick="playAll(true)" class="ghost" style="flex:1;background:#333;color:#fff">🔀 Shuffle Play</button>
   </div>
   <div id="list"></div>
-  <div id="msg">Loading...</div>
+  <div id="msg">Loading your Library...</div>
   <p style="text-align:center"><a href="discover.html" style="color:#d4ff3f">🔥 Buy more in Discover →</a></p>
 </div>
 
@@ -77,7 +79,7 @@
       <option>High</option>
       <option>Data Saver</option>
     </select>
-    <p style="font-size:12px;opacity:.6;margin:0">Songs play only inside Les-Pot. No download. Signed link expires in 1 hour.</p>
+    <p style="font-size:12px;opacity:.6;margin:0">Songs play only inside Les-Pot. No download. Your Library saves what you bought.</p>
   </div>
 </div>
 
@@ -88,20 +90,51 @@ let MY_SONGS = [];
 let currentIndex = -1;
 let shuffleOn = false;
 let repeatOn = false;
+function getSb(){ return window.sb || window.supabase || null; }
+function getCoverField(s){ return s.cover_url || s.cover_art || s.cover_path || s.image_url || s.artwork_url || s.cover_image || s.thumbnail || s.artwork || s.cover || ''; }
+function extractCoverPath(raw){
+  if(!raw) return null;
+  if(raw.includes('/storage/v1/object/public/covers/')) return decodeURIComponent(raw.split('/storage/v1/object/public/covers/')[1].split('?')[0]);
+  if(raw.includes('/storage/v1/object/public/songs/')) return decodeURIComponent(raw.split('/storage/v1/object/public/songs/')[1].split('?')[0]);
+  if(raw.includes('/covers/')) return decodeURIComponent(raw.split('/covers/').pop().split('?')[0]);
+  return null;
+}
+async function resolveCover(s){
+  const raw = getCoverField(s);
+  if(!raw) return '';
+  const sb = getSb();
+  if(!sb) return raw.startsWith('http') ? raw : '';
+  if(!raw.startsWith('http')){
+    for(const bucket of ['covers','songs']){
+      try{ const r = await sb.storage.from(bucket).createSignedUrl(raw, 3600); if(r.data?.signedUrl) return r.data.signedUrl; }catch(e){}
+    }
+    return '';
+  }
+  const path = extractCoverPath(raw);
+  if(path){
+    for(const bucket of ['covers','songs']){
+      try{ const r = await sb.storage.from(bucket).createSignedUrl(path, 3600); if(r.data?.signedUrl) return r.data.signedUrl; }catch(e){}
+    }
+  }
+  return raw;
+}
 
 async function load(){
   const msg = document.getElementById('msg');
   const list = document.getElementById('list');
+  const sb = getSb();
+  if(!sb){ msg.innerHTML = 'App is loading. Please refresh.'; return; }
 
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ msg.innerHTML = 'Not logged in. <a href="auth.html" style="color:#d4ff3f">Go to Login →</a>'; return; }
 
   const { data: purchases, error } = await sb.from('purchases').select('*, songs(*)').eq('status', 'approved').eq('fan_id', user.id).order('created_at', { ascending: false });
 
-  if(error){ msg.textContent = "Error: " + error.message; return; }
+  if(error){ msg.textContent = "Could not load Library. Please try again."; return; }
 
   if(!purchases || purchases.length === 0){
-    msg.innerHTML = "No approved songs yet.<br><a href='discover.html' style='color:#d4ff3f'>🔥 Buy one in Discover →</a>";
+    msg.innerHTML = "";
+    list.innerHTML = `<div class="emptyBox"><b>You don't own any songs yet</b><p class="small" style="opacity:.7">When you buy a song, it saves here in your Library forever.</p><button onclick="location.href='discover.html'" style="background:#d4ff3f;color:#000;border:0;padding:12px 20px;border-radius:99px;font-weight:900;cursor:pointer;width:100%">🔥 Browse Discover</button></div>`;
     return;
   }
 
@@ -109,15 +142,17 @@ async function load(){
   msg.textContent = `You own ${MY_SONGS.length} song(s) ✅`;
   list.innerHTML = "";
 
-  MY_SONGS.forEach((s, idx) => {
+  for(let idx=0; idx<MY_SONGS.length; idx++){
+    const s = MY_SONGS[idx];
+    const coverUrl = await resolveCover(s);
     const div = document.createElement('div');
     div.className = 'card';
     div.id = 'lib-song-' + s.id;
-    const cover = s.cover_url ? `<img src="${s.cover_url}" class="cover">` : `<div class="cover"></div>`;
-    div.innerHTML = `${cover}<div class="info"><b>${escapeHtml(s.title||'Untitled')}</b><div>${escapeHtml(s.artist_name||'Unknown')} • ${s.price_grind}G • APPROVED</div><button class="shareBtn" onclick="shareSong('${s.id}','${escapeHtml(s.title||'')}')">🔗 Share This Song</button></div><button class="playBtn">▶ PLAY</button>`;
+    const cover = coverUrl ? `<img src="${coverUrl}" class="cover" onerror="this.style.display='none'">` : `<div class="coverPlaceholder">🎵</div>`;
+    div.innerHTML = `${cover}<div class="info"><b>${escapeHtml(s.title||'Untitled')}</b><div>${escapeHtml(s.artist_name||'Unknown')} • ${s.price_grind}G • OWNED</div><button class="shareBtn" onclick="shareSong('${s.id}','${escapeHtml(s.title||'')}')">🔗 Share This Song</button></div><button class="playBtn">▶ PLAY</button>`;
     div.querySelector('.playBtn').onclick = () => playSongAt(idx);
     list.appendChild(div);
-  });
+  }
 }
 
 function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -130,8 +165,8 @@ async function playSongAt(index){
   const player = document.getElementById('player');
   const audio = document.getElementById('audio');
   const now = document.getElementById('nowPlaying');
+  const sb = getSb();
 
-  // Highlight playing card
   document.querySelectorAll('.card').forEach(c=>c.classList.remove('playing'));
   const card = document.getElementById('lib-song-' + song.id);
   if(card) card.classList.add('playing');
@@ -141,14 +176,13 @@ async function playSongAt(index){
   player.style.display = 'block';
 
   const path = song.audio_path || '';
-  if(!path){ msg.textContent = "No audio file found for this song. Contact admin."; return; }
-  if(path.startsWith('http')){ msg.textContent = "Old song with public link - re-upload needed."; return; }
+  if(!path){ msg.textContent = "No audio file found for this song. Please contact support."; return; }
+  if(path.startsWith('http')){ msg.textContent = "This song needs a refresh. Please contact support."; return; }
 
   const { data: signed, error } = await sb.storage.from('songs').createSignedUrl(path, 3600);
-  if(error || !signed?.signedUrl){ msg.textContent = "Could not load song. Re-login."; return; }
+  if(error || !signed?.signedUrl){ msg.textContent = "Could not load song. Please re-login and try again."; return; }
 
   audio.src = signed.signedUrl;
-  // Apply settings
   audio.playbackRate = parseFloat(document.getElementById('speedSelect').value || 1);
   try{
     await audio.play();
@@ -160,7 +194,7 @@ async function playSongAt(index){
 }
 
 function playAll(shuffle){
-  if(!MY_SONGS.length) return;
+  if(!MY_SONGS.length){ alert('Your Library is empty. Buy a song in Discover first.'); return; }
   if(shuffle){ shuffleOn = true; updateShuffleBtn(); playSongAt(Math.floor(Math.random()*MY_SONGS.length)); }
   else { shuffleOn = false; updateShuffleBtn(); playSongAt(0); }
 }
@@ -218,14 +252,12 @@ function shareCurrent(){
   const s = MY_SONGS[currentIndex];
   shareSong(s.id, s.title);
 }
-
-// Auto Next when song ends
 document.getElementById('audio').addEventListener('ended', ()=>{
   if(!repeatOn) nextSong();
 });
 
 load();
-loadBalanceBadge();
+try{ if(typeof loadBalanceBadge === 'function') loadBalanceBadge(); }catch(e){}
 </script>
 </body>
 </html>
