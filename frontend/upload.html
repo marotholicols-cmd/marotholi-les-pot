@@ -8,108 +8,88 @@
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+<script src="app.js?v=99"></script>
 </head>
 <body>
 <div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
 <div class="wrap">
-  <div class="card">
-    <h2>⬆️ Upload Song</h2>
-    <p class="small" style="margin-top:6px">Pick MP3 → Goes to YOUR Supabase Bucket `songs` → Fans pay YOUR price. You earn.</p>
-
-    <label>Song Title *</label>
-    <input id="title" placeholder="e.g. Kea Rata">
-
-    <label>Artist Name *</label>
-    <input id="artist" placeholder="Your artist name">
-
-    <label>Genre</label>
-    <select id="genre">
-      <option>Amapiano</option><option>Hip Hop</option><option>Afrobeat</option><option>Gospel</option><option>Sesotho Traditional</option><option>R&B</option><option>House</option><option>Other</option>
-    </select>
-
-    <label>YOUR Price in Grinds — YOU SET IT (1 Grind = M10) *</label>
-    <input id="price" type="number" min="1" value="1" placeholder="1">
-    <p class="small">1 = M10 • 2 = M20 • 5 = M50 • 10 = M100 — You choose!</p>
-
-    <label>Pick MP3 File — Uploads to YOUR Bucket *</label>
-    <input id="audioFile" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg">
-
-    <label>OR Paste Audio Link (optional)</label>
-    <input id="audio" placeholder="https://files.catbox.moe/xxxx.mp3 or https://...mp3">
-
-    <label>Cover Image Link (optional)</label>
-    <input id="cover" placeholder="https://...jpg">
-
-    <button id="upBtn" onclick="doUpload()">Upload Song →</button>
-    <p class="small center" style="margin-top:10px" id="upMsg"></p>
+  <div class="card"><h2>⬆️ Upload Song</h2><p class="small">MP3 only • You set price in Grinds (1 Grind = M10) • You earn when fans buy</p>
+    <input id="title" placeholder="Song Title *">
+    <input id="artistName" placeholder="Artist Name *">
+    <select id="genre"><option>Amapiano</option><option>Hip Hop</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>R&B</option><option>Other</option></select>
+    <input id="price" type="number" min="1" value="1" placeholder="Price in Grinds (1 = M10)">
+    <label class="small" style="display:block;margin-top:12px">🎵 MP3 File *</label><input id="audioFile" type="file" accept=".mp3,audio/mpeg,audio/*">
+    <label class="small" style="display:block;margin-top:12px">🖼️ Cover Image (optional)</label><input id="coverFile" type="file" accept="image/*">
+    <button id="uploadBtn" onclick="doUpload()">Upload Song 🚀</button>
+    <p class="small" id="uploadStatus" style="margin-top:10px"></p>
   </div>
-
-  <div class="card"><h3>🎵 My Uploads</h3><div id="myUploads" style="margin-top:10px">Loading...</div></div>
-  <div class="card"><h3>📦 Files In YOUR Bucket</h3><div id="bucketFiles" style="margin-top:10px">Loading...</div></div>
+  <div class="card"><h3>📁 Files In YOUR Bucket</h3><div id="bucketList">Loading...</div></div>
 </div>
-
-<nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html" class="active">⬆️<br>Upload</a><a href="auth.html">👤<br>Account</a></nav>
-
+<nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html" class="active">⬆️<br>Upload</a><a href="auth.html">👤<br>Account</a></nav>
 <script>
 const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
-
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+async function loadBucket(){
+  const box=document.getElementById('bucketList');
+  const {data:files}=await sb.storage.from('songs').list('',{limit:100});
+  if(!files || !files.length){ box.innerHTML='No files in bucket yet.'; return; }
+  box.innerHTML=files.map(f=>{
+    const {data:pub}=sb.storage.from('songs').getPublicUrl(f.name);
+    return `<div style="padding:8px 0;border-bottom:1px solid #222"><b>${esc(f.name)}</b><br><a href="${pub.publicUrl}" target="_blank" style="color:#c8ff00;font-size:12px">▶ Test Play This Link</a> • ${Math.round((f.metadata?.size||0)/1024)} KB</div>`;
+  }).join('');
+}
 async function doUpload(){
-  const {user}=await getMyProfile();
+  const status=document.getElementById('uploadStatus');
+  const {user, profile}=await getMyProfile();
   if(!user){ alert('Log in first'); location.href='auth.html'; return; }
-
   const title=document.getElementById('title').value.trim();
-  const artist=document.getElementById('artist').value.trim();
+  const artistName=document.getElementById('artistName').value.trim() || profile.display_name || profile.username || 'Unknown';
   const genre=document.getElementById('genre').value;
   const price=parseInt(document.getElementById('price').value)||1;
-  const file=document.getElementById('audioFile').files[0];
-  const link=document.getElementById('audio').value.trim();
-  const cover=document.getElementById('cover').value.trim();
-
-  if(!title){ alert('Enter Song Title'); return; }
-  if(!artist){ alert('Enter Artist Name'); return; }
-
-  const btn=document.getElementById('upBtn');
-  const msg=document.getElementById('upMsg');
-  let audioUrl = link;
-
-  // 1. If artist picked FILE -> upload to YOUR bucket 'songs'
-  if(file){
-    btn.disabled=true; btn.textContent='Uploading to YOUR bucket...'; msg.textContent='Uploading file... do not close';
-    const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.-]/g,'_');
-    const {error: upErr} = await sb.storage.from('songs').upload(fileName, file);
-    if(upErr){
-      alert('Bucket upload failed: ' + upErr.message + '\n\nCheck: Supabase → Storage → songs bucket exists + is PUBLIC');
-      btn.disabled=false; btn.textContent='Upload Song →'; msg.textContent=''; return;
+  const audioFile=document.getElementById('audioFile').files[0];
+  if(!title){ alert('Enter song title'); return; }
+  if(!audioFile){ alert('Pick MP3 file'); return; }
+  document.getElementById('uploadBtn').textContent='Uploading... Please wait';
+  status.textContent='Uploading to bucket...';
+  try{
+    const safeName=audioFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const fileName=Date.now()+'-'+safeName;
+    const {error: upErr}=await sb.storage.from('songs').upload(fileName, audioFile);
+    if(upErr) throw upErr;
+    const {data:pub}=sb.storage.from('songs').getPublicUrl(fileName);
+    const publicUrl=pub.publicUrl;
+    status.textContent='Uploading cover...';
+    let coverUrl='icon.svg';
+    const coverFile=document.getElementById('coverFile').files[0];
+    if(coverFile){
+      const cName=Date.now()+'-cover-'+coverFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const {error: cErr}=await sb.storage.from('songs').upload(cName, coverFile);
+      if(!cErr){ const {data:cp}=sb.storage.from('songs').getPublicUrl(cName); coverUrl=cp.publicUrl; }
     }
-    const {data: pub} = sb.storage.from('songs').getPublicUrl(fileName);
-    audioUrl = pub.publicUrl;
+    status.textContent='Saving song to database...';
+    const row={title:title, artist_name:artistName, artist:artistName, genre:genre, price_grind:price, price_grinds:price, audio_path:fileName, audio_url:publicUrl, cover_url:coverUrl, artist_id:user.id, uploader_id:user.id};
+    const {data, error}=await sb.from('songs').insert([row]).select().maybeSingle();
+    if(error){
+      // Retry without extra columns if table is strict
+      const row2={title:title, artist_name:artistName, genre:genre, price_grind:price, audio_path:fileName, artist_id:user.id};
+      const {error:e2}=await sb.from('songs').insert([row2]);
+      if(e2) throw e2;
+    }
+    status.textContent='✅ Uploaded! Song is now in Discover.';
+    alert('✅ Uploaded! "'+title+'" is live in Discover.');
+    document.getElementById('uploadBtn').textContent='Upload Song 🚀';
+    loadBucket();
+  }catch(e){
+    console.log(e); status.textContent='❌ Error: '+e.message; alert('Upload failed: '+e.message);
+    document.getElementById('uploadBtn').textContent='Upload Song 🚀';
   }
-
-  if(!audioUrl){ alert('Pick an MP3 file OR paste a link.\n\nPick file = uploads to YOUR bucket'); return; }
-  if(!audioUrl.includes('http')){ alert('Audio link must start with https://'); return; }
-
-  btn.disabled=true; btn.textContent='Saving song...';
-  const {error}=await sb.from('songs').insert([{title,artist,genre,price_grinds:price,audio_url:audioUrl,cover_url:cover||'icon.svg',uploader_id:user.id}]);
-  if(error){ alert('Save failed: '+error.message); btn.disabled=false; btn.textContent='Upload Song →'; return; }
-  alert('✅ Uploaded to YOUR bucket!\nTitle: '+title+'\nArtist: '+artist+'\nYOUR Price: '+price+' Grinds = M'+(price*10));
-  location.href='discover.html';
 }
-
-async function loadMyUploads(){
-  const {user,profile}=await getMyProfile();
-  if(profile) document.getElementById('topBal').textContent=(profile.grind_balance||0)+' Grinds';
-  if(!user){ document.getElementById('myUploads').innerHTML='Log in to see uploads'; document.getElementById('bucketFiles').innerHTML='Log in'; return; }
-  const {data}=await sb.from('songs').select('*').eq('uploader_id',user.id).order('created_at',{ascending:false});
-  document.getElementById('myUploads').innerHTML=!data||!data.length?'No uploads yet':data.map(s=>`<div style="border-bottom:1px solid #222;padding:10px 0;font-size:13px"><b>${s.title}</b> - ${s.artist} - ${s.price_grinds}G = M${(s.price_grinds||1)*10}<br><small>${s.audio_url}</small></div>`).join('');
-
-  // Show bucket files too
-  const {data: files}=await sb.storage.from('songs').list('',{limit:100});
-  document.getElementById('bucketFiles').innerHTML=!files||!files.length?'Bucket empty - no files in Storage → songs':files.map(f=>`<div style="border-bottom:1px solid #222;padding:8px 0;font-size:12px">📦 ${f.name}</div>`).join('');
-}
-
-document.addEventListener('DOMContentLoaded', loadMyUploads);
+document.addEventListener('DOMContentLoaded', async()=>{
+  const {profile}=await getMyProfile();
+  if(profile) document.getElementById('topBal').textContent=(profile.grind_balance ?? profile.grinds ?? 0)+' Grinds';
+  loadBucket();
+});
 </script>
 </body>
 </html>
