@@ -77,7 +77,12 @@ async function loadDiscover(){
 async function previewSong(id){
   const s=allSongs.find(function(x){return String(x.id)===String(id);});
   if(!s) return;
-  const url=await getSongStreamUrl(s.audio_path||s.audio_url,3600);
+  // FIXED: Use full audio_url directly - it already plays in Chrome
+  // Only use getSongStreamUrl if we only have a path
+  let url = s.audio_url;
+  if(!url || !String(url).startsWith('http')){
+    try{ url = await getSongStreamUrl(s.audio_path || s.audio_url, 3600); }catch(e){ url = null; }
+  }
   if(!url){alert('No audio for this song');return;}
   const r=getPreviewRange(s.preview_start);
   playWithPlayer(url,s,r.start,r.end,false);
