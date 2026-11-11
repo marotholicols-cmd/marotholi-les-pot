@@ -1,263 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Library - Marotholi Les-Pot</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
-<style>
-  *{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:180px}
-  header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;position:sticky;top:0;z-index:10}
-  .wrap{max-width:600px;margin:0 auto;padding:16px}
-  .card{background:#1e1e1e;border:1px solid #333;padding:14px;border-radius:16px;margin-bottom:12px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.25)}
-  .card.playing{border:2px solid #d4ff3f;box-shadow:0 0 20px rgba(212,255,63,.35)}
-  .info{flex:1;min-width:0} .info b{font-size:16px} .info div{font-size:13px;opacity:.7}
-  .playBtn{background:#d4ff3f;color:#000;border:0;padding:10px 18px;border-radius:99px;font-weight:900;cursor:pointer;white-space:nowrap}
-  .shareBtn{background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:99px;cursor:pointer;font-size:12px;margin-top:6px;width:100%}
-  #msg{font-size:13px;opacity:.8;text-align:center;margin:10px;white-space:pre-wrap}
-  #player{position:fixed;bottom:48px;left:0;right:0;background:#111;border-top:2px solid #d4ff3f;padding:12px 12px 10px;text-align:center;z-index:20}
-  #player audio{width:100%;max-width:600px}
-  #nowPlaying{font-size:14px;font-weight:900;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .controls button{background:#222;color:#fff;border:0;padding:10px 14px;border-radius:99px;cursor:pointer;font-weight:700;font-size:13px}
-  .controls button.primary{background:#d4ff3f;color:#000;padding:10px 20px}
-  .controls button.on{background:#d4ff3f;color:#000}
-  #settingsBox{display:none;background:#1e1e1e;border:1px solid #333;border-radius:12px;padding:12px;margin-top:10px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto}
-  #settingsBox label{font-size:12px;opacity:.8}
-  #settingsBox select,#settingsBox input{width:100%;padding:8px;border-radius:99px;background:#222;color:#fff;border:1px solid #444;margin:6px 0 10px}
-  .nav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:12px;z-index:30}
-  .nav a{color:#fff;text-decoration:none;font-size:13px;opacity:.7} .nav a.active{opacity:1;color:#d4ff3f}
-  .top{ display:flex; justify-content:space-between; align-items:center; }
-  .badge{background:#d4ff3f;color:#000;padding:4px 10px;border-radius:10px;font-weight:900;font-size:12px}
-  .cover{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#333;flex-shrink:0}
-  .coverPlaceholder{width:56px;height:56px;min-width:56px;border-radius:10px;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-  .emptyBox{background:#1e1e1e;border:1px solid #333;border-radius:16px;padding:20px;text-align:center}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Library — Marotholi Les-Pot</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>MAROTHOLI LES-POT — LIBRARY 🔥</header>
+<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">📚 LIBRARY</span></div>
 <div class="wrap">
-  <div class="top"><h2 style="margin:4px 0 2px">My Bought Songs</h2><span class="badge" id="bal">G 0.00</span></div>
-  <p style="opacity:.6;font-size:13px;margin:0 0 14px">Full songs you own. Play in app only. Saved in your Library.</p>
-  <div style="display:flex;gap:8px;margin-bottom:14px">
-    <button onclick="playAll(false)" style="flex:1">▶️ Play All</button>
-    <button onclick="playAll(true)" class="ghost" style="flex:1;background:#333;color:#fff">🔀 Shuffle Play</button>
-  </div>
-  <div id="list"></div>
-  <div id="msg">Loading your Library...</div>
-  <p style="text-align:center"><a href="discover.html" style="color:#d4ff3f">🔥 Buy more in Discover →</a></p>
+<div class="card"><h3>Your Bought Songs</h3><p>Full playback + download. You own these.</p><input id="libSearch" placeholder="🔍 Search your library..." oninput="filterLib()"></div>
+<div id="libList"></div>
+<div id="libEmpty" class="card center hidden"><h3>No songs yet</h3><p>Buy songs in Discover to see them here.</p><a href="discover.html"><button>Go to Discover →</button></a></div>
 </div>
-
-<div id="player" style="display:none">
-  <div id="nowPlaying">🎵 Now Playing</div>
-  <audio id="audio" controls controlsList="nodownload" oncontextmenu="return false"></audio>
-  <div class="controls">
-    <button onclick="prevSong()">⏮️ Prev</button>
-    <button onclick="togglePlay()" id="playPauseBtn" class="primary">⏸️ Pause</button>
-    <button onclick="nextSong()">⏭️ Next</button>
-    <button onclick="toggleShuffle()" id="shuffleBtn">🔀 Shuffle: OFF</button>
-    <button onclick="toggleRepeat()" id="repeatBtn">🔁 Repeat: OFF</button>
-    <button onclick="toggleSettings()">⚙️ Settings</button>
-    <button onclick="shareCurrent()">🔗 Share</button>
-  </div>
-  <div id="settingsBox">
-    <label>⚡ Speed</label>
-    <select id="speedSelect" onchange="setSpeed(this.value)">
-      <option value="0.5">0.5x - Slow</option>
-      <option value="0.75">0.75x</option>
-      <option value="1" selected>1x - Normal</option>
-      <option value="1.25">1.25x</option>
-      <option value="1.5">1.5x</option>
-      <option value="2">2x - Fast</option>
-    </select>
-    <label>🔊 Volume</label>
-    <input type="range" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
-    <label>🎵 Quality</label>
-    <select onchange="alert('Quality: '+this.value+' - Les-Pot streams in best quality always')">
-      <option>Auto - Best</option>
-      <option>High</option>
-      <option>Data Saver</option>
-    </select>
-    <p style="font-size:12px;opacity:.6;margin:0">Songs play only inside Les-Pot. No download. Your Library saves what you bought.</p>
-  </div>
-</div>
-
-<div class="nav"><a href="discover.html">🔥 Discover</a><a href="library.html" class="active">📚 Library</a><a href="upload.html">⬆️ Upload</a><a href="wallet.html">💰 Wallet</a><a href="admin.html">🛠️ Admin</a><a href="account.html">👤 Account</a></div>
-
+<div id="player"></div>
+<nav class="bottomnav"><a href="discover.html">🏠<br>Discover</a><a href="library.html" class="active">📚<br>Library</a><a href="wallet.html">💰<br>Wallet</a><a href="upload.html">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
+<script src="app.js"></script><script src="player.js"></script>
 <script>
-let MY_SONGS = [];
-let currentIndex = -1;
-let shuffleOn = false;
-let repeatOn = false;
-function getSb(){ return window.sb || window.supabase || null; }
-function getCoverField(s){ return s.cover_url || s.cover_art || s.cover_path || s.image_url || s.artwork_url || s.cover_image || s.thumbnail || s.artwork || s.cover || ''; }
-function extractCoverPath(raw){
-  if(!raw) return null;
-  if(raw.includes('/storage/v1/object/public/covers/')) return decodeURIComponent(raw.split('/storage/v1/object/public/covers/')[1].split('?')[0]);
-  if(raw.includes('/storage/v1/object/public/songs/')) return decodeURIComponent(raw.split('/storage/v1/object/public/songs/')[1].split('?')[0]);
-  if(raw.includes('/covers/')) return decodeURIComponent(raw.split('/covers/').pop().split('?')[0]);
-  return null;
-}
-async function resolveCover(s){
-  const raw = getCoverField(s);
-  if(!raw) return '';
-  const sb = getSb();
-  if(!sb) return raw.startsWith('http') ? raw : '';
-  if(!raw.startsWith('http')){
-    for(const bucket of ['covers','songs']){
-      try{ const r = await sb.storage.from(bucket).createSignedUrl(raw, 3600); if(r.data?.signedUrl) return r.data.signedUrl; }catch(e){}
-    }
-    return '';
-  }
-  const path = extractCoverPath(raw);
-  if(path){
-    for(const bucket of ['covers','songs']){
-      try{ const r = await sb.storage.from(bucket).createSignedUrl(path, 3600); if(r.data?.signedUrl) return r.data.signedUrl; }catch(e){}
-    }
-  }
-  return raw;
-}
-
-async function load(){
-  const msg = document.getElementById('msg');
-  const list = document.getElementById('list');
-  const sb = getSb();
-  if(!sb){ msg.innerHTML = 'App is loading. Please refresh.'; return; }
-
-  const { data: { user } } = await sb.auth.getUser();
-  if(!user){ msg.innerHTML = 'Not logged in. <a href="auth.html" style="color:#d4ff3f">Go to Login →</a>'; return; }
-
-  const { data: purchases, error } = await sb.from('purchases').select('*, songs(*)').eq('status', 'approved').eq('fan_id', user.id).order('created_at', { ascending: false });
-
-  if(error){ msg.textContent = "Could not load Library. Please try again."; return; }
-
-  if(!purchases || purchases.length === 0){
-    msg.innerHTML = "";
-    list.innerHTML = `<div class="emptyBox"><b>You don't own any songs yet</b><p class="small" style="opacity:.7">When you buy a song, it saves here in your Library forever.</p><button onclick="location.href='discover.html'" style="background:#d4ff3f;color:#000;border:0;padding:12px 20px;border-radius:99px;font-weight:900;cursor:pointer;width:100%">🔥 Browse Discover</button></div>`;
-    return;
-  }
-
-  MY_SONGS = purchases.map(p=>p.songs).filter(Boolean);
-  msg.textContent = `You own ${MY_SONGS.length} song(s) ✅`;
-  list.innerHTML = "";
-
-  for(let idx=0; idx<MY_SONGS.length; idx++){
-    const s = MY_SONGS[idx];
-    const coverUrl = await resolveCover(s);
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.id = 'lib-song-' + s.id;
-    const cover = coverUrl ? `<img src="${coverUrl}" class="cover" onerror="this.style.display='none'">` : `<div class="coverPlaceholder">🎵</div>`;
-    div.innerHTML = `${cover}<div class="info"><b>${escapeHtml(s.title||'Untitled')}</b><div>${escapeHtml(s.artist_name||'Unknown')} • ${s.price_grind}G • OWNED</div><button class="shareBtn" onclick="shareSong('${s.id}','${escapeHtml(s.title||'')}')">🔗 Share This Song</button></div><button class="playBtn">▶ PLAY</button>`;
-    div.querySelector('.playBtn').onclick = () => playSongAt(idx);
-    list.appendChild(div);
-  }
-}
-
-function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-async function playSongAt(index){
-  if(index < 0 || index >= MY_SONGS.length) return;
-  currentIndex = index;
-  const song = MY_SONGS[index];
-  const msg = document.getElementById('msg');
-  const player = document.getElementById('player');
-  const audio = document.getElementById('audio');
-  const now = document.getElementById('nowPlaying');
-  const sb = getSb();
-
-  document.querySelectorAll('.card').forEach(c=>c.classList.remove('playing'));
-  const card = document.getElementById('lib-song-' + song.id);
-  if(card) card.classList.add('playing');
-
-  msg.textContent = "Getting play link for " + song.title + "...";
-  now.textContent = "🎵 " + song.title + " — " + song.artist_name + ` (${index+1}/${MY_SONGS.length})`;
-  player.style.display = 'block';
-
-  const path = song.audio_path || '';
-  if(!path){ msg.textContent = "No audio file found for this song. Please contact support."; return; }
-  if(path.startsWith('http')){ msg.textContent = "This song needs a refresh. Please contact support."; return; }
-
-  const { data: signed, error } = await sb.storage.from('songs').createSignedUrl(path, 3600);
-  if(error || !signed?.signedUrl){ msg.textContent = "Could not load song. Please re-login and try again."; return; }
-
-  audio.src = signed.signedUrl;
-  audio.playbackRate = parseFloat(document.getElementById('speedSelect').value || 1);
-  try{
-    await audio.play();
-    document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
-    msg.textContent = "✅ Playing: " + song.title;
-  }catch(e){
-    msg.textContent = "Tap Play in player below.";
-  }
-}
-
-function playAll(shuffle){
-  if(!MY_SONGS.length){ alert('Your Library is empty. Buy a song in Discover first.'); return; }
-  if(shuffle){ shuffleOn = true; updateShuffleBtn(); playSongAt(Math.floor(Math.random()*MY_SONGS.length)); }
-  else { shuffleOn = false; updateShuffleBtn(); playSongAt(0); }
-}
-function nextSong(){
-  if(!MY_SONGS.length) return;
-  if(shuffleOn){ playSongAt(Math.floor(Math.random()*MY_SONGS.length)); }
-  else { playSongAt((currentIndex+1) % MY_SONGS.length); }
-}
-function prevSong(){
-  if(!MY_SONGS.length) return;
-  playSongAt((currentIndex - 1 + MY_SONGS.length) % MY_SONGS.length);
-}
-function togglePlay(){
-  const audio = document.getElementById('audio');
-  const btn = document.getElementById('playPauseBtn');
-  if(audio.paused){ audio.play(); btn.textContent='⏸️ Pause'; }
-  else { audio.pause(); btn.textContent='▶️ Play'; }
-}
-function toggleShuffle(){
-  shuffleOn = !shuffleOn;
-  updateShuffleBtn();
-}
-function updateShuffleBtn(){
-  const b = document.getElementById('shuffleBtn');
-  b.textContent = shuffleOn ? '🔀 Shuffle: ON' : '🔀 Shuffle: OFF';
-  b.classList.toggle('on', shuffleOn);
-}
-function toggleRepeat(){
-  repeatOn = !repeatOn;
-  const audio = document.getElementById('audio');
-  audio.loop = repeatOn;
-  const b = document.getElementById('repeatBtn');
-  b.textContent = repeatOn ? '🔁 Repeat: ON' : '🔁 Repeat: OFF';
-  b.classList.toggle('on', repeatOn);
-}
-function toggleSettings(){
-  const box = document.getElementById('settingsBox');
-  box.style.display = box.style.display === 'block' ? 'none' : 'block';
-}
-function setSpeed(v){
-  document.getElementById('audio').playbackRate = parseFloat(v);
-}
-function setVolume(v){
-  document.getElementById('audio').volume = parseFloat(v);
-}
-function shareSong(id, title){
-  const link = window.location.origin + '/discover.html?song=' + id;
-  const text = '🔥 Listen to ' + (title||'this song') + ' on Marotholi Les-Pot';
-  if(navigator.share){ navigator.share({title: title, text: text, url: link}).catch(()=>{}); }
-  else if(navigator.clipboard){ navigator.clipboard.writeText(link).then(()=> alert('🔗 Link copied!\n'+link)); }
-  else { prompt('Copy this link:', link); }
-}
-function shareCurrent(){
-  if(currentIndex < 0) return alert('Play a song first');
-  const s = MY_SONGS[currentIndex];
-  shareSong(s.id, s.title);
-}
-document.getElementById('audio').addEventListener('ended', ()=>{
-  if(!repeatOn) nextSong();
-});
-
-load();
-try{ if(typeof loadBalanceBadge === 'function') loadBalanceBadge(); }catch(e){}
+let LIB=[];
+async function loadLib(){const el=document.getElementById('libList');el.innerHTML='<div class="card center">Loading...</div>';try{LIB=await window.LES_POT.getLibrary()||[];renderLib(LIB);}catch(e){el.innerHTML='<div class="card center">Login to see library. <a href="auth.html">Login</a></div>';}}
+function renderLib(list){const el=document.getElementById('libList');document.getElementById('libEmpty').classList.toggle('hidden',list.length>0);if(!list.length){el.innerHTML='';return;}el.innerHTML=list.map(s=>`<div class="card"><div class="song">${s.cover_url?`<img src="${s.cover_url}">`:`<div class="coverPlaceholder">🎵</div>`}<div class="meta"><b>${escapeHtml(s.title||'')}</b><small>${escapeHtml(s.artist||'')} • Bought ${s.created_at?new Date(s.created_at).toLocaleDateString():''} • ${s.price_grinds||1}G</small><div><span class="pill">✅ Owned</span></div></div><button class="playBtn" onclick="playSong('${s.id}')">▶ Play</button></div><div class="flex" style="margin-top:12px"><button onclick="downloadSong('${s.audio_url}','${escapeHtml(s.title||'song')}')">⬇️ Download</button><button class="ghost" onclick="shareLib('${escapeHtml(s.title||'')}','${s.id}')">📤 WhatsApp</button></div><p class="small">🧾 Receipt: ${s.price_grinds||1} Grinds • M${((s.price_grinds||1)*10).toFixed(2)} • ${s.created_at?new Date(s.created_at).toLocaleString():''}</p></div>`).join('');}
+function filterLib(){const q=(document.getElementById('libSearch').value||'').toLowerCase();renderLib(LIB.filter(s=>(s.title||'').toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q)));}
+function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function downloadSong(url,title){if(!url){alert('No audio file.');return;}const a=document.createElement('a');a.href=url;a.download=title+'.mp3';a.target='_blank';a.click();}
+function shareLib(title,id){window.open('https://wa.me/?text='+encodeURIComponent('🎵 I bought '+title+' on LES-POT 🇱🇸 '+location.origin+'/discover.html?song='+id));}
+loadLib();
 </script>
 </body>
 </html>
