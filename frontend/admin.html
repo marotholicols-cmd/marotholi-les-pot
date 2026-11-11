@@ -4,198 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin - Marotholi Les-Pot</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<style>
-  .tabs{display:flex;gap:10px;margin-bottom:16px}
-  .tabs button{flex:1;padding:12px;font-size:14px}
-  .tabs button.active{background:#d4ff3f;color:#000}
-  .tabContent{display:none}
-  .tabContent.show{display:block}
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
-  .payBox b{color:#d4ff3f}
-  .depCard{border:1px solid #333}
-  .depCard .rowLine{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #222}
-  .depCard .rowLine:last-child{border-bottom:none}
-  .depCard .rowLine span:first-child{color:#9a9aab}
-  .depCard .rowLine span:last-child{text-align:right;word-break:break-all}
-  .statRow{display:flex;gap:12px}
-  .statBox{flex:1;background:#1e1e1e;border:1px solid #333;border-radius:14px;padding:14px;text-align:center}
-  .statBox b{font-size:22px;color:#d4ff3f;display:block}
-  .statBox small{color:#9a9aab;font-size:11px}
-</style>
 </head>
 <body>
-
-<div class="topbar">
-  <div class="logo">MAROTHOLI <span>ADMIN</span></div>
-  <a class="badge" href="index.html">← Home</a>
-</div>
-
+<div class="topbar"><div class="logo">MAROTHOLI <span>ADMIN</span></div><a class="badge" href="index.html">Home</a></div>
 <div class="wrap">
-
-  <div id="notAdmin" style="display:none">
-    <div class="card center">
-      <h2>⛔ Not Admin</h2>
-      <p class="small" style="margin-top:10px">This page is for Marotholi Les-Pot admin only.<br>If you are the owner, set <b>is_admin = true</b> on your profile in Supabase.</p>
-      <br>
-      <button onclick="location.href='index.html'">Back Home</button>
-    </div>
-  </div>
-
-  <div id="adminView" style="display:none">
-    <h2 style="font-size:24px;font-weight:900">🛠 Admin Panel</h2>
-    <p class="small" style="margin-top:6px" id="adminEmail"></p>
-
-    <div class="statRow" style="margin-top:16px">
-      <div class="statBox"><b id="statPending">0</b><small>PENDING</small></div>
-      <div class="statBox"><b id="statApproved">0</b><small>APPROVED</small></div>
-      <div class="statBox"><b id="statTotalGrinds">0</b><small>GRINDS GIVEN</small></div>
-    </div>
-
-    <div class="card" style="margin-top:16px">
-      <h3>💳 Check Payment On — ONLY THESE 2</h3>
-      <div class="payBox">
-        <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
-        Check EcoCash SMS / EcoCash App for this Merchant number.<br><br>
-        <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot<br>
-        Check Postbank statement / SMS for this account.
-      </div>
-      <p class="small" style="margin-top:10px">Approve ONLY if you see the money + reference in EcoCash or Postbank. If no money, Reject.</p>
-    </div>
-
-    <div class="tabs">
-      <button id="tabPending" class="active" onclick="showAdminTab('pending')">Pending</button>
-      <button id="tabApproved" onclick="showAdminTab('approved')">Approved</button>
-      <button id="tabRejected" onclick="showAdminTab('rejected')">Rejected</button>
-    </div>
-
-    <div id="tab-pending" class="tabContent show"><div id="pendingList">Loading pending...</div></div>
-    <div id="tab-approved" class="tabContent"><div id="approvedList">Loading approved...</div></div>
-    <div id="tab-rejected" class="tabContent"><div id="rejectedList">Loading rejected...</div></div>
-
-    <div class="card">
-      <h3>🎵 All Songs</h3>
-      <div id="allSongs">Loading songs...</div>
-    </div>
-  </div>
-
+  <div class="card center"><h2>🔐 Admin Panel</h2><p class="small" style="margin-top:6px">Approve deposits → Grinds added automatically. Do NOT approve without checking EcoCash 128235 / Postbank 1040278800016</p></div>
+  <div class="card"><h3>💰 Pending Deposits</h3><div id="deposits" style="margin-top:10px">Loading...</div></div>
+  <div class="card"><h3>🎵 All Songs</h3><div id="songs" style="margin-top:10px">Loading...</div></div>
 </div>
-
 <script>
-const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
-const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
-if(!window.sb && window.supabase){
-  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
+const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
+async function loadAdmin(){
+  const {data:deps}=await sb.from('deposits').select('*').order('created_at',{ascending:false}).limit(50);
+  document.getElementById('deposits').innerHTML=!deps||!deps.length?'No deposits':deps.map(d=>`<div style="border-bottom:1px solid #222;padding:12px 0;font-size:13px"><b>${d.user_email||d.user_id}</b><br>M${d.amount_maloti} → ${d.grinds} Grinds • ${d.method} • Ref: ${d.reference}<br>Status: <b>${d.status}</b><br>${d.status==='pending'?`<button style="margin-top:8px" onclick="approve('${d.id}','${d.user_id}',${d.grinds})">✅ Approve + Add Grinds</button> <button class="ghost" style="margin-top:8px" onclick="reject('${d.id}')">❌ Reject</button>`:''}</div>`).join('');
+  const {data:songs}=await sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
+  document.getElementById('songs').innerHTML=!songs||!songs.length?'No songs':songs.map(s=>`<div style="border-bottom:1px solid #222;padding:10px 0;font-size:13px"><b>${s.title}</b> - ${s.artist} - ${s.price_grinds}G <button class="ghost" style="margin-top:6px" onclick="delSong('${s.id}')">Delete</button></div>`).join('');
 }
-
-function showAdminTab(name){
-  document.querySelectorAll('.tabContent').forEach(el=>el.classList.remove('show'));
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('show');
-  if(name==='pending') document.getElementById('tabPending').classList.add('active');
-  if(name==='approved') document.getElementById('tabApproved').classList.add('active');
-  if(name==='rejected') document.getElementById('tabRejected').classList.add('active');
+async function approve(id,userId,grinds){
+  if(!confirm('Approve '+grinds+' Grinds? Did you CHECK EcoCash/Postbank?')) return;
+  const {data:prof}=await sb.from('profiles').select('grind_balance').eq('id',userId).single();
+  const cur=prof?prof.grind_balance||0:0;
+  await sb.from('profiles').update({grind_balance:cur+grinds}).eq('id',userId);
+  await sb.from('deposits').update({status:'approved'}).eq('id',id);
+  alert('Approved! +'+grinds+' Grinds'); loadAdmin();
 }
-
-function depCardHTML(d){
-  const name = d.profiles ? (d.profiles.full_name || d.profiles.email || d.user_id) : d.user_id;
-  const email = d.profiles ? (d.profiles.email || '') : '';
-  const phone = d.profiles ? (d.profiles.phone || '') : '';
-  const bal = d.profiles ? (d.profiles.grind_balance || 0) : 0;
-  const isPending = d.status === 'pending';
-  return `
-  <div class="card depCard">
-    <b style="font-size:16px">${name}</b><br>
-    <small>${email} • ${phone} • Balance now: ${bal} Grinds</small>
-    <div style="margin-top:12px">
-      <div class="rowLine"><span>Amount</span><span><b>${d.amount_grinds} Grinds (M${d.amount_grinds*10})</b></span></div>
-      <div class="rowLine"><span>Method</span><span><b>${d.method}</b></span></div>
-      <div class="rowLine"><span>Reference</span><span><b>${d.reference}</b></span></div>
-      <div class="rowLine"><span>Status</span><span><b>${d.status}</b></span></div>
-      <div class="rowLine"><span>Date</span><span>${new Date(d.created_at).toLocaleString()}</span></div>
-    </div>
-    ${isPending ? `
-    <div style="display:flex;gap:10px;margin-top:14px">
-      <button onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount_grinds})">✅ Approve + Add Grinds</button>
-      <button class="ghost" style="background:#3a1515;border-color:#ff5252" onclick="rejectDeposit('${d.id}')">❌ Reject</button>
-    </div>
-    <p class="small" style="margin-top:10px">Before Approving: Check EcoCash 128235 OR Postbank 1040278800016 for this reference + amount.</p>
-    ` : ''}
-  </div>`;
-}
-
-async function loadDeposits(){
-  const {data, error} = await sb.from('deposits').select('*,profiles(full_name,email,phone,grind_balance)').order('created_at',{ascending:false});
-  if(error){
-    document.getElementById('pendingList').innerHTML = 'Error: ' + error.message;
-    return;
-  }
-  const all = data || [];
-  const pending = all.filter(d=>d.status==='pending');
-  const approved = all.filter(d=>d.status==='approved');
-  const rejected = all.filter(d=>d.status==='rejected');
-  document.getElementById('statPending').textContent = pending.length;
-  document.getElementById('statApproved').textContent = approved.length;
-  document.getElementById('statTotalGrinds').textContent = approved.reduce((sum,d)=> sum + (d.amount_grinds||0), 0);
-  document.getElementById('pendingList').innerHTML = pending.length ? pending.map(depCardHTML).join('') : '<div class="card">No pending deposits. 🎉</div>';
-  document.getElementById('approvedList').innerHTML = approved.length ? approved.map(depCardHTML).join('') : '<div class="card">No approved deposits yet.</div>';
-  document.getElementById('rejectedList').innerHTML = rejected.length ? rejected.map(depCardHTML).join('') : '<div class="card">No rejected deposits.</div>';
-}
-
-async function approveDeposit(id, userId, grinds){
-  if(!confirm('Approve? This will ADD ' + grinds + ' Grinds to this user. Have you checked EcoCash 128235 / Postbank 1040278800016?')) return;
-  const {data: prof, error: pErr} = await sb.from('profiles').select('grind_balance').eq('id', userId).single();
-  if(pErr) return alert('Could not load user balance: ' + pErr.message);
-  const newBal = (prof.grind_balance || 0) + grinds;
-  const {error: upErr} = await sb.from('profiles').update({grind_balance: newBal}).eq('id', userId);
-  if(upErr) return alert('Balance update failed: ' + upErr.message);
-  const {error: dErr} = await sb.from('deposits').update({status:'approved'}).eq('id', id);
-  if(dErr) return alert('Deposit update failed: ' + dErr.message);
-  alert('✅ Approved! User now has ' + newBal + ' Grinds.');
-  loadDeposits();
-}
-
-async function rejectDeposit(id){
-  if(!confirm('Reject this deposit? User will NOT get Grinds.')) return;
-  const {error} = await sb.from('deposits').update({status:'rejected'}).eq('id', id);
-  if(error) return alert('Reject failed: ' + error.message);
-  alert('❌ Rejected.');
-  loadDeposits();
-}
-
-async function loadAllSongs(){
-  const box = document.getElementById('allSongs');
-  try{
-    const {data, error} = await sb.from('songs').select('*').order('created_at',{ascending:false});
-    if(error) throw error;
-    if(!data || !data.length){ box.innerHTML = 'No songs yet.'; return; }
-    box.innerHTML = data.map(s=>`<div style="padding:10px 0;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:10px"><div><b>${s.title || 'Untitled'}</b><br><small>${s.artist || ''} • ${s.price_grinds || 1} Grind</small></div><button style="width:auto;padding:8px 14px;font-size:12px;background:#3a1515;border-color:#ff5252" onclick="deleteSongAdmin('${s.id}')">Delete</button></div>`).join('');
-  }catch(e){ box.innerHTML = 'Could not load songs: ' + e.message; }
-}
-
-async function deleteSongAdmin(id){
-  if(!confirm('Delete this song for all users?')) return;
-  const {error} = await sb.from('songs').delete().eq('id', id);
-  if(error) return alert('Delete failed: ' + error.message);
-  loadAllSongs();
-}
-
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const {user, profile} = await getMyProfile();
-  if(!user) return location.href='auth.html';
-  document.getElementById('adminEmail').textContent = 'Admin: ' + (profile.full_name || profile.email || user.email);
-  if(!profile || !profile.is_admin){
-    document.getElementById('notAdmin').style.display = 'block';
-    return;
-  }
-  document.getElementById('adminView').style.display = 'block';
-  loadDeposits();
-  loadAllSongs();
-});
+async function reject(id){ if(!confirm('Reject this deposit?'))return; await sb.from('deposits').update({status:'rejected'}).eq('id',id); loadAdmin(); }
+async function delSong(id){ if(!confirm('Delete song?'))return; await sb.from('songs').delete().eq('id',id); loadAdmin(); }
+document.addEventListener('DOMContentLoaded',loadAdmin);
 </script>
 </body>
 </html>
