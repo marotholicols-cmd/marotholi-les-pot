@@ -13,14 +13,14 @@
 <div id="panelDeposit" class="card">
 <h3>➕ Deposit Grinds</h3>
 <p>1 Grind = M10. Send money, then submit proof. Admin approves.</p>
-<div class="pausedBox">⚠️ <b>Deposit:</b> M-Pesa & PayFast are <b>PAUSED</b> for deposits to Marotholi. Use EcoCash or Postbank only. Withdrawals CAN use M-Pesa — that's your own number.</div>
+<div class="pausedBox">⚠️ <b>Deposit:</b> M-Pesa & PayFast are <b>PAUSED</b> for deposits to Marotholi. Use EcoCash or Postbank or VISA only. Withdrawals CAN use M-Pesa — that's your own number.</div>
 <label>Amount in Grinds</label><input id="depGrinds" type="number" min="1" placeholder="e.g. 10 Grinds = M100">
 <p class="small" id="depRand">M0.00</p>
 <label>Payment Method (Deposit)</label>
 <select id="depMethod" onchange="showPayBox()"><option value="EcoCash">EcoCash</option><option value="Postbank">Postbank</option><option value="Mpesa" disabled>M-Pesa — PAUSED for Deposit</option><option value="PayFast" disabled>PayFast — PAUSED</option></select>
 <div id="boxEcoCash" class="paybox active"><span class="paytag">ECOCASH</span><br>Send to:<br><b>128235</b><br>Marotholi Lespot MSU<br><button class="copyBtn" onclick="copyText('128235')">📋 Copy 128235</button></div>
-<div id="boxPostbank" class="paybox"><span class="paytag">POSTBANK</span><br>Account:<br><b>1040278800016</b><br>Marotholi Lespot<br><button class="copyBtn" onclick="copyText('1040278800016')">📋 Copy Account</button></div>
-<label>Your EcoCash / Postbank Number / Name</label><input id="depSender" placeholder="Your name + number you sent from">
+<div id="boxPostbank" class="paybox"><span class="paytag">POSTBANK or VISA </span><br>Account:<br><b>1040278800016</b><br>Marotholi Lespot<br><button class="copyBtn" onclick="copyText('1040278800016')">📋 Copy Account</button></div>
+<label>Your EcoCash / Postbank or VISA ACCOUNT / Name</label><input id="depSender" placeholder="Your name + number you sent from">
 <label>Reference / Proof (optional)</label><input id="depRef" placeholder="e.g. EcoCash SMS code">
 <button onclick="submitDeposit()">Submit Deposit Request</button>
 <p id="depMsg" class="small center"></p>
@@ -65,7 +65,7 @@ async function submitDeposit(){
   const msg=document.getElementById('depMsg');
   if(!grinds||grinds<1){msg.textContent='Enter Grinds.';return;}
   if(!sender){msg.textContent='Enter your name/number.';return;}
-  if(method==='Mpesa'||method==='PayFast'){msg.textContent='M-Pesa / PayFast are PAUSED for deposits. Use EcoCash or Postbank.';return;}
+  if(method==='Mpesa'||method==='PayFast'){msg.textContent='M-Pesa / PayFast are PAUSED for deposits. Use EcoCash or Postbank or VISA.';return;}
   msg.textContent='Sending...';
   const r=await window.LES_POT.submitDeposit({grinds,method,sender,ref});
   msg.textContent=r.ok?'✅ Deposit request sent. Admin will approve soon.':'❌ '+r.error;
@@ -80,7 +80,7 @@ async function submitWithdrawal(){
   if(!number){msg.textContent='Enter your number/account.';return;}
   if(!name){msg.textContent='Enter your full name.';return;}
   // M-Pesa ALLOWED here - only PayFast blocked
-  if(method==='PayFast'){msg.textContent='PayFast is paused. Use EcoCash, Postbank or M-Pesa.';return;}
+  if(method==='PayFast'){msg.textContent='PayFast is paused. Use EcoCash, Postbank / VISA or M-Pesa.';return;}
   msg.textContent='Sending...';
   const r=await window.LES_POT.submitWithdrawal({grinds,method,number,name});
   msg.textContent=r.ok?'✅ Withdrawal request sent. You will be paid to your '+method+' ('+number+').':'❌ '+r.error;
