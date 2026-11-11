@@ -8,196 +8,79 @@
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
-<script src="player.js"></script>
-<style>
-  .searchRow{display:flex;gap:8px}
-  .searchRow input{flex:1}
-  .searchRow button{width:auto;padding:13px 16px;margin-top:0}
-  .chipRow{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
-  .payBox b{color:#d4ff3f}
-</style>
+<script src="app.js?v=99"></script>
+<script src="player.js?v=99"></script>
 </head>
 <body>
-
-<div class="topbar">
-  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
-  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
-</div>
-
+<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
 <div class="wrap">
-
-  <div class="card">
-    <h2>🎵 Discover Music</h2>
-    <p class="small" style="margin-top:6px">Play 30s preview free. Buy with Grinds to unlock full song. 1 Grind = M10.</p>
-
-    <div class="searchRow" style="margin-top:14px">
-      <input id="searchInput" placeholder="Search song or artist...">
-      <button onclick="loadSongs()">Search</button>
-    </div>
-
-    <div class="chipRow">
-      <button class="chip active" style="width:auto;margin-top:0" onclick="filterGenre('',this)">All</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Amapiano',this)">Amapiano</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Hip Hop',this)">Hip Hop</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Afrobeat',this)">Afrobeat</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Gospel',this)">Gospel</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('Sesotho Traditional',this)">Sesotho</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('R&B',this)">R&B</button>
-      <button class="chip" style="width:auto;margin-top:0" onclick="filterGenre('House',this)">House</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div id="songList" style="margin-top:4px">Loading songs...</div>
-  </div>
-
-  <div class="card">
-    <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
-    <div class="payBox">
-      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
-      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
-    </div>
-    <br>
-    <button onclick="location.href='deposit.html'">Top Up Now</button>
-  </div>
-
+  <div class="card"><h2>🎵 Discover</h2><input id="searchBox" placeholder="Search songs, artists..." oninput="renderSongs()"></div>
+  <div class="card"><div id="songList">Loading songs...</div></div>
 </div>
-
-<div class="miniPlayer hidden" id="miniPlayer">
-  <img id="pCover" src="icon.svg">
-  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
-  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
-  <button class="closeBtn" onclick="stopSong(true)">✕</button>
-</div>
-
-<nav class="bottomnav">
-  <a href="index.html">🏠<br>Home</a>
-  <a href="discover.html" class="active">🎵<br>Discover</a>
-  <a href="wallet.html">👛<br>Wallet</a>
-  <a href="upload.html">⬆️<br>Upload</a>
-  <a href="auth.html">👤<br>Account</a>
-</nav>
-
+<div class="miniPlayer hidden" id="miniPlayer"><img id="pCover" src="icon.svg"><div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div><button id="pPlayBtn" onclick="togglePlay()">▶</button><button class="closeBtn" onclick="stopSong(true)">✕</button></div>
+<nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html" class="active">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html">⬆️<br>Upload</a><a href="auth.html">👤<br>Account</a></nav>
 <script>
-const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
-const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
-if(!window.sb && window.supabase){
-  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
-}
-
-let ALL_SONGS = [];
-let MY_PURCHASES = [];
-let CURRENT_GENRE = '';
-
-function esc(s){
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function filterGenre(g, btn){
-  CURRENT_GENRE = g;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  renderSongs();
-}
-
+const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
+let ALL=[], OWNED=new Set();
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function renderSongs(){
-  const box = document.getElementById('songList');
-  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-  let list = ALL_SONGS.filter(s=>{
-    if(CURRENT_GENRE && s.genre !== CURRENT_GENRE) return false;
-    if(q && !((s.title||'').toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q))) return false;
-    return true;
-  });
-  if(!list.length){ box.innerHTML = 'No songs found.<br><br>Check: Supabase → Storage → songs bucket → Are files there?<br>Or <a href="upload.html">Upload a song</a>'; return; }
-  box.innerHTML = list.map(s=>{
-    const owned = MY_PURCHASES.includes(s.id);
-    const price = s.price_grinds || 1;
-    const cover = esc(s.cover_url || 'icon.svg');
-    const title = esc(s.title || 'Untitled');
-    const artist = esc(s.artist || 'Unknown');
-    const audio = esc(s.audio_url || '');
-    const isBucket = String(s.id).startsWith('bucket-');
-    return `
-    <div class="songCard">
-      <img src="${cover}" onerror="this.src='icon.svg'">
-      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${price} Grind${price>1?'s':''} = M${price*10}</small><br><small>${isBucket ? '📦 From Your Bucket' : ''} ${owned ? '✅ Owned — Full Song' : '🎧 30s Preview Free'}</small></div>
-      <div class="actions">
-        ${owned
-          ? `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button>`
-          : `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',true)">▶ Preview</button><button class="buyBtn" onclick="buyThis('${s.id}',${price},'${title}')">Buy ${price}G</button>`
-        }
-      </div>
-    </div>`;
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const box=document.getElementById('songList');
+  const list=ALL.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist||s.artist_name||'').toLowerCase().includes(q));
+  if(!list.length){ box.innerHTML='No songs found.'; return; }
+  box.innerHTML=list.map(s=>{
+    const title=esc(s.title||'Untitled'); const artist=esc(s.artist||s.artist_name||'Unknown'); const cover=esc(s.cover_url||'icon.svg');
+    const price=s.price_grinds||s.price_grind||1; const audio=esc(s.audio_url||s.audio_path||'');
+    const owned=OWNED.has(s.id);
+    return `<div class="songCard"><img src="${cover}" onerror="this.src='icon.svg'"><div class="info"><b>${title}</b><small>${artist} • ${s.genre||'Music'} • ${price} Grind = M${price*10}<br>${owned?'✅ Owned - Full Song':'⏱️ 30s Preview Free'}</small></div><div class="actions"><button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',${owned?'false':'true'})">${owned?'▶ Play Full':'▶ Preview'}</button>${owned?'':`<button class="buyBtn" onclick="buySong('${s.id}',${price},'${title}')">Buy ${price}G</button>`}</div></div>`;
   }).join('');
 }
-
-async function buyThis(id, price, title){
-  // Bucket songs not in purchases table yet - if bucket song, just play full after confirm
-  if(String(id).startsWith('bucket-')){
-    alert('Bucket song: ' + title + ' - ' + price + 'G. Buy via table song after upload saves it. For now playing preview.');
-    return;
-  }
-  const ok = await buySongById(id, price, title);
-  if(ok){
-    MY_PURCHASES.push(id);
-    renderSongs();
-    const {profile} = await getMyProfile();
-    if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
-  }
-}
-
-async function loadSongs(){
-  const box = document.getElementById('songList');
-  box.innerHTML = 'Loading songs from your bucket...';
+async function buySong(id, price, title){
+  const {user, profile}=await getMyProfile();
+  if(!user){ alert('Log in first'); location.href='auth.html'; return; }
+  const bal=profile.grind_balance ?? profile.grinds ?? 0;
+  if(bal < price){ alert('Not enough Grinds. You have '+bal+'G, need '+price+'G. Top up in Wallet.'); location.href='wallet.html'; return; }
+  if(!confirm('Buy "'+title+'" for '+price+' Grind (M'+(price*10)+')?')) return;
+  const newBal=bal-price;
+  await sb.from('profiles').update({grind_balance:newBal}).eq('id', user.id);
+  await sb.from('purchases').insert([{user_id:user.id, song_id:id, price_grinds:price}]);
+  // Give artist their share - update artist balance if possible
   try{
-    // 1. TABLE songs
-    const {data: tableSongs} = await sb.from('songs').select('*').order('created_at',{ascending:false});
-    ALL_SONGS = tableSongs || [];
-
-    // 2. BUCKET songs - YOUR Supabase Storage Bucket 'songs'
-    const {data: files, error: ferr} = await sb.storage.from('songs').list('', {limit: 100});
-    if(!ferr && files && files.length){
-      for(const f of files){
-        if(!f.name || f.name.endsWith('/')) continue;
-        if(!f.name.match(/\.(mp3|m4a|wav|ogg|mp4)$/i)) continue;
-        const {data: pub} = sb.storage.from('songs').getPublicUrl(f.name);
-        const url = pub.publicUrl;
-        const already = ALL_SONGS.some(s => s.audio_url === url);
-        if(!already){
-          const cleanName = f.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/^\d+\s*-?\s*/, "");
-          ALL_SONGS.push({
-            id: 'bucket-' + f.name,
-            title: cleanName || f.name,
-            artist: 'From Your Bucket',
-            genre: 'Music',
-            price_grinds: 1,
-            audio_url: url,
-            cover_url: 'icon.svg',
-            is_bucket: true
-          });
-        }
-      }
+    const song=ALL.find(x=>x.id===id);
+    if(song && song.artist_id){
+      const {data:ap}=await sb.from('profiles').select('*').eq('id', song.artist_id).maybeSingle();
+      if(ap){ await sb.from('profiles').update({grind_balance:(ap.grind_balance||0)+price}).eq('id', song.artist_id); }
     }
-
-    if(!ALL_SONGS.length){
-      box.innerHTML = 'No songs found in TABLE or BUCKET.<br><br>Check: Supabase → Storage → songs bucket → Are files there?';
-      return;
-    }
-    renderSongs();
-  }catch(e){ box.innerHTML = 'Could not load songs: ' + e.message; }
+  }catch(e){}
+  alert('✅ Bought! Full song unlocked in Library.'); OWNED.add(id); renderSongs();
 }
-
-document.addEventListener('DOMContentLoaded', async ()=>{
-  document.getElementById('searchInput').addEventListener('input', renderSongs);
-  const {user, profile} = await getMyProfile();
-  if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
-  if(user){
-    MY_PURCHASES = await getMyPurchases(user.id);
-  }
-  loadSongs();
-});
+window.buySong=buySong;
+async function loadSongs(){
+  const box=document.getElementById('songList'); box.innerHTML='Loading songs...';
+  const {user, profile}=await getMyProfile();
+  if(profile) document.getElementById('topBal').textContent=(profile.grind_balance ?? profile.grinds ?? 0)+' Grinds';
+  if(user){ const ids=await getMyPurchases(user.id); OWNED=new Set(ids); }
+  // 1. From songs table
+  let fromTable=[];
+  try{ const {data}=await sb.from('songs').select('*').order('created_at',{ascending:false}); fromTable=data||[]; }catch(e){}
+  // 2. From bucket - any file not in table
+  let fromBucket=[];
+  try{
+    const {data: files}=await sb.storage.from('songs').list('',{limit:100});
+    const inTable=new Set(fromTable.map(s=> (s.audio_path||'').split('/').pop()));
+    (files||[]).filter(f=> f.name.endsWith('.mp3')||f.name.endsWith('.m4a')||f.name.endsWith('.wav')).forEach(f=>{
+      if(!inTable.has(f.name)){
+        const {data:pub}=sb.storage.from('songs').getPublicUrl(f.name);
+        const pretty=f.name.replace(/^\d+-/,'').replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+        fromBucket.push({id:'bucket-'+f.name, title:pretty||f.name, artist:'Unknown', artist_name:'Unknown', genre:'Music', price_grinds:1, price_grind:1, audio_url:pub.publicUrl, audio_path:f.name, cover_url:'icon.svg', created_at:new Date().toISOString()});
+      }
+    });
+  }catch(e){}
+  ALL=[...fromTable, ...fromBucket];
+  renderSongs();
+}
+document.addEventListener('DOMContentLoaded', loadSongs);
 </script>
 </body>
 </html>
