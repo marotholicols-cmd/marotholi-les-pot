@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Artist Dashboard - Marotholi Les-Pot</title>
+<link rel="icon" href="icon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:110px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
+.wrap{max-width:620px;margin:0 auto;padding:14px}
+.card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
+.row{display:flex;gap:10px}.row .card{flex:1;text-align:center}
+.big{font-size:26px;font-weight:900;color:#d4ff3f}
+.small{font-size:13px;opacity:.7;line-height:1.5}
+.btn{display:block;text-align:center;background:#d4ff3f;color:#000;padding:12px;border-radius:99px;font-weight:900;text-decoration:none;margin-top:10px}
+.song{border-bottom:1px solid #333;padding:10px 0;display:flex;justify-content:space-between;gap:10px}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
+.bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
+.bottomnav a.active{color:#d4ff3f;opacity:1}
+</style>
+</head>
+<body>
+<header>MAROTHOLI LES-POT<small>🎤 Artist Dashboard • Your Sales</small></header>
+<div class="wrap">
+<div class="row">
+<div class="card"><div class="big" id="totalSongs">-</div><div class="small">Your Songs</div></div>
+<div class="card"><div class="big" id="totalBought">-</div><div class="small">Songs Bought</div></div>
+<div class="card"><div class="big" id="totalEarned">-</div><div class="small">Earned (G)</div></div>
+</div>
+<div class="card"><h3 style="margin:0 0 8px">💰 Earnings</h3><p class="small" id="earnM"></p><p class="small">1G = M10. You keep 100% — Les-Pot takes 0% for now.</p><a class="btn" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a></div>
+<div class="card"><h3 style="margin:0 0 8px">🎵 Per Song — How Many Times Bought</h3><div id="songList"><p class="small">Loading...</p></div></div>
+<div class="card"><h3 style="margin:0 0 8px">🛒 Recent Purchases</h3><div id="buyList"><p class="small">Loading...</p></div></div>
+</div>
+<div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
+<script>
+async function loadDashboard(){
+  const user=await requireLogin(); if(!user) return;
+  // 1. Get my songs
+  const {data:songs}=await window.sb.from('songs').select('id,title,artist_name,price_grind').eq('user_id',user.id).order('created_at',{ascending:false});
+  // Fallback if songs use owner_id / artist_id column
+  let mySongs=songs||[];
+  if(!mySongs.length){
+    const r2=await window.sb.from('songs').select('id,title,artist_name,price_grind').eq('artist_id',user.id);
+    mySongs=r2.data||[];
+  }
+  document.getElementById('totalSongs').textContent=mySongs.length;
+  if(!mySongs.length){
+    document.getElementById('songList').innerHTML="<p class='small'>You have no songs yet. <a href='upload.html' style='color:#d4ff3f'>Upload one →</a></p>";
+    document.getElementById('buyList').innerHTML="<p class='small'>No sales yet.</p>";
+    document.getElementById('totalBought').textContent="0";
+    document.getElementById('totalEarned').textContent="0.00 G";
+    return;
+  }
+  const ids=mySongs.map(s=>s.id);
+  // 2. Get purchases for my songs
+  const {data:purchases}=await window.sb.from('purchases').select('*').in('song_id',ids).order('created_at',{ascending:false});
+  const buys=purchases||[];
+  // Count per song
+  let totalEarned=0;
+  const html=mySongs.map(function(s){
+    const count=buys.filter(b=>b.song_id===s.id).length;
+    const earned=buys.filter(b=>b.song_id===s.id).reduce((sum,b)=>sum+Number(b.amount_grind||b.price_grind||s.price_grind||0),0);
+    totalEarned+=earned;
+    return "<div class='song'><div><b>"+escHtml(s.title||'Untitled')+"</b><br><span class='small'>Price: "+Number(s.price_grind||0).toFixed(2)+" G • Earned: "+earned.toFixed(2)+" G</span></div><div style='text-align:right'><b style='color:#d4ff3f;font-size:20px'>"+count+" bought</b><br><span class='small'>"+(count===0?'No sales yet':'🔥 Selling!')+"</span></div></div>";
+  }).join('');
+  document.getElementById('songList').innerHTML=html;
+  document.getElementById('totalBought').textContent=buys.length;
+  document.getElementById('totalEarned').textContent=totalEarned.toFixed(2)+" G";
+  document.getElementById('earnM').textContent="Total earned: "+totalEarned.toFixed(2)+" G = M"+grindToMaloti(totalEarned)+" from "+buys.length+" purchases";
+  if(!buys.length){
+    document.getElementById('buyList').innerHTML="<p class='small'>No one has bought yet. Share your link!</p>";
+  } else {
+    document.getElementById('buyList').innerHTML=buys.slice(0,20).map(function(b){
+      const song=mySongs.find(s=>s.id===b.song_id);
+      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>"+escHtml(song?song.title:'Song')+"</b> • "+Number(b.amount_grind||b.price_grind||0).toFixed(2)+" G<br><span class='small'>"+new Date(b.created_at).toLocaleString()+"</span></div>";
+    }).join('');
+  }
+}
+document.addEventListener('DOMContentLoaded',loadDashboard);
+</script>
+</body>
+</html>
