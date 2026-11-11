@@ -7,245 +7,98 @@
 <link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<link rel="stylesheet" href="style.css">
 <style>
 body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:110px}
 header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
 header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .wrap{max-width:560px;margin:0 auto;padding:14px}
 .card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
-.card h3{margin:0 0 8px 0;font-size:18px}
+.card h3{margin:0 0 8px 0}
 label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
-input,select,textarea{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
-textarea{height:70px;resize:vertical}
-.btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:14px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
-.btn:disabled{opacity:.5}
-.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
-.small{font-size:13px;opacity:.7;line-height:1.5}
-.msg{margin-top:10px;font-size:14px;min-height:20px}
-.msg.error{color:#ff6b6b}
-.msg.ok{color:#d4ff3f}
-.preview-box{background:#111;border:1px solid #d4ff3f;border-radius:14px;padding:12px;margin-top:10px}
-.preview-box b{color:#d4ff3f}
+input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 input[type=range]{padding:0}
-.cover-preview{width:100%;height:180px;object-fit:cover;border-radius:14px;background:#333;display:none;margin-top:10px}
+.btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
+.btn2{display:block;text-align:center;background:#333;color:#fff;padding:12px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:10px}
+.small{font-size:13px;opacity:.7;line-height:1.5}
+.msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT<small>⬆️ Upload Song • 1 Upload = 2 Versions</small></header>
-
+<header>MAROTHOLI LES-POT<small>⬆️ Upload Music • 1G = M10</small></header>
 <div class="wrap">
-
+<div class="card"><h3>🎤 Artist Dashboard</h3><p class="small">See how many times each song was bought + your earnings.</p><a class="btn2" href="artist-dashboard.html" style="background:#d4ff3f;color:#000">🎤 My Artist Dashboard - See Sales →</a></div>
 <div class="card">
-<h3>⬆️ Upload Your Song</h3>
-<p class="small">1 Upload = Full song + 30-sec preview. You pick where preview starts. Min price 0.2G = M2. You get 63%.</p>
-
+<h3>Upload New Song</h3>
 <label>Song Title *</label>
-<input id="title" placeholder="e.g. KILLING DUDES">
-
-<label>Artist / Stage Name *</label>
-<input id="artistName" placeholder="e.g. SHUTTER">
-
-<label>Your Price in Grinds (G) * — Min 0.2G</label>
-<input id="price" type="number" step="0.01" min="0.2" placeholder="e.g. 0.35">
-<p class="small" id="pricePreview">0.35 G = M3.50 • You get 63% = M2.21</p>
-
+<input id="title" placeholder="e.g. Marotholi">
+<label>Artist Name *</label>
+<input id="artistName" placeholder="e.g. Thabo Mokoena">
 <label>Genre</label>
-<select id="genre">
-<option value="Hip Hop">Hip Hop</option>
-<option value="Amapiano">Amapiano</option>
-<option value="Afrobeat">Afrobeat</option>
-<option value="Sesotho">Sesotho</option>
-<option value="Gospel">Gospel</option>
-<option value="R&B">R&B</option>
-<option value="Trap">Trap</option>
-<option value="Other">Other</option>
-</select>
-
-<label>Description (optional)</label>
-<textarea id="description" placeholder="About this song..."></textarea>
-
-<label>Full Song File (MP3) *</label>
+<select id="genre"><option>Hip Hop</option><option>Amapiano</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>Famo</option><option>R&B</option><option>Other</option></select>
+<label>Price in Grinds (G) * — 1G = M10</label>
+<input id="priceG" type="number" step="0.01" min="0.1" value="1.0">
+<p class="small" id="priceM">1.00 G = M10.00 • Buyer pays this, you earn this.</p>
+<label>Audio File (MP3) *</label>
 <input id="audioFile" type="file" accept="audio/*">
-<p class="small" id="audioInfo">No file selected yet</p>
-<audio id="audioPreview" controls style="width:100%;margin-top:8px;display:none"></audio>
-
-<!-- PREVIEW PICKER -->
-<div class="preview-box" id="previewBox" style="display:none">
-<b>🎵 Pick Your 30-Second Preview</b>
-<p class="small">Drag to choose where preview starts. Fans will hear 30 seconds from there. Max 30 sec, never more.</p>
-<label>Preview Starts At: <b id="previewStartLabel">0:00</b> → Ends At: <b id="previewEndLabel">0:30</b></label>
-<input id="previewStart" type="range" min="0" max="0" value="0" step="1" oninput="updatePreviewLabels()">
-<p class="small">Preview: <span id="previewRangeText">0:00 - 0:30</span></p>
-<button class="btn2" type="button" onclick="playPreviewSample()">▶ Play My 30s Preview</button>
-</div>
-
-<label>Cover Image (Bull + RainDrops style) *</label>
+<label>Cover Image (optional)</label>
 <input id="coverFile" type="file" accept="image/*">
-<img id="coverPreviewImg" class="cover-preview" alt="cover preview">
-
-<button class="btn" id="uploadBtn" onclick="doUpload()">Upload Song →</button>
-<p class="msg" id="uploadMsg"></p>
-<p class="small" id="uploadProgress"></p>
+<label>🎧 Preview — How much can fans hear FREE? (seconds)</label>
+<input id="previewSec" type="range" min="10" max="60" step="5" value="30">
+<p class="small" id="previewLabel"><b style="color:#d4ff3f;font-size:16px">30s Preview</b> — Fans hear first 30s free, then must BUY to hear full song.</p>
+<p class="small">Tip: 30s is best. 10s = too short, 60s = too much free.</p>
+<button class="btn" onclick="uploadSong()">⬆️ Upload Song →</button>
+<p class="msg" id="msg"></p>
 </div>
-
-<div class="card">
-<h3>📋 My Uploads</h3>
-<div id="mySongs"><p class="small">Loading...</p></div>
+<div class="card"><h3>🎵 My Uploaded Songs</h3><div id="mySongs"><p class="small">Loading...</p></div></div>
 </div>
-
-</div>
-
-<div class="bottomnav">
-<a href="index.html">🏠<br>Home</a>
-<a href="discover.html">🎵<br>Discover</a>
-<a href="library.html">📚<br>Library</a>
-<a href="upload.html" class="active">⬆️<br>Upload</a>
-<a href="wallet.html">💰<br>Wallet</a>
-<a href="account.html">👤<br>Account</a>
-</div>
-
+<div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html" class="active">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-let audioDuration = 0;
-let audioObjectUrl = null;
-
-function formatTime(sec) {
-  sec = Math.floor(Number(sec || 0));
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return m + ":" + (s < 10 ? "0" + s : s);
+document.getElementById('priceG').addEventListener('input',function(){const g=Number(this.value||0);document.getElementById('priceM').textContent=g.toFixed(2)+" G = M"+grindToMaloti(g)+" • Buyer pays this, you earn this.";});
+document.getElementById('previewSec').addEventListener('input',function(){document.getElementById('previewLabel').innerHTML="<b style='color:#d4ff3f;font-size:16px'>"+this.value+"s Preview</b> — Fans hear first "+this.value+"s free, then must BUY to hear full song.";});
+async function uploadSong(){
+  const user=await requireLogin(); if(!user) return;
+  const msg=document.getElementById('msg');
+  const title=document.getElementById('title').value.trim();
+  const artistName=document.getElementById('artistName').value.trim();
+  const genre=document.getElementById('genre').value;
+  const priceG=Number(document.getElementById('priceG').value||0);
+  const previewSec=Number(document.getElementById('previewSec').value||30);
+  const audioFile=document.getElementById('audioFile').files[0];
+  const coverFile=document.getElementById('coverFile').files[0];
+  if(!title||!artistName){msg.textContent='Fill Title + Artist Name';msg.className='msg error';return;}
+  if(!priceG||priceG<0.1){msg.textContent='Price min 0.1G = M1';msg.className='msg error';return;}
+  if(!audioFile){msg.textContent='Choose MP3 file';msg.className='msg error';return;}
+  msg.textContent='Uploading... do not close';msg.className='msg';
+  try{
+    const audioName='audio/'+user.id+'/'+Date.now()+'_'+audioFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const {error:upErr}=await window.sb.storage.from('songs').upload(audioName,audioFile);
+    if(upErr) throw upErr;
+    const {data:audioUrl}=window.sb.storage.from('songs').getPublicUrl(audioName);
+    let coverUrl='';
+    if(coverFile){
+      const coverName='covers/'+user.id+'/'+Date.now()+'_'+coverFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const {error:cErr}=await window.sb.storage.from('songs').upload(coverName,coverFile);
+      if(!cErr){coverUrl=window.sb.storage.from('songs').getPublicUrl(coverName).data.publicUrl;}
+    }
+    const {error:dbErr}=await window.sb.from('songs').insert({user_id:user.id,artist_id:user.id,title:title,artist_name:artistName,genre:genre,price_grind:priceG,price:priceG*10,preview_seconds:previewSec,preview_duration:previewSec,audio_url:audioUrl.publicUrl,audio:audioUrl.publicUrl,cover_url:coverUrl,cover:coverUrl});
+    if(dbErr) throw dbErr;
+    msg.textContent='✅ Uploaded! Preview: '+previewSec+'s • Price: '+priceG.toFixed(2)+' G';msg.className='msg ok';
+    document.getElementById('title').value=''; loadMySongs();
+  }catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
 }
-
-function updatePreviewLabels() {
-  const start = Number(document.getElementById('previewStart').value || 0);
-  const end = Math.min(start + 30, audioDuration);
-  document.getElementById('previewStartLabel').textContent = formatTime(start);
-  document.getElementById('previewEndLabel').textContent = formatTime(end);
-  document.getElementById('previewRangeText').textContent = formatTime(start) + " - " + formatTime(end) + " (30 sec max)";
-}
-
-function playPreviewSample() {
-  const audio = document.getElementById('audioPreview');
-  const start = Number(document.getElementById('previewStart').value || 0);
-  audio.currentTime = start;
-  audio.play();
-  setTimeout(function() { try { audio.pause(); } catch(e) {} }, 30000);
-}
-
-document.getElementById('price').addEventListener('input', function() {
-  const p = Number(this.value || 0);
-  const split = splitMoney(p);
-  document.getElementById('pricePreview').textContent = p.toFixed(2) + " G = M" + grindToMaloti(p) + " • You get 63% = M" + (split.artist * 10).toFixed(2) + " • Platform 23% • Fees 14%";
-});
-
-document.getElementById('audioFile').addEventListener('change', function() {
-  const file = this.files[0];
-  if (!file) return;
-  document.getElementById('audioInfo').textContent = "Selected: " + file.name + " • " + (file.size / 1024 / 1024).toFixed(2) + " MB";
-  if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
-  audioObjectUrl = URL.createObjectURL(file);
-  const audio = document.getElementById('audioPreview');
-  audio.src = audioObjectUrl;
-  audio.style.display = 'block';
-  audio.onloadedmetadata = function() {
-    audioDuration = Math.floor(audio.duration || 0);
-    const slider = document.getElementById('previewStart');
-    slider.max = Math.max(0, audioDuration - 1);
-    slider.value = 0;
-    document.getElementById('previewBox').style.display = 'block';
-    updatePreviewLabels();
-  };
-});
-
-document.getElementById('coverFile').addEventListener('change', function() {
-  const file = this.files[0];
-  if (!file) return;
-  const img = document.getElementById('coverPreviewImg');
-  img.src = URL.createObjectURL(file);
-  img.style.display = 'block';
-});
-
-async function doUpload() {
-  const msg = document.getElementById('uploadMsg');
-  const btn = document.getElementById('uploadBtn');
-  const user = await requireLogin();
-  if (!user) return;
-  const title = document.getElementById('title').value.trim();
-  const artistName = document.getElementById('artistName').value.trim();
-  const price = Number(document.getElementById('price').value || 0);
-  const genre = document.getElementById('genre').value;
-  const description = document.getElementById('description').value.trim();
-  const previewStart = Number(document.getElementById('previewStart').value || 0);
-  const audioFile = document.getElementById('audioFile').files[0];
-  const coverFile = document.getElementById('coverFile').files[0];
-
-  if (!title || !artistName) { msg.textContent = 'Fill Title + Artist Name'; msg.className = 'msg error'; return; }
-  if (!price || price < 0.2) { msg.textContent = 'Min price is 0.2G = M2'; msg.className = 'msg error'; return; }
-  if (!audioFile) { msg.textContent = 'Pick your FULL song file (MP3)'; msg.className = 'msg error'; return; }
-  if (!coverFile) { msg.textContent = 'Pick a cover image'; msg.className = 'msg error'; return; }
-
-  btn.disabled = true;
-  msg.textContent = 'Uploading... Please wait, do not close.'; msg.className = 'msg';
-  try {
-    const ts = Date.now();
-    const safeTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
-    // 1. Upload FULL song to songs bucket
-    const audioPath = user.id + '/' + ts + '_' + safeTitle + '.mp3';
-    const { error: audioErr } = await window.sb.storage.from('songs').upload(audioPath, audioFile, { upsert: true, contentType: audioFile.type || 'audio/mpeg' });
-    if (audioErr) throw new Error('Audio upload failed: ' + audioErr.message);
-    document.getElementById('uploadProgress').textContent = '✅ Full song uploaded. Uploading cover...';
-    // 2. Upload cover to covers bucket
-    const coverPath = user.id + '/' + ts + '_' + safeTitle + '.jpg';
-    const { error: coverErr } = await window.sb.storage.from('covers').upload(coverPath, coverFile, { upsert: true, contentType: coverFile.type || 'image/jpeg' });
-    if (coverErr) throw new Error('Cover upload failed: ' + coverErr.message);
-    // 3. Save song: 1 row = 2 versions (Full + Preview via preview_start)
-    const { error: dbErr } = await window.sb.from('songs').insert({
-      title: title,
-      artist_name: artistName,
-      artist_id: user.id,
-      user_id: user.id,
-      price_grind: price,
-      genre: genre,
-      description: description,
-      audio_path: audioPath,
-      cover_url: coverPath,
-      cover_path: coverPath,
-      preview_start: previewStart,
-      preview_duration: 30,
-      status: 'published'
-    });
-    if (dbErr) throw new Error('Save failed: ' + dbErr.message);
-    msg.textContent = '✅ UPLOADED! Your song is LIVE. Preview starts at ' + formatTime(previewStart) + ', Full song for buyers.'; msg.className = 'msg ok';
-    document.getElementById('uploadProgress').textContent = '';
-    loadMySongs();
-    setTimeout(function() { location.href = 'index.html'; }, 1500);
-  } catch (e) {
-    msg.textContent = '❌ ' + e.message; msg.className = 'msg error';
-    btn.disabled = false;
-  }
-}
-
-async function loadMySongs() {
-  const user = await getCurrentUser();
-  if (!user) { document.getElementById('mySongs').innerHTML = "<p class='small'>Login to see your uploads. <a href='auth.html' style='color:#d4ff3f'>Login</a></p>"; return; }
-  const { data } = await window.sb.from('songs').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-  if (!data || !data.length) { document.getElementById('mySongs').innerHTML = "<p class='small'>No uploads yet.</p>"; return; }
-  document.getElementById('mySongs').innerHTML = data.map(function(s) {
-    return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + escHtml(s.title) + "</b><br><span class='small'>" + formatPrice(s.price_grind) + " • Preview starts " + formatTime(s.preview_start || 0) + " • " + escHtml(s.status || 'published') + "</span></div>";
+async function loadMySongs(){
+  const user=await getCurrentUser(); if(!user){document.getElementById('mySongs').innerHTML="<p class='small'>Login to see your songs.</p>";return;}
+  let {data}=await window.sb.from('songs').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  if(!data||!data.length){const r2=await window.sb.from('songs').select('*').eq('artist_id',user.id).order('created_at',{ascending:false}); data=r2.data||[];}
+  if(!data.length){document.getElementById('mySongs').innerHTML="<p class='small'>No songs yet. Upload your first hit! 🔥</p>";return;}
+  document.getElementById('mySongs').innerHTML=data.map(function(s){
+    return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>"+escHtml(s.title||'')+"</b> • "+Number(s.price_grind||0).toFixed(2)+" G • Preview "+Number(s.preview_seconds||s.preview_duration||30)+"s<br><span class='small'>"+escHtml(s.genre||'')+" • "+escHtml(s.artist_name||'')+"</span></div>";
   }).join('');
 }
-
-document.addEventListener('DOMContentLoaded', async function() {
-  const user = await getCurrentUser();
-  if (user) {
-    const { data } = await window.sb.from('profiles').select('artist_name, username').eq('id', user.id).single();
-    if (data && (data.artist_name || data.username)) document.getElementById('artistName').value = data.artist_name || data.username;
-  }
-  loadMySongs();
-});
+document.addEventListener('DOMContentLoaded',loadMySongs);
 </script>
 </body>
 </html>
