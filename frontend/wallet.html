@@ -1,93 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wallet — Marotholi Les-Pot</title><link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wallet - Marotholi Les-Pot</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8ff00">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+  .balBig{font-size:48px;font-weight:900;line-height:1;text-align:center}
+  .balBig span{color:#d4ff3f;font-size:28px}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:14px;line-height:2}
+  .payBox b{color:#d4ff3f}
+  .payRow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #222}
+  .payRow:last-child{border-bottom:none}
+  .payRow small{color:#9a9aab}
+  .status-pending{color:#ffcc00;font-weight:800}
+  .status-approved{color:#00ff88;font-weight:800}
+  .status-rejected{color:#ff5252;font-weight:800}
+  .copyBtn{width:auto;padding:8px 14px;font-size:12px;border-radius:999px}
+</style>
 </head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">💰 WALLET</span></div>
+
+<div class="topbar">
+  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
+  <span class="badge" id="topBal">0 Grinds</span>
+</div>
+
 <div class="wrap">
-<div class="card center"><p>Your Balance</p><h1 id="balance">0 Grinds</h1><p class="small" id="balanceM">M0.00 • 1 Grind = M10</p><div class="statRow"><div class="statBox"><b id="totalEarned">0</b><div>Earned</div></div><div class="statBox"><b id="totalSpent">0</b><div>Spent</div></div><div class="statBox"><b id="totalWithdrawn">0</b><div>Withdrawn</div></div></div></div>
-<div class="tabs"><button id="tabDeposit" class="on" onclick="showTab('deposit')">➕ Deposit</button><button id="tabWithdraw" onclick="showTab('withdraw')">➖ Withdraw</button><button id="tabHistory" onclick="showTab('history')">📜 History</button></div>
 
-<div id="panelDeposit" class="card">
-<h3>➕ Deposit Grinds</h3>
-<p>1 Grind = M10. Send money, then submit proof. Admin approves.</p>
-<div class="pausedBox">⚠️ <b>Deposit:</b> M-Pesa & PayFast are <b>PAUSED</b> for deposits to Marotholi. Use EcoCash or Postbank or VISA only. Withdrawals CAN use M-Pesa — that's your own number.</div>
-<label>Amount in Grinds</label><input id="depGrinds" type="number" min="1" placeholder="e.g. 10 Grinds = M100">
-<p class="small" id="depRand">M0.00</p>
-<label>Payment Method (Deposit)</label>
-<select id="depMethod" onchange="showPayBox()"><option value="EcoCash">EcoCash</option><option value="Postbank">Postbank</option><option value="Mpesa" disabled>M-Pesa — PAUSED for Deposit</option><option value="PayFast" disabled>PayFast — PAUSED</option></select>
-<div id="boxEcoCash" class="paybox active"><span class="paytag">ECOCASH</span><br>Send to:<br><b>128235</b><br>Marotholi Lespot MSU<br><button class="copyBtn" onclick="copyText('128235')">📋 Copy 128235</button></div>
-<div id="boxPostbank" class="paybox"><span class="paytag">POSTBANK or VISA </span><br>Account:<br><b>1040278800016</b><br>Marotholi Lespot<br><button class="copyBtn" onclick="copyText('1040278800016')">📋 Copy Account</button></div>
-<label>Your EcoCash / Postbank or VISA ACCOUNT / Name</label><input id="depSender" placeholder="Your name + number you sent from">
-<label>Reference / Proof (optional)</label><input id="depRef" placeholder="e.g. EcoCash SMS code">
-<button onclick="submitDeposit()">Submit Deposit Request</button>
-<p id="depMsg" class="small center"></p>
+  <div class="card center">
+    <p class="small">YOUR BALANCE</p>
+    <div class="balBig" style="margin-top:10px"><span id="balBig">0</span> <span style="font-size:20px;color:#fff">Grinds</span></div>
+    <p class="small" id="balRand" style="margin-top:8px">M0 value</p>
+    <p class="small" id="walletUser" style="margin-top:6px"></p>
+    <br>
+    <button onclick="location.href='deposit.html'">+ Top Up Wallet</button>
+  </div>
+
+  <div class="card">
+    <h3>💳 How To Pay — ONLY THESE 2 WORK</h3>
+    <div class="payBox">
+      <b>1. EcoCash Pay Merchant:</b><br>
+      128235 — Marotholi Lespot MSU<br>
+      <button class="copyBtn" onclick="copyText('128235')">Copy 128235</button>
+      <br><br>
+      <b>2. Postbank Visa Account:</b><br>
+      1040278800016 — Marotholi Lespot<br>
+      <button class="copyBtn" onclick="copyText('1040278800016')">Copy 1040278800016</button>
+    </div>
+    <p class="small" style="margin-top:12px">1 Grind = M10 • Min 1 Grind<br>Send money to EcoCash OR Postbank above, then submit your Reference in Deposit page for approval.<br>No other number works.</p>
+  </div>
+
+  <div class="card">
+    <h3>📜 My Deposits</h3>
+    <p class="small">Pending = waiting for admin approval. Approved = Grinds added.</p>
+    <div id="myDeposits" style="margin-top:12px">Loading...</div>
+  </div>
+
+  <div class="card">
+    <h3>🛒 My Purchases</h3>
+    <div id="myPurchases" style="margin-top:12px">Loading...</div>
+  </div>
+
+  <div class="card center">
+    <p class="small">© MAROTHOLI LES-POT<br>EcoCash 128235 • Postbank 1040278800016</p>
+  </div>
+
 </div>
 
-<div id="panelWithdraw" class="card hidden">
-<h3>➖ Withdraw Royalties</h3>
-<p>Choose where YOU want YOUR money. M-Pesa is allowed here — it's your own wallet.</p>
-<div class="pausedBox" style="background:#0a1a0a;border-color:#00ff88">✅ <b>Withdrawal:</b> EcoCash, Postbank or VISA AND <b>M-Pesa allowed</b>. You type YOUR OWN number. Marotholi never asks for your PIN.</div>
-<label>Amount in Grinds</label><input id="wdGrinds" type="number" min="1" placeholder="e.g. 5 Grinds = M50">
-<p class="small" id="wdRand">M0.00</p>
-<label>Pay Me Via</label>
-<select id="wdMethod"><option value="EcoCash">EcoCash — My Number</option><option value="Postbank">Postbank or VISA — My Account</option><option value="Mpesa">M-Pesa — My Own Number</option></select>
-<label>Your EcoCash / M-Pesa Number / Postbank or VISA Account</label><input id="wdNumber" placeholder="e.g. M-Pesa 5XXXXXXX / EcoCash 6XXXXXXX / Postbank acc">
-<label>Your Full Name (must match account)</label><input id="wdName" placeholder="Full name on account">
-<button onclick="submitWithdrawal()">Request Withdrawal</button>
-<p id="wdMsg" class="small center"></p>
-</div>
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html">🎵<br>Discover</a>
+  <a href="wallet.html" class="active">👛<br>Wallet</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="auth.html">👤<br>Account</a>
+</nav>
 
-<div id="panelHistory" class="card hidden"><h3>📜 History</h3><div id="historyList">Loading...</div></div>
-<div class="card center"><a href="deposit.html"><button class="ghost">See Full Deposit Page →</button></a></div>
-</div>
-<nav class="bottomnav"><a href="discover.html">🏠<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="upload.html">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
-<script src="app.js"></script>
 <script>
-function showTab(t){
-  ['Deposit','Withdraw','History'].forEach(n=>document.getElementById('tab'+n).classList.remove('on'));
-  ['panelDeposit','panelWithdraw','panelHistory'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  if(t==='deposit'){document.getElementById('tabDeposit').classList.add('on');document.getElementById('panelDeposit').classList.remove('hidden');}
-  if(t==='withdraw'){document.getElementById('tabWithdraw').classList.add('on');document.getElementById('panelWithdraw').classList.remove('hidden');}
-  if(t==='history'){document.getElementById('tabHistory').classList.add('on');document.getElementById('panelHistory').classList.remove('hidden');loadHistory();}
+const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
+const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase){
+  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
 }
-function showPayBox(){document.getElementById('boxEcoCash').classList.toggle('active',document.getElementById('depMethod').value==='EcoCash');document.getElementById('boxPostbank').classList.toggle('active',document.getElementById('depMethod').value==='Postbank');}
-function copyText(t){navigator.clipboard.writeText(t).then(()=>alert('Copied: '+t));}
-document.getElementById('depGrinds').addEventListener('input',e=>{document.getElementById('depRand').textContent='M'+((parseFloat(e.target.value)||0)*10).toFixed(2);});
-document.getElementById('wdGrinds').addEventListener('input',e=>{document.getElementById('wdRand').textContent='M'+((parseFloat(e.target.value)||0)*10).toFixed(2);});
-async function submitDeposit(){
-  const grinds=parseInt(document.getElementById('depGrinds').value);
-  const method=document.getElementById('depMethod').value;
-  const sender=document.getElementById('depSender').value.trim();
-  const ref=document.getElementById('depRef').value.trim();
-  const msg=document.getElementById('depMsg');
-  if(!grinds||grinds<1){msg.textContent='Enter Grinds.';return;}
-  if(!sender){msg.textContent='Enter your name/number.';return;}
-  if(method==='Mpesa'||method==='PayFast'){msg.textContent='M-Pesa / PayFast are PAUSED for deposits. Use EcoCash or Postbank or VISA.';return;}
-  msg.textContent='Sending...';
-  const r=await window.LES_POT.submitDeposit({grinds,method,sender,ref});
-  msg.textContent=r.ok?'✅ Deposit request sent. Admin will approve soon.':'❌ '+r.error;
+function copyText(t){
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>alert('Copied: ' + t));
+  else { prompt('Copy this:', t); }
 }
-async function submitWithdrawal(){
-  const grinds=parseInt(document.getElementById('wdGrinds').value);
-  const method=document.getElementById('wdMethod').value;
-  const number=document.getElementById('wdNumber').value.trim();
-  const name=document.getElementById('wdName').value.trim();
-  const msg=document.getElementById('wdMsg');
-  if(!grinds||grinds<1){msg.textContent='Enter Grinds.';return;}
-  if(!number){msg.textContent='Enter your number/account.';return;}
-  if(!name){msg.textContent='Enter your full name.';return;}
-  // M-Pesa ALLOWED here - only PayFast blocked
-  if(method==='PayFast'){msg.textContent='PayFast is paused. Use EcoCash, Postbank / VISA or M-Pesa.';return;}
-  msg.textContent='Sending...';
-  const r=await window.LES_POT.submitWithdrawal({grinds,method,number,name});
-  msg.textContent=r.ok?'✅ Withdrawal request sent. You will be paid to your '+method+' ('+number+').':'❌ '+r.error;
-}
-async function loadHistory(){const el=document.getElementById('historyList');try{const h=await window.LES_POT.getHistory();if(!h.length){el.innerHTML='No history yet.';return;}el.innerHTML=h.map(x=>`<div class="flex" style="padding:10px 0;border-bottom:1px solid #222"><span>${x.type} • ${x.method||''}</span><b>${x.grinds}G • ${x.status}</b></div>`).join('');}catch(e){el.innerHTML='Failed to load.';}}
-async function loadBalance(){try{const b=await window.LES_POT.getBalance();document.getElementById('balance').textContent=(b.grinds||0)+' Grinds';document.getElementById('balanceM').textContent='M'+((b.grinds||0)*10).toFixed(2)+' • 1 Grind = M10';document.getElementById('totalEarned').textContent=b.earned||0;document.getElementById('totalSpent').textContent=b.spent||0;document.getElementById('totalWithdrawn').textContent=b.withdrawn||0;}catch(e){}}
-loadBalance();showPayBox();
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const {user, profile} = await getMyProfile();
+  if(!user) return location.href='auth.html';
+  const bal = profile ? (profile.grind_balance || 0) : 0;
+  document.getElementById('topBal').textContent = bal + ' Grinds';
+  document.getElementById('balBig').textContent = bal;
+  document.getElementById('balRand').textContent = 'M' + (bal * 10) + ' value';
+  document.getElementById('walletUser').textContent = (profile.full_name || profile.email || '') + ' • ' + (profile.phone || '');
+  loadMyDeposits(user.id);
+  try{
+    const {data: pur} = await sb.from('purchases').select('*,songs(title,artist)').eq('user_id', user.id).order('created_at',{ascending:false});
+    const box = document.getElementById('myPurchases');
+    if(!pur || !pur.length){ box.innerHTML = 'No purchases yet.'; }
+    else {
+      box.innerHTML = pur.map(p=>`<div class="payRow"><div><b>${p.songs ? p.songs.title : 'Song'}</b><br><small>${p.songs ? p.songs.artist : ''} • ${p.price_grinds} Grind</small></div><span class="status-approved">OWNED</span></div>`).join('');
+    }
+  }catch(e){ document.getElementById('myPurchases').innerHTML = 'Could not load purchases.'; }
+});
 </script>
 </body>
 </html>
