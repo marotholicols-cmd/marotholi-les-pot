@@ -1,18 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0a0a10"/>
-      <stop offset="100%" stop-color="#1a1a22"/>
-    </linearGradient>
-    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#c8ff00"/>
-      <stop offset="100%" stop-color="#d4ff3f"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#lime)" stroke-width="14"/>
-  <circle cx="256" cy="256" r="62" fill="url(#lime)"/>
-  <circle cx="256" cy="256" r="18" fill="#0a0a10"/>
-  <text x="256" y="395" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="900" fill="#c8ff00" letter-spacing="4">LES-POT</text>
-  <text x="256" y="130" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#ffffff" letter-spacing="6">MAROTHOLI</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#0f0f0f"/>
+
+  <!-- Clouds - Blue -->
+  <g fill="#2196F3">
+    <ellipse cx="145" cy="145" rx="95" ry="45"/>
+    <ellipse cx="105" cy="160" rx="55" ry="35"/>
+    <ellipse cx="190" cy="160" rx="55" ry="35"/>
+    <ellipse cx="145" cy="125" rx="55" ry="35"/>
+    <ellipse cx="365" cy="145" rx="80" ry="38"/>
+    <ellipse cx="330" cy="158" rx="45" ry="28"/>
+    <ellipse cx="400" cy="158" rx="45" ry="28"/>
+    <ellipse cx="365" cy="128" rx="45" ry="28"/>
+  </g>
+
+  <!-- RainDrops - Blue -->
+  <g fill="#2196F3">
+    <path d="M70 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M110 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M150 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M190 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M230 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M90 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M130 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M170 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M210 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M70 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M110 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M380 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M420 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M380 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M420 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M380 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M420 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M380 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M60 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+    <path d="M100 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+  </g>
+
+  <!-- Mountains - Lime Green -->
+  <path d="M20 430 L130 330 L210 410 L280 350 L380 440 L470 360 L470 470 Q470 490 450 490 L60 490 Q20 490 20 450 Z" fill="#d4ff3f"/>
+
+  <!-- Bull - Lime Green - Standing on mountains -->
+  <g fill="#d4ff3f">
+    <!-- Body -->
+    <path d="M130 300 Q150 250 220 240 Q260 235 290 250 Q330 265 335 300 Q340 330 320 350 Q300 365 260 365 L180 365 Q140 360 130 330 Z"/>
+    <!-- Head -->
+    <path d="M320 260 Q340 250 360 260 Q375 270 370 290 Q365 310 345 315 Q325 318 315 305 Q305 285 320 260 Z"/>
+    <!-- Horns -->
+    <path d="M325 258 Q320 230 340 225 Q335 240 345 245 L335 260 Z" fill="#d4ff3f"/>
+    <path d="M365 262 Q385 255 390 235 Q395 255 380 268 Z" fill="#d4ff3f"/>
+    <!-- Legs -->
+    <rect x="155" y="360" width="18" height="55" rx="8"/>
+    <rect x="215" y="360" width="18" height="55" rx="8"/>
+    <rect x="270" y="360" width="18" height="55" rx="8"/>
+    <!-- Tail -->
+    <path d="M135 290 Q110 310 120 350 Q115 330 130 315 Z"/>
+    <!-- Ear -->
+    <ellipse cx="340" cy="275" rx="12" ry="6"/>
+  </g>
+
+  <!-- RainDrop on Bull back -->
+  <path d="M175 270 q8 -14 16 0 q0 10 -8 10 q-8 0 -8 -10 Z" fill="#2196F3"/>
 </svg>
