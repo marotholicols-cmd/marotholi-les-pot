@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Withdraw - Marotholi Les-Pot</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+    * { box-sizing: border-box; }
+  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
+  header { background: #d4ff3f; color: #000; padding: 14px; text-align: center; font-weight: 900; font-size: 18px; position: sticky; top: 0; z-index: 50; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 14px; }
+  .bal-card { background: linear-gradient(135deg, #d4ff3f, #00ff88); color: #000; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 14px; }
+  .bal-card b { font-size: 38px; display: block; }
+  .bal-card span { font-size: 14px; font-weight: 700; }
+  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: 14px; opacity: .8; margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; outline: none; }
+  input:focus, select:focus { border-color: #d4ff3f; }
+  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
+  .center { text-align: center; }
+  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+  .choice { display: flex; gap: 8px; margin: 6px 0; }
+  .choice button { flex: 1; padding: 11px; border-radius: 12px; border: 2px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; font-size: 13px; }
+  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  .warn { color: #ff6666; font-weight: 800; font-size: 13px; }
+  .ok { color: #d4ff3f; font-weight: 800; font-size: 13px; }
+  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
+  .bottomnav a { color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; text-align: center; opacity: .7; padding: 6px; }
+  .bottomnav a.active { color: #d4ff3f; opacity: 1; }
+</style>
+</head>
+<body>
+<header>MAROTHOLI LES-POT — WITHDRAW</header>
+<div class="wrap">
+
+  <div class="bal-card">
+    <span>💰 YOUR BALANCE</span>
+    <b id="walletBalance">0.00 G</b>
+    <span id="walletSub">M0.00 • Min withdraw 2.5 G • M25</span>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0">🏧 Withdraw — Lesotho + South Africa ONLY</h3>
+    <p class="small">Min 2.5 G = M25 • Max = your balance • Any account, but LS + ZA only. Other countries will be REJECTED by admin.</p>
+
+    <label>Amount in Grind (G) — Min 2.5 G</label>
+    <input id="wdAmount" type="number" step="0.01" placeholder="2.5">
+
+    <label>Country — REQUIRED</label>
+    <div class="choice">
+      <button type="button" id="cLS" class="on" onclick="setCountry('Lesotho')">🇱🇸 Lesotho</button>
+      <button type="button" id="cZA" onclick="setCountry('South Africa')">🇿🇦 South Africa</button>
+      <button type="button" id="cOther" onclick="setCountry('Other')">🌍 Other</button>
+    </div>
+    <p id="countryWarn" class="ok">✅ Lesotho allowed.</p>
+
+    <label>Withdraw to — Choose account type</label>
+    <select id="wdMethod" onchange="updateWdLabel()">
+      <option value="EcoCash">EcoCash (Lesotho)</option>
+      <option value="Mpesa">Mpesa</option>
+      <option value="Bank">Bank - Lesotho / SA Bank</option>
+      <option value="Capitec">Capitec (SA)</option>
+      <option value="FNB">FNB (SA)</option>
+      <option value="ABSA">ABSA (SA)</option>
+      <option value="Standard Bank">Standard Bank (SA)</option>
+      <option value="Nedbank">Nedbank (SA)</option>
+      <option value="TymeBank">TymeBank (SA)</option>
+    </select>
+
+    <label id="wdLabel">EcoCash Number</label>
+    <input id="wdNumber" placeholder="e.g. 63XXXXXX / Account number">
+
+    <label>Full Name (as on account)</label>
+    <input id="wdName" placeholder="Full name as on account">
+
+    <button class="btn" onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
+    <p id="wdMsg" class="small center"></p>
+    <p class="small center">⚠️ Admin will pay you manually, then click APPROVE. Don't spam - 1 request at a time.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0">📜 My Withdrawals</h3>
+    <div id="myWithdrawals"><p class="small">Loading...</p></div>
+  </div>
+
+  <button class="btn-dark" onclick="location.href='wallet.html'">⬅️ Back to Wallet / Top Up</button>
+
+</div>
+
+<div class="bottomnav">
+  <a href="discover.html">🔥<br>Discover</a>
+  <a href="library.html">📚<br>Library</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="wallet.html">💰<br>Wallet</a>
+  <a href="withdraw.html" class="active">🏧<br>Withdraw</a>
+  <a href="account.html">👤<br>Account</a>
+</div>
+
+<script>
+  // WITHDRAW - uses app.js -> SUPA_URL = https://mmkxiniybctmgoozaecp.supabase.co
+  // SUPA_KEY = sb_publishable_... (publishable, safe)
+  // Rules: LS + ZA ONLY, Min 2.5 G, Any account
+  let WD_COUNTRY = 'Lesotho';
+
+  function setCountry(c) {
+    WD_COUNTRY = c;
+    document.getElementById('cLS').classList.toggle('on', c === 'Lesotho');
+    document.getElementById('cZA').classList.toggle('on', c === 'South Africa');
+    document.getElementById('cOther').classList.toggle('on', c === 'Other');
+    const w = document.getElementById('countryWarn');
+    if (c === 'Other') {
+      w.textContent = '❌ Other countries are NOT allowed. Withdrawals are Lesotho + South Africa ONLY. This will be rejected.';
+      w.className = 'warn';
+    } else {
+      w.textContent = '✅ ' + c + ' allowed.';
+      w.className = 'ok';
+    }
+    updateWdLabel();
+  }
+
+  function updateWdLabel() {
+    const m = document.getElementById('wdMethod').value;
+    const labels = {
+      'EcoCash': 'EcoCash Number',
+      'Mpesa': 'Mpesa Number',
+      'Bank': 'Bank Account Number',
+      'Capitec': 'Capitec Account Number',
+      'FNB': 'FNB Account Number',
+      'ABSA': 'ABSA Account Number',
+      'Standard Bank': 'Standard Bank Account Number',
+      'Nedbank': 'Nedbank Account Number',
+      'TymeBank': 'TymeBank Account Number'
+    };
+    document.getElementById('wdLabel').textContent = labels[m] || 'Account Number';
+  }
+
+  async function doWithdraw() {
+    const amt = document.getElementById('wdAmount').value;
+    const method = document.getElementById('wdMethod').value;
+    const num = document.getElementById('wdNumber').value.trim();
+    const name = document.getElementById('wdName').value.trim();
+    const msg = document.getElementById('wdMsg');
+    if (!num) { msg.textContent = 'Enter number / account'; return; }
+    if (!name) { msg.textContent = 'Enter full name'; return; }
+    // Details format: "Lesotho | EcoCash | 63XXXXXX | Name: John"
+    // app.js checks for "Lesotho" or "South Africa" in this string
+    const details = WD_COUNTRY + ' | ' + method + ' | ' + num + ' | Name: ' + name;
+    await submitWithdrawal(amt, method, details);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    updateWdLabel();
+    setCountry('Lesotho');
+    loadWallet();
+  });
+</script>
+</body>
+</html>
