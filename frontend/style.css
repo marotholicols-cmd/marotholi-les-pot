@@ -1,235 +1,25 @@
-/* ============================================================
-   MAROTHOLI LES-POT - style.css
-   Dark theme + lime green (#c8ff00 / #d4ff3f)
-   ============================================================ */
-
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  background:#0a0a10;
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  padding-bottom:110px;
-  min-height:100vh;
-}
-
-/* ---------- TOPBAR ---------- */
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:#0a0a10;
-  border-bottom:1px solid #222;
-  padding:12px 16px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.logo{font-weight:900;font-size:18px;letter-spacing:1px}
-.logo span{color:#c8ff00}
-.badge{
-  background:#c8ff00;
-  color:#000;
-  font-weight:800;
-  font-size:12px;
-  padding:7px 12px;
-  border-radius:999px;
-  text-decoration:none;
-  white-space:nowrap;
-}
-.badge:hover{opacity:.9}
-
-/* ---------- LAYOUT ---------- */
-.wrap{max-width:520px;margin:0 auto;padding:14px}
-.card{
-  background:#1a1a22;
-  border:1px solid #2a2a35;
-  border-radius:16px;
-  padding:16px;
-  margin-bottom:14px;
-}
-.center{text-align:center}
-.small{color:#9a9aab;font-size:12px;line-height:1.6}
-h2{font-size:22px;font-weight:900}
-h3{font-size:16px;font-weight:800}
-
-/* ---------- FORMS ---------- */
-label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px;color:#ddd}
-input,select,textarea{
-  width:100%;
-  padding:13px;
-  border-radius:12px;
-  border:1px solid #333;
-  background:#0a0a10;
-  color:#fff;
-  font-size:15px;
-  outline:none;
-}
-input:focus,select:focus,textarea:focus{border-color:#c8ff00}
-input::placeholder{color:#666}
-select{appearance:none}
-button{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:1px solid #c8ff00;
-  background:#c8ff00;
-  color:#000;
-  font-weight:900;
-  font-size:15px;
-  cursor:pointer;
-  margin-top:14px;
-}
-button:hover{opacity:.9}
-button:disabled{opacity:.5;cursor:not-allowed}
-button.ghost{
-  background:transparent;
-  color:#fff;
-  border-color:#333;
-}
-button.ghost:hover{border-color:#c8ff00}
-a{color:#c8ff00;text-decoration:none}
-a:hover{text-decoration:underline}
-
-/* ---------- SONG CARDS ---------- */
-.songCard{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  padding:12px 0;
-  border-bottom:1px solid #222;
-}
-.songCard:last-child{border-bottom:none}
-.songCard img{
-  width:64px;height:64px;
-  border-radius:12px;
-  object-fit:cover;
-  background:#222;
-  border:1px solid #333;
-  flex-shrink:0;
-}
-.songCard .info{flex:1;min-width:0}
-.songCard .info b{
-  display:block;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  font-size:15px;
-}
-.songCard .info small{color:#9a9aab;font-size:12px}
-.songCard .actions{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  flex-shrink:0;
-}
-.songCard .actions button{
-  width:auto;
-  padding:8px 14px;
-  font-size:12px;
-  margin-top:0;
-  border-radius:999px;
-}
-.songCard .actions button.buyBtn{
-  background:#d4ff3f;
-  border-color:#d4ff3f;
-}
-.songCard .actions button.playBtn{
-  background:transparent;
-  color:#fff;
-  border-color:#333;
-}
-
-/* ---------- MINI PLAYER ---------- */
-.miniPlayer{
-  position:fixed;
-  bottom:68px;
-  left:0;
-  right:0;
-  z-index:200;
-  background:#111118;
-  border-top:1px solid #333;
-  padding:10px 14px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#fff;font-family:system-ui,Arial,sans-serif;padding-bottom:90px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#111;position:sticky;top:0;z-index:10}
+.logo{font-weight:900;letter-spacing:1px}.logo span{color:#c8ff00}
+.badge{background:#c8ff00;color:#000;padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;text-decoration:none}
+.wrap{max-width:520px;margin:0 auto;padding:12px}
+.card{background:#151515;border:1px solid #222;border-radius:16px;padding:16px;margin-bottom:12px}
+h2{font-size:20px}h3{font-size:16px;margin-bottom:6px}
+.small{color:#aaa;font-size:13px;line-height:1.5}
+input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#fff;padding:12px;border-radius:10px;margin-top:8px}
+button{background:#c8ff00;color:#000;border:0;padding:12px 16px;border-radius:10px;font-weight:800;cursor:pointer;width:100%;margin-top:8px}
+button:active{transform:scale(.98)}
+.songCard{display:flex;gap:10px;align-items:center;background:#1c1c1c;border:1px solid #262626;border-radius:12px;padding:10px;margin-top:10px}
+.songCard img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#222}
+.songCard .info{flex:1;min-width:0}.songCard .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.songCard .info small{color:#aaa}
+.songCard .actions{display:flex;flex-direction:column;gap:6px;min-width:90px}
+.playBtn{background:#c8ff00}.buyBtn{background:#fff}
+.miniPlayer{position:fixed;left:0;right:0;bottom:64px;background:#111;border-top:1px solid #222;display:flex;align-items:center;gap:10px;padding:10px 12px;z-index:50}
 .miniPlayer.hidden{display:none}
-.miniPlayer img{
-  width:48px;height:48px;
-  border-radius:10px;
-  object-fit:cover;
-  background:#222;
-  border:1px solid #333;
-  flex-shrink:0;
-}
-.miniPlayer .pInfo{flex:1;min-width:0}
-.miniPlayer .pInfo b{
-  display:block;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  font-size:14px;
-}
-.miniPlayer .pInfo small{color:#9a9aab;font-size:12px}
-.miniPlayer button{
-  width:48px;height:48px;
-  padding:0;
-  margin-top:0;
-  border-radius:50%;
-  font-size:18px;
-  flex-shrink:0;
-}
-.miniPlayer .closeBtn{
-  width:32px;height:32px;
-  background:transparent;
-  border-color:#333;
-  color:#fff;
-  font-size:14px;
-}
-
-/* ---------- BOTTOM NAV ---------- */
-.bottomnav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  z-index:300;
-  background:#0a0a10;
-  border-top:1px solid #222;
-  display:flex;
-  justify-content:space-around;
-  padding:8px 0 10px;
-}
-.bottomnav a{
-  color:#9a9aab;
-  text-decoration:none;
-  text-align:center;
-  font-size:11px;
-  line-height:1.4;
-  flex:1;
-}
+.miniPlayer img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.miniPlayer .pInfo{flex:1;min-width:0}.miniPlayer .pInfo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.miniPlayer .pInfo small{color:#aaa}
+.miniPlayer button{width:44px;padding:10px}.closeBtn{background:#222!important;color:#fff!important}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;background:#111;border-top:1px solid #222;display:flex;z-index:60}
+.bottomnav a{flex:1;text-align:center;padding:8px 2px;color:#aaa;text-decoration:none;font-size:11px;line-height:1.2}
 .bottomnav a.active{color:#c8ff00}
-.bottomnav a:hover{text-decoration:none;color:#fff}
-
-/* ---------- UTILITIES ---------- */
-.hidden{display:none !important}
-.centerBtn{margin-left:auto;margin-right:auto;display:block}
-.chip{
-  display:inline-block;
-  background:#222;
-  border:1px solid #333;
-  color:#ddd;
-  font-size:11px;
-  padding:5px 10px;
-  border-radius:999px;
-  margin:2px 2px 2px 0;
-}
-.chip.active{background:#c8ff00;color:#000;border-color:#c8ff00}
-
-/* ---------- RESPONSIVE ---------- */
-@media (max-width:480px){
-  .wrap{padding:12px}
-  .card{padding:14px}
-  .logo{font-size:16px}
-}
