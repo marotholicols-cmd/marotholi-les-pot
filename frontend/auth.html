@@ -3,59 +3,80 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Account - Marotholi Les-Pot</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c8ff00">
-<link rel="stylesheet" href="style.css">
+<title>Login - Marotholi Les-Pot</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<style>
+    * { box-sizing: border-box; }
+  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
+  .wrap { max-width: 420px; margin: 0 auto; }
+  .logo { background: #d4ff3f; color: #000; padding: 18px; border-radius: 20px; text-align: center; font-weight: 900; font-size: 20px; margin-bottom: 16px; }
+  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 16px; }
+  label { display: block; font-size: 14px; opacity: .8; margin: 10px 0 4px; }
+  input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; }
+  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
+  .center { text-align: center; }
+  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 12px; }
+  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+  .choice { display: flex; gap: 8px; margin-bottom: 10px; }
+  .choice button { flex: 1; padding: 11px; border-radius: 99px; border: 1px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; }
+  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  .hidden { display: none; }
+</style>
 </head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
 <div class="wrap">
-  <div class="card" id="loggedOut">
-    <h2>👤 Login / Sign Up</h2>
-    <p class="small" style="margin-top:6px">You need an account to buy songs and top up wallet.</p>
-    <label>Email</label><input id="email" type="email" placeholder="you@gmail.com">
-    <label>Password</label><input id="password" type="password" placeholder="Min 6 characters">
-    <button onclick="doSignup()">Create Account</button>
-    <button class="ghost" onclick="doLogin()">Log In</button>
-    <p class="small center" style="margin-top:10px" id="authMsg"></p>
+  <div class="logo">MAROTHOLI LES-POT 🔥<br><span style="font-size:12px;font-weight:700">LESOTHO MUSIC • ARTIST SETS OWN PRICE</span></div>
+  <div class="card">
+    <div class="choice">
+      <button id="btnLogin" class="on" onclick="setMode('login')">Login</button>
+      <button id="btnSignup" onclick="setMode('signup')">Sign Up</button>
+    </div>
+    <div id="signupNameBox" class="hidden">
+      <label>Username / Artist Name</label>
+      <input id="authUsername" placeholder="e.g. FlackoBird">
+    </div>
+    <label>Email</label>
+    <input id="authEmail" type="email" placeholder="you@email.com">
+    <label>Password</label>
+    <input id="authPass" type="password" placeholder="••••••••">
+    <button class="btn" id="authBtn" onclick="doAuth()">LOGIN →</button>
+    <p id="authMsg" class="small center"></p>
+    <p class="small center">By signing up you agree: only upload YOUR OWN copyright music. 1G = M10.</p>
   </div>
-  <div class="card hidden" id="loggedIn">
-    <h2>✅ Logged In</h2>
-    <p class="small" style="margin-top:8px" id="userEmail"></p>
-    <p style="margin-top:10px">Balance: <b id="myBal" style="color:#d4ff3f">0 Grinds</b></p>
-    <button onclick="location.href='wallet.html'">Go To Wallet →</button>
-    <button class="ghost" onclick="logoutUser()">Log Out</button>
-  </div>
+  <button class="btn-dark" onclick="location.href='discover.html'">🔥 Browse without login →</button>
 </div>
-<nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html">⬆️<br>Upload</a><a href="auth.html" class="active">👤<br>Account</a></nav>
 <script>
-const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
-if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
-async function doSignup(){
-  const e=document.getElementById('email').value.trim(), p=document.getElementById('password').value;
-  if(!e||!p) return alert('Enter email + password');
-  const {error}=await sb.auth.signUp({email:e,password:p});
-  if(error) return alert(error.message);
-  alert('Account created! Now log in.'); doLogin();
-}
-async function doLogin(){
-  const e=document.getElementById('email').value.trim(), p=document.getElementById('password').value;
-  const {error}=await sb.auth.signInWithPassword({email:e,password:p});
-  if(error) return alert(error.message);
-  location.reload();
-}
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const {user,profile}=await getMyProfile();
-  if(user){
-    document.getElementById('loggedOut').classList.add('hidden');
-    document.getElementById('loggedIn').classList.remove('hidden');
-    document.getElementById('userEmail').textContent=user.email;
-    if(profile){ document.getElementById('myBal').textContent=(profile.grind_balance||0)+' Grinds'; document.getElementById('topBal').textContent=(profile.grind_balance||0)+' Grinds'; }
+  let MODE = 'login';
+  function setMode(m) {
+    MODE = m;
+    document.getElementById('btnLogin').classList.toggle('on', m === 'login');
+    document.getElementById('btnSignup').classList.toggle('on', m === 'signup');
+    document.getElementById('signupNameBox').classList.toggle('hidden', m !== 'signup');
+    document.getElementById('authBtn').textContent = m === 'login' ? 'LOGIN →' : 'SIGN UP →';
   }
-});
+  async function doAuth() {
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPass').value;
+    const name = document.getElementById('authUsername').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email || !pass) { msg.textContent = 'Enter email + password'; return; }
+    if (pass.length < 6) { msg.textContent = 'Password must be 6+ chars'; return; }
+    msg.textContent = 'Loading...';
+    if (MODE === 'signup') {
+      const u = await signUp(email, pass, name || email.split('@')[0]);
+      if (u) { msg.textContent = '✅ Signed up! Check email if needed, then login.'; setMode('login'); }
+      else msg.textContent = '';
+    } else {
+      const u = await signIn(email, pass);
+      if (u) { location.href = 'discover.html'; }
+      else msg.textContent = '';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', async function () {
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (user) location.href = 'discover.html';
+  });
 </script>
 </body>
 </html>
