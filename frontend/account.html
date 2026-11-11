@@ -10,16 +10,15 @@
 <style>
 body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:110px}
 header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
-header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .wrap{max-width:560px;margin:0 auto;padding:14px}
 .card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
 .card h3{margin:0 0 8px 0}
 label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
-.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
+.btn2{display:block;text-align:center;background:#333;color:#fff;padding:12px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:10px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
-.msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
+.msg{margin-top:10px;font-size:14px;min-height:20px}.msg.ok{color:#d4ff3f}.msg.error{color:#ff6b6b}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
@@ -28,50 +27,42 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <body>
 <header>MAROTHOLI LES-POT<small>👤 My Account</small></header>
 <div class="wrap">
-<div class="card" id="loginCard" style="display:none"><h3>Not Logged In</h3><p class="small">Login to see your account.</p><button class="btn" onclick="location.href='auth.html'">Login →</button></div>
-<div id="accountContent" style="display:none">
-<div class="card"><h3>👤 Profile</h3><p class="small" id="emailLine"></p><p style="font-size:24px;font-weight:900;margin:6px 0" id="balLine">Loading...</p><p class="small" id="balM"></p><button class="btn2" onclick="location.href='wallet.html'">💰 Wallet</button><button class="btn2" onclick="location.href='library.html'">📚 My Library</button><div id="adminBtnWrap" style="display:none"><button class="btn" onclick="location.href='admin.html'">🛡️ Go to Admin</button></div></div>
-<div class="card"><h3>✏️ Edit Profile</h3>
-<label>Stage / Artist Name</label><input id="artistName" placeholder="e.g. SHUTTER">
-<label>Username</label><input id="username" placeholder="e.g. shutter_ls">
-<label>Bio</label><input id="bio" placeholder="About you...">
-<button class="btn" onclick="saveProfile()">Save Profile</button><p class="msg" id="msg"></p>
-</div>
-<div class="card"><h3>🔒 Logout</h3><button class="btn2" onclick="doLogout()">Logout</button></div>
-</div>
+<div class="card" id="loginCard"><h3>Login / Sign Up</h3><label>Email</label><input id="email" type="email" placeholder="you@gmail.com"><label>Password</label><input id="password" type="password" placeholder="••••••••"><button class="btn" onclick="doLogin()">Login</button><button class="btn" onclick="doSignup()" style="background:#333;color:#fff">Sign Up</button><p class="msg" id="loginMsg"></p></div>
+<div class="card" id="profileCard" style="display:none"><h3>👤 My Profile</h3><p><b id="pEmail"></b></p><p class="small">Balance: <b id="pBal" style="color:#d4ff3f">0.00 G</b> <span id="pBalM"></span></p><label>Display Name</label><input id="displayName" placeholder="e.g. Thabo Mokoena"><label>Phone (for EcoCash / M-Pesa)</label><input id="phone" placeholder="e.g. 6288..."><button class="btn" onclick="saveProfile()">Save Profile</button><p class="msg" id="profileMsg"></p><a class="btn2" href="artist-dashboard.html" style="background:#d4ff3f;color:#000">🎤 My Artist Dashboard - See Sales →</a><a class="btn2" href="wallet.html">💰 My Wallet →</a><a class="btn2" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a><a class="btn2" href="upload.html">⬆️ Upload Music →</a><button class="btn" onclick="doLogout()" style="background:#ff4444;color:#fff">Logout</button></div>
+<div class="card"><h3>ℹ️ About</h3><p class="small">Marotholi Les-Pot — Lesotho Music. 1G = M10. Preview 30s free, Buy full song. Deposit: EcoCash + PostBank only. Withdraw: BANK • VISA • MPESA • ECOCASH • PostBank — any method OK.</p></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
 <script>
-let currentUser=null;
-async function loadAccount(){
+async function refresh(){
   const user=await getCurrentUser();
-  if(!user){document.getElementById('loginCard').style.display='block';return;}
-  currentUser=user;
-  document.getElementById('accountContent').style.display='block';
-  document.getElementById('emailLine').textContent=user.email;
-  const {data:prof}=await window.sb.from('profiles').select('*').eq('id',user.id).single();
-  if(prof){
-    document.getElementById('artistName').value=prof.artist_name||prof.display_name||'';
-    document.getElementById('username').value=prof.username||'';
-    document.getElementById('bio').value=prof.bio||'';
-    document.getElementById('balLine').textContent=Number(prof.balance_grind||0).toFixed(2)+" G";
-    document.getElementById('balM').textContent="= M"+grindToMaloti(prof.balance_grind||0);
-    if(prof.role==='admin'||prof.is_admin===true) document.getElementById('adminBtnWrap').style.display='block';
+  document.getElementById('loginCard').style.display=user?'none':'block';
+  document.getElementById('profileCard').style.display=user?'block':'none';
+  if(!user) return;
+  document.getElementById('pEmail').textContent=user.email||'';
+  const {data}=await window.sb.from('profiles').select('*').eq('id',user.id).single();
+  if(data){
+    document.getElementById('displayName').value=data.display_name||data.full_name||'';
+    document.getElementById('phone').value=data.phone||'';
+    const bal=Number(data.balance_grind||0);
+    document.getElementById('pBal').textContent=bal.toFixed(2)+' G';
+    document.getElementById('pBalM').textContent='= M'+grindToMaloti(bal);
   }
 }
-async function saveProfile(){
-  const msg=document.getElementById('msg');
-  if(!currentUser) return;
-  const artistName=document.getElementById('artistName').value.trim();
-  const username=document.getElementById('username').value.trim();
-  const bio=document.getElementById('bio').value.trim();
-  msg.textContent='Saving...';msg.className='msg';
-  const {error}=await window.sb.from('profiles').update({artist_name:artistName,display_name:artistName,username:username,bio:bio}).eq('id',currentUser.id);
-  if(error){msg.textContent='❌ '+error.message;msg.className='msg error';return;}
-  msg.textContent='✅ Saved!';msg.className='msg ok';
+async function doLogin(){
+  const msg=document.getElementById('loginMsg');
+  try{const {error}=await window.sb.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value}); if(error) throw error; msg.textContent='✅ Logged in!';msg.className='msg ok'; refresh();}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
 }
-async function doLogout(){await window.sb.auth.signOut();location.href='auth.html';}
-document.addEventListener('DOMContentLoaded',loadAccount);
+async function doSignup(){
+  const msg=document.getElementById('loginMsg');
+  try{const {error}=await window.sb.auth.signUp({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value}); if(error) throw error; msg.textContent='✅ Check your email to confirm, then Login.';msg.className='msg ok';}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+}
+async function saveProfile(){
+  const user=await requireLogin(); if(!user) return;
+  const msg=document.getElementById('profileMsg');
+  try{const {error}=await window.sb.from('profiles').upsert({id:user.id,email:user.email,display_name:document.getElementById('displayName').value.trim(),full_name:document.getElementById('displayName').value.trim(),phone:document.getElementById('phone').value.trim()}); if(error) throw error; msg.textContent='✅ Saved!';msg.className='msg ok';}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+}
+async function doLogout(){await window.sb.auth.signOut(); refresh();}
+document.addEventListener('DOMContentLoaded',refresh);
 </script>
 </body>
 </html>
