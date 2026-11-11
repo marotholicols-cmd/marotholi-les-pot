@@ -26,6 +26,10 @@ a:active{opacity:.7}
 .logo{font-size:22px;font-weight:900;letter-spacing:-.5px}
 .logo span{color:var(--green);text-shadow:0 0 18px rgba(163,255,0,.6)}
 .badge{background:linear-gradient(135deg,var(--yellow),var(--green));color:#000;font-size:12px;font-weight:900;padding:6px 12px;border-radius:999px;box-shadow:var(--glow);white-space:nowrap}
+.badge.admin{background:linear-gradient(135deg,var(--yellow),var(--green));color:#000}
+.badge.blocked{background:#ff2d55;color:#fff}
+.badge.null{background:#ffaa00;color:#000}
+.badge.paused{background:#ffaa00;color:#000}
 
 /* HERO */
 .hero{padding:30px 22px 26px;background:linear-gradient(135deg,#d4ff3f 0%,#a3ff00 45%,#00ff88 100%);color:#000;border-radius:0 0 28px 28px;box-shadow:0 20px 40px rgba(163,255,0,.25)}
@@ -41,18 +45,23 @@ a:active{opacity:.7}
 .card h2{font-size:20px;font-weight:900}
 .card p{color:var(--muted);font-size:14px;line-height:1.55}
 .card:active{border-color:#3a3a45}
+.top{display:flex;justify-content:space-between;align-items:center}
+.emptyBox{background:#1e1e1e;border:1px solid #333;border-radius:16px;padding:20px;text-align:center}
 
 /* FORMS */
 input,select,textarea{width:100%;padding:14px;background:#0a0a10;border:1.5px solid #2a2a35;border-radius:12px;color:#fff;margin-bottom:12px;font-size:15px;outline:none;transition:.2s}
 input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(163,255,0,.15);background:#0d0d14}
 input::placeholder{color:#666}
 label{font-size:13px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px}
+input:disabled,select:disabled{opacity:.5;cursor:not-allowed}
 
 /* BUTTONS */
 button{width:100%;padding:15px;background:linear-gradient(135deg,var(--yellow),var(--green));color:#000;border:none;border-radius:14px;font-weight:900;font-size:16px;cursor:pointer;transition:.15s;box-shadow:0 6px 20px rgba(163,255,0,.25)}
 button:active{transform:scale(.97)}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 button.ghost{background:#22222c;border:1px solid #333;color:#fff;box-shadow:none}
 button.danger{background:linear-gradient(135deg,#ff5a5a,#ff3b3b);color:#fff}
+button.blue{background:#2196f3;color:#fff}
 button.small{width:auto;padding:9px 16px;font-size:13px;border-radius:999px}
 .playBtn{background:linear-gradient(135deg,var(--yellow),var(--green));color:#000;border:0;padding:10px 18px;border-radius:999px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:var(--glow)}
 .playBtn:active{transform:scale(.95)}
@@ -60,21 +69,50 @@ button.small{width:auto;padding:9px 16px;font-size:13px;border-radius:999px}
 /* SONGS */
 .song{display:flex;gap:14px;align-items:center}
 .song img,.cover{width:64px;height:64px;border-radius:14px;object-fit:cover;background:#222;flex-shrink:0;border:1px solid #333}
+.coverPlaceholder{width:56px;height:56px;min-width:56px;border-radius:10px;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .song .meta{flex:1;min-width:0}
 .song .meta b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .song .meta small{color:var(--muted);font-size:12px}
 .price-tag{color:var(--green);font-weight:900;font-size:15px}
 .flex{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.shareBtn{background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:999px;cursor:pointer;font-size:12px;margin-top:6px;width:100%}
+
+/* UPLOAD - Toggle + Preview */
+.toggleRow{display:flex;gap:8px}
+.toggleRow button{flex:1;padding:12px;border-radius:12px;border:1px solid #333;background:#222;color:#fff;cursor:pointer;font-weight:900;box-shadow:none}
+.toggleRow button.on{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.previewCard{background:#111;border:1px solid #333;border-radius:14px;padding:12px;margin-top:14px;display:flex;gap:12px;align-items:center}
+.previewCard img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#333}
+.priceHint{font-size:13px;color:#d4ff3f;margin-top:6px}
+
+/* WALLET / DEPOSIT - Pay boxes */
+.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.5}
+.paybox{background:#000;border:1px solid #333;border-radius:12px;padding:12px;margin-top:10px;line-height:1.6;display:none}
+.paybox.active{display:block}
+.paybox b{color:#d4ff3f;font-size:18px;word-break:break-all}
+.paytag{display:inline-block;background:#d4ff3f;color:#000;font-size:11px;font-weight:900;padding:3px 8px;border-radius:20px;margin-bottom:6px}
+.copyBtn{width:auto;padding:6px 12px;border-radius:999px;background:#333;color:#fff;font-size:12px;font-weight:700;margin-top:6px;box-shadow:none}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;background:#222;color:#fff;box-shadow:none}
+.tabs button.on{background:#d4ff3f;color:#000}
+.statRow{display:flex;gap:8px;margin-top:12px}
+.statBox{flex:1;background:#111;border:1px solid #333;border-radius:12px;padding:10px;text-align:center}
+.statBox b{font-size:16px;color:#d4ff3f}
+.statBox div{font-size:11px;opacity:.7}
 
 /* NAV */
 .bottomnav,.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(13,13,20,.95);backdrop-filter:blur(12px);border-top:1px solid #222;display:flex;justify-content:space-around;padding:12px 0 calc(12px + env(safe-area-inset-bottom));z-index:40}
-.bottomnav a,.nav a,.nav button{font-size:12px;color:var(--muted);text-align:center;background:none;border:none;width:auto;padding:6px;font-weight:700;cursor:pointer}
+.bottomnav a,.nav a,.nav button{font-size:12px;color:var(--muted);text-align:center;background:none;border:none;width:auto;padding:6px;font-weight:700;cursor:pointer;box-shadow:none}
 .bottomnav a.active,.nav a.active,.nav button.active{color:var(--green);font-weight:900;text-shadow:0 0 12px rgba(163,255,0,.5)}
 
 /* PLAYER */
 .player,#player{position:fixed;bottom:68px;left:12px;right:12px;background:rgba(26,26,36,.95);backdrop-filter:blur(12px);border:1px solid #333;border-radius:18px;padding:12px;display:flex;align-items:center;gap:12px;z-index:35;box-shadow:var(--shadow)}
 #player audio{width:100%;max-width:600px}
 #miniPlayer{position:fixed;bottom:68px;left:12px;right:12px;background:#1a1a24;border:1px solid #333;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;z-index:35}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.controls button{width:auto;background:#222;color:#fff;padding:10px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:none}
+.controls button.primary{background:#d4ff3f;color:#000;padding:10px 20px}
+.controls button.on{background:#d4ff3f;color:#000}
 
 /* HELPERS */
 .hidden{display:none!important}
