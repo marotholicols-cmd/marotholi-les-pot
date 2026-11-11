@@ -76,16 +76,58 @@ async function loadDiscover(){
 }
 async function previewSong(id){
   const s=allSongs.find(function(x){return String(x.id)===String(id);});
-  if(!s) return;
-  // FIXED: Use full audio_url directly - it already plays in Chrome
-  // Only use getSongStreamUrl if we only have a path
+  if(!s){ alert('Song not found'); return; }
   let url = s.audio_url;
+  console.log('PLAYING URL:', url);
   if(!url || !String(url).startsWith('http')){
-    try{ url = await getSongStreamUrl(s.audio_path || s.audio_url, 3600); }catch(e){ url = null; }
+    alert('No audio_url for this song: ' + JSON.stringify(s).slice(0,300));
+    return;
   }
-  if(!url){alert('No audio for this song');return;}
-  const r=getPreviewRange(s.preview_start);
-  playWithPlayer(url,s,r.start,r.end,false);
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  const titleEl = document.getElementById('playerTitle');
+  const artistEl = document.getElementById('playerArtist');
+  const coverEl = document.getElementById('playerCover');
+  const btn = document.getElementById('playerBtn');
+  if(titleEl) titleEl.textContent = s.title || 'Unknown';
+  if(artistEl) artistEl.textContent = s.artist_name || '';
+  if(coverEl && s.cover_url) coverEl.src = s.cover_url;
+  if(bar) bar.classList.add('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
+  audio.src = url;
+  audio.currentTime = 0;
+  try{
+    await audio.play();
+    if(btn) btn.textContent = '⏸';
+  }catch(e){
+    alert('Play blocked / failed: ' + e.message + '\nURL: ' + url);
+    return;
+  }
+  const r = (typeof getPreviewRange === 'function') ? getPreviewRange(s.preview_start) : {start:0, end:30};
+  const start = Number(r.start||0);
+  const end = Number(r.end||30);
+  if(start > 0) audio.currentTime = start;
+  window._previewTimer = setInterval(function(){
+    if(audio.currentTime >= end){
+      audio.pause();
+      clearInterval(window._previewTimer);
+      if(btn) btn.textContent = '▶';
+      alert('Preview ended - Buy for full song');
+    }
+  }, 500);
+}
+function togglePlayer(){
+  const audio = document.getElementById('mainAudio');
+  const btn = document.getElementById('playerBtn');
+  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
+  else { audio.pause(); if(btn) btn.textContent='▶'; }
+}
+function stopPlayer(){
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  audio.pause(); audio.src='';
+  if(bar) bar.classList.remove('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
 }
 async function buySong(id,price){
   const user=await requireLogin(); if(!user) return;
