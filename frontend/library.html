@@ -7,555 +7,112 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-    * {
-    box-sizing: border-box;
-  }
-
-  body {
-    background: #0f0f0f;
-    color: #fff;
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    overflow-x: hidden;
-    padding-bottom: 180px;
-  }
-
-  header {
-    background: #d4ff3f;
-    color: #000;
-    padding: 14px;
-    text-align: center;
-    font-weight: 900;
-    font-size: 18px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    letter-spacing: .3px;
-  }
-
-  .wrap {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 14px;
-    width: 100%;
-  }
-
-  .top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .top-row h1 {
-    margin: 0;
-    font-size: 28px;
-    line-height: 1.1;
-  }
-
-  .top-row p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    opacity: .6;
-  }
-
-  .bal-pill {
-    background: #d4ff3f;
-    color: #000;
-    padding: 7px 12px;
-    border-radius: 99px;
-    font-weight: 900;
-    font-size: 13px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
-
-  .small {
-    font-size: 13px;
-    opacity: .7;
-    line-height: 1.5;
-  }
-
-  .center {
-    text-align: center;
-  }
-
-  .search-box {
-    margin: 14px 0 10px;
-  }
-
-  .search-box input {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #333;
-    background: #1a1a1a;
-    color: #fff;
-    font-size: 14px;
-    outline: none;
-  }
-
-  .search-box input:focus {
-    border-color: #d4ff3f;
-  }
-
-  .filters {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-
-  .filters button {
-    padding: 7px 13px;
-    border-radius: 99px;
-    border: 1px solid #333;
-    background: #1a1a1a;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .filters button.on {
-    background: #d4ff3f;
-    color: #000;
-    border-color: #d4ff3f;
-  }
-
-  /* SONG CARD - SAME AS SCREENSHOT, BETTER */
-  .song-card {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 18px;
-    padding: 14px;
-    margin-bottom: 12px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .song-card.playing {
-    border-color: #d4ff3f;
-    background: linear-gradient(135deg, #1e2a00 0%, #1e1e1e 70%);
-  }
-
-  .cover {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ff2ea6, #ffcc00, #d4ff3f);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    overflow: hidden;
-  }
-
-  .cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .meta {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .meta b {
-    font-size: 16px;
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .meta .sub {
-    font-size: 13px;
-    opacity: .65;
-    line-height: 1.4;
-    margin-top: 2px;
-  }
-
-  .meta .price-line {
-    font-size: 12px;
-    color: #d4ff3f;
-    margin-top: 2px;
-    font-weight: 700;
-  }
-
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: flex-end;
-  }
-
-  .playBtn {
-    background: #d4ff3f;
-    color: #000;
-    border: 0;
-    padding: 11px 18px;
-    border-radius: 99px;
-    font-weight: 900;
-    cursor: pointer;
-    font-size: 14px;
-    white-space: nowrap;
-  }
-
-  .shareBtn {
-    background: #222;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 7px 12px;
-    border-radius: 99px;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .playing-label {
-    text-align: center;
-    font-size: 14px;
-    margin: 10px 0 6px;
-    font-weight: 700;
-  }
-
-  .buy-more {
-    text-align: center;
-    display: block;
-    color: #d4ff3f;
-    font-weight: 800;
-    font-size: 16px;
-    margin-top: 8px;
-  }
-
-  /* MINI PLAYER - LIKE SCREENSHOT */
-  #miniPlayer {
-    position: fixed;
-    bottom: 62px;
-    left: 0;
-    right: 0;
-    background: #111;
-    border-top: 1px solid #333;
-    padding: 10px 12px 8px;
-    z-index: 40;
-    display: none;
-  }
-
-  #miniPlayer .now {
-    text-align: center;
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .mini-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .mini-row audio {
-    flex: 1;
-    height: 36px;
-  }
-
-  .mini-row audio::-webkit-media-controls-panel {
-    background: #fff;
-  }
-
-  .iconBtn {
-    background: #222;
-    color: #fff;
-    border: 1px solid #333;
-    border-radius: 99px;
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .iconBtn.lime {
-    background: #d4ff3f;
-    color: #000;
-    border-color: #d4ff3f;
-  }
-
-  /* FULLSCREEN PLAYER */
-  #fullPlayer {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(180deg, #0f0f0f 0%, #1a2a00 60%, #0f0f0f 100%);
-    z-index: 100;
-    display: none;
-    flex-direction: column;
-    padding: 16px;
-    overflow-y: auto;
-  }
-
-  #fullPlayer.open {
-    display: flex;
-  }
-
-  .full-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .full-cover {
-    width: 220px;
-    height: 220px;
-    margin: 24px auto 16px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, #ff2ea6, #ffcc00, #d4ff3f);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 80px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(212, 255, 63, .25);
-  }
-
-  .full-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .full-title {
-    text-align: center;
-    font-size: 22px;
-    font-weight: 900;
-    margin: 0;
-  }
-
-  .full-artist {
-    text-align: center;
-    opacity: .7;
-    margin: 4px 0 0;
-    font-size: 14px;
-  }
-
-  .full-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin: 20px 0 10px;
-  }
-
-  .full-controls button {
-    border: 0;
-    border-radius: 99px;
-    cursor: pointer;
-    font-weight: 900;
-  }
-
-  .bigPlay {
-    width: 72px;
-    height: 72px;
-    font-size: 28px;
-    background: #d4ff3f;
-    color: #000;
-  }
-
-  .skipBtn {
-    width: 52px;
-    height: 52px;
-    font-size: 20px;
-    background: #222;
-    color: #fff;
-  }
-
-  .settings-box {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 14px;
-    margin-top: 12px;
-  }
-
-  .settings-box h3 {
-    margin: 0 0 10px;
-    font-size: 15px;
-  }
-
-  .settings-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-
-  .settings-row button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 99px;
-    border: 1px solid #333;
-    background: #222;
-    color: #fff;
-    font-weight: 800;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .settings-row button.on {
-    background: #d4ff3f;
-    color: #000;
-    border-color: #d4ff3f;
-  }
-
-  .settings-row label {
-    font-size: 13px;
-    opacity: .7;
-    width: 100%;
-  }
-
-  .settings-row input[type="range"] {
-    width: 100%;
-  }
-
-  .bottomnav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #111;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    z-index: 50;
-  }
-
-  .bottomnav a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    text-align: center;
-    opacity: .7;
-    padding: 6px;
-  }
-
-  .bottomnav a.active {
-    color: #d4ff3f;
-    opacity: 1;
-  }
+    * { box-sizing: border-box; }
+  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
+  header { background: #d4ff3f; color: #000; padding: 14px; text-align: center; font-weight: 900; font-size: 18px; position: sticky; top: 0; z-index: 50; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 14px; }
+  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
+  .center { text-align: center; }
+  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+  .choice { display: flex; gap: 8px; margin: 6px 0; }
+  .choice button { flex: 1; padding: 11px; border-radius: 12px; border: 2px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; font-size: 13px; }
+  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; outline: none; }
+  .song { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 12px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; }
+  .song img { width: 62px; height: 62px; border-radius: 12px; object-fit: cover; background: #333; flex-shrink: 0; }
+  .song .meta { flex: 1; min-width: 0; }
+  .song b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .song span { font-size: 13px; opacity: .7; }
+  .row { display: flex; gap: 6px; margin-top: 8px; }
+  .row button { flex: 1; padding: 9px 4px; border-radius: 99px; border: 1px solid #444; background: #222; color: #fff; font-weight: 800; cursor: pointer; font-size: 12px; }
+  .row button.play { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  /* PLAYER */
+  #playerBar { display: none; position: fixed; bottom: 62px; left: 10px; right: 10px; background: #1e1e1e; border: 1px solid #d4ff3f; border-radius: 20px; padding: 12px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+  #playerBar.full { top: 10px; bottom: 70px; left: 10px; right: 10px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; }
+  #playerBar.full #playerCover { width: 220px !important; height: 220px !important; }
+  #playerBar.full #nowTitle { font-size: 22px !important; }
+  #playerBar.full #nowArtist { font-size: 16px !important; }
+  #playerCover { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; background: #333; }
+  #nowTitle { font-weight: 900; font-size: 15px; }
+  #nowArtist { font-size: 13px; opacity: .7; }
+  .pcontrols { display: flex; gap: 6px; margin-top: 10px; }
+  .pcontrols button { flex: 1; padding: 10px 4px; border-radius: 99px; border: 1px solid #444; background: #222; color: #fff; font-weight: 800; cursor: pointer; font-size: 12px; }
+  .pcontrols button.main { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  input[type=range] { width: 100%; accent-color: #d4ff3f; margin: 8px 0; }
+  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
+  .bottomnav a { color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; text-align: center; opacity: .7; padding: 6px; }
+  .bottomnav a.active { color: #d4ff3f; opacity: 1; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-
 <header>MAROTHOLI LES-POT — LIBRARY</header>
-
 <div class="wrap">
-  <div class="top-row">
-    <div>
-      <h1>My Bought Songs</h1>
-      <p>Stream in app only. Song never leaves app.</p>
+
+  <div class="card">
+    <h3 style="margin:0">📚 My Library</h3>
+    <p class="small">Bought songs play FULL. Hyped songs are previews only. Stream-only — no download.</p>
+    <div class="choice">
+      <button type="button" id="tabBought" class="on" onclick="setTab('bought')">🛒 Bought</button>
+      <button type="button" id="tabHyped" onclick="setTab('hyped')">🔥 Hyped</button>
+      <button type="button" id="tabAll" onclick="setTab('all')">🎵 All</button>
     </div>
-    <span class="bal-pill" id="topBal">0.00 G</span>
+    <p class="small center" id="libCount">Loading...</p>
   </div>
 
-  <div class="search-box">
-    <input id="searchInput" placeholder="🔍 Search my songs..." oninput="applyFilter()">
-  </div>
+  <div id="libraryList"><p class="small center">Loading...</p></div>
 
-  <div class="filters">
-    <button class="on" onclick="setFilter('All', this)">All</button>
-    <button onclick="setFilter('Playing', this)">▶️ Now Playing</button>
-    <button onclick="setFilter('Recent', this)">🕒 Recent</button>
-  </div>
+  <button class="btn-dark" onclick="location.href='discover.html'">🔥 Go Discover More Songs</button>
+  <button class="btn-dark" onclick="location.href='wallet.html'">💰 Wallet</button>
 
-  <div id="list">
-    <p class="small">Loading your songs...</p>
-  </div>
-
-  <div id="playingLabel" class="playing-label hidden">✅ Playing: —</div>
-
-  <a class="buy-more" href="discover.html">🔥 Buy more in Discover →</a>
 </div>
 
-<!-- MINI PLAYER - SMALL VIEW -->
-<div id="miniPlayer">
-  <div class="now" id="miniNow">🎵 —</div>
-  <div class="mini-row">
-    <button class="iconBtn" onclick="prevSong()" title="Previous">⏮️</button>
-    <audio id="audio" controls controlsList="nodownload" preload="none"></audio>
-    <button class="iconBtn" onclick="nextSong()" title="Next">⏭️</button>
-    <button class="iconBtn lime" onclick="openFull()" title="Full Screen">⛶</button>
-    <button class="iconBtn" onclick="openSettingsFromMini()" title="Settings">⚙️</button>
-  </div>
-  <div class="center" style="margin-top:6px">
-    <button class="shareBtn" onclick="shareCurrent()">🔗 Share This Song</button>
-    <button class="shareBtn" onclick="toggleRepeat()">🔁 <span id="repeatLabel">Off</span></button>
-    <button class="shareBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">Off</span></button>
-  </div>
-</div>
-
-<!-- FULLSCREEN PLAYER -->
-<div id="fullPlayer">
-  <div class="full-top">
-    <button class="iconBtn" onclick="closeFull()">▾ Small View</button>
-    <b style="font-size:13px;opacity:.7">NOW PLAYING</b>
-    <button class="iconBtn" onclick="shareCurrent()">🔗 Share</button>
+<!-- PLAYER BAR - Small / Full Screen / Settings / Share -->
+<div id="playerBar">
+  <div style="display:flex;gap:10px;align-items:center">
+    <img id="playerCover" src="" alt="">
+    <div style="flex:1;min-width:0">
+      <div id="nowTitle">No song playing</div>
+      <div id="nowArtist">—</div>
+    </div>
+    <button onclick="toggleFull()" style="background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:99px;font-weight:800;cursor:pointer" id="fullBtn">⛶ Full</button>
+    <button onclick="closePlayer()" style="background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:99px;font-weight:800;cursor:pointer">✕</button>
   </div>
 
-  <div class="full-cover" id="fullCover">🎵</div>
-  <p class="full-title" id="fullTitle">—</p>
-  <p class="full-artist" id="fullArtist">—</p>
-  <p class="center small" id="fullPrice">—</p>
+  <audio id="mainPlayer" preload="auto" controlslist="nodownload" style="width:100%;margin-top:10px"></audio>
 
-  <div class="full-controls">
-    <button class="skipBtn" onclick="prevSong()">⏮️</button>
-    <button class="bigPlay" id="fullPlayBtn" onclick="togglePlay()">⏸️</button>
-    <button class="skipBtn" onclick="nextSong()">⏭️</button>
+  <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" oninput="seekTo(this.value)">
+
+  <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.7">
+    <span id="curTime">0:00</span>
+    <span id="durTime">0:00</span>
   </div>
 
-  <div class="center">
-    <button class="shareBtn" onclick="shareCurrent()">🔗 Share Link</button>
-    <button class="shareBtn" onclick="toggleRepeat()">🔁 Repeat: <span id="repeatLabel2">Off</span></button>
-    <button class="shareBtn" onclick="toggleShuffle()">🔀 Shuffle: <span id="shuffleLabel2">Off</span></button>
+  <div class="pcontrols">
+    <button onclick="prevSong()">⏮️ Prev</button>
+    <button class="main" id="playPauseBtn" onclick="togglePlay()">▶️ Play</button>
+    <button onclick="nextSong()">⏭️ Next</button>
+    <button onclick="toggleRepeat()">🔁 <span id="repeatLabel">Off</span></button>
+  </div>
+
+  <div class="pcontrols">
+    <button onclick="changeSpeed()">⏩ Speed: <span id="speedLabel">1x</span></button>
+    <button onclick="shareCurrent()">🔗 Share</button>
+    <button onclick="toggleSettings()">⚙️ Settings</button>
   </div>
 
   <!-- SETTINGS -->
-  <div class="settings-box">
-    <h3>⚙️ Player Settings</h3>
-
-    <div class="settings-row">
-      <label>Speed</label>
-      <button onclick="setSpeed(0.75, this)">0.75x</button>
-      <button class="on" onclick="setSpeed(1, this)">1x</button>
-      <button onclick="setSpeed(1.25, this)">1.25x</button>
-      <button onclick="setSpeed(1.5, this)">1.5x</button>
+  <div id="settingsBox" class="hidden" style="background:#111;border:1px solid #333;border-radius:14px;padding:10px;margin-top:8px">
+    <label style="font-size:13px;opacity:.8">Volume</label>
+    <input type="range" min="0" max="100" value="100" oninput="setVolume(this.value)">
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="setVolume(0)" style="flex:1;background:#222;color:#fff;border:1px solid #444;padding:8px;border-radius:99px">🔇 Mute</button>
+      <button onclick="setVolume(100)" style="flex:1;background:#222;color:#fff;border:1px solid #444;padding:8px;border-radius:99px">🔊 Max</button>
     </div>
-
-    <div class="settings-row">
-      <label>Repeat</label>
-      <button id="repOffBtn" class="on" onclick="setRepeat('off')">Off</button>
-      <button id="repOneBtn" onclick="setRepeat('one')">🔂 One</button>
-      <button id="repAllBtn" onclick="setRepeat('all')">🔁 All</button>
-    </div>
-
-    <div class="settings-row">
-      <label>Volume</label>
-      <input type="range" min="0" max="100" value="100" oninput="setVolume(this.value)">
-    </div>
-
-    <div class="settings-row">
-      <button onclick="closeFull()">▾ Back to Small View</button>
-      <button onclick="location.href='discover.html'">🔥 Discover</button>
-    </div>
+    <p class="small">Playback: Stream-only. No download. Signed URL expires in 1 hour — auto-refreshes if you press Play again.</p>
+    <button onclick="toggleSettings()" style="width:100%;background:#d4ff3f;color:#000;border:0;padding:9px;border-radius:99px;font-weight:800">Close Settings</button>
   </div>
 </div>
 
@@ -564,278 +121,239 @@
   <a href="library.html" class="active">📚<br>Library</a>
   <a href="upload.html">⬆️<br>Upload</a>
   <a href="wallet.html">💰<br>Wallet</a>
-  <a href="admin.html">🛠️<br>Admin</a>
+  <a href="withdraw.html">🏧<br>Withdraw</a>
   <a href="account.html">👤<br>Account</a>
 </div>
 
 <script>
-  // -------------------------------------------------
-  // LIBRARY - SAME LAYOUT AS SCREENSHOT + BETTER
-  // Features: Settings / Full Screen / Small View / Share Link
-  // RULE: ARTIST SETS OWN PRICE - from purchases.price_grind
-  // Stream only - no download
-  // -------------------------------------------------
+  // LIBRARY - FULL
+  // Uses app.js: SUPA_URL + SUPA_KEY, getSongStreamUrl(), shareSongLink(), escHtml()
+  // Bought = FULL play via signed URL (private bucket), Hyped = preview list
+  // Player: Small / Full Screen, Settings, Share, Prev/Next, Repeat, Speed, Volume, Seek
 
-  let ALL = [];
-  let FILTER = 'All';
+  let LIB_TAB = 'bought';
+  let LIB_SONGS = [];
   let CURRENT_INDEX = -1;
-  let CURRENT = null;
-  let REPEAT = 'off';
-  let SHUFFLE = false;
-  let SPEED = 1;
+  let REPEAT = false;
+  let SPEEDS = [1, 1.25, 1.5, 2];
+  let SPEED_IDX = 0;
 
-  function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  function setTab(tab) {
+    LIB_TAB = tab;
+    document.getElementById('tabBought').classList.toggle('on', tab === 'bought');
+    document.getElementById('tabHyped').classList.toggle('on', tab === 'hyped');
+    document.getElementById('tabAll').classList.toggle('on', tab === 'all');
+    loadLibrary();
   }
 
-  function setFilter(f, btn) {
-    FILTER = f;
-    document.querySelectorAll('.filters button').forEach(function (b) {
-      b.classList.remove('on');
-    });
-    if (btn) btn.classList.add('on');
-    applyFilter();
-  }
-
-  function applyFilter() {
-    const q = (document.getElementById('searchInput').value || '').toLowerCase();
-    let list = ALL.filter(function (it) {
-      const s = it.song || {};
-      return !q || (s.title || '').toLowerCase().includes(q) || (s.artist_name || '').toLowerCase().includes(q);
-    });
-    if (FILTER === 'Playing' && CURRENT) {
-      list = list.filter(function (it) { return it.song && it.song.id === CURRENT.id; });
-    }
-    if (FILTER === 'Recent') {
-      list = [...list].sort(function (a, b) {
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
-    }
-    render(list);
-  }
-
-  function render(list) {
-    const el = document.getElementById('list');
-    if (!list.length) {
-      el.innerHTML = '<p class="small">No bought songs yet.<br><a href="discover.html" style="color:#d4ff3f;font-weight:800">🔥 Buy in Discover →</a></p>';
-      return;
-    }
-    el.innerHTML = list.map(function (it) {
-      const s = it.song || {};
-      const price = Number(it.price_grind || s.price_grind || 0);
-      const maloti = (price * 10).toFixed(2);
-      const isPlaying = CURRENT && CURRENT.id === s.id;
-      const cover = s.cover_url
-        ? '<div class="cover"><img src="' + esc(s.cover_url) + '"></div>'
-        : '<div class="cover">🎵</div>';
-      const realIndex = ALL.findIndex(function (x) { return x.song && x.song.id === s.id; });
-      return (
-        '<div class="song-card ' + (isPlaying ? 'playing' : '') + '">' +
-          cover +
-          '<div class="meta">' +
-            '<b>' + esc(s.title) + '</b>' +
-            '<div class="sub">' + esc(s.artist_name) + ' • ' + price + ' G • APPROVED</div>' +
-            '<div class="price-line">Artist price: ' + price + ' G = M' + maloti + '</div>' +
-          '</div>' +
-          '<div class="actions">' +
-            '<button class="playBtn" onclick="playSong(' + realIndex + ')">' + (isPlaying ? '⏸️ PAUSE' : '▶ PLAY') + '</button>' +
-            '<button class="shareBtn" onclick="shareSong(\'' + esc(s.title) + '\',\'' + esc(s.artist_name) + '\',\'' + s.id + '\')">🔗 Share</button>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
+  function fmtTime(sec) {
+    if (!sec || isNaN(sec)) return '0:00';
+    sec = Math.floor(sec);
+    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
   }
 
   async function loadLibrary() {
-    try {
-      const { data: { user } } = await window.sb.auth.getUser();
-      if (!user) { location.href = 'auth.html'; return; }
-      const { data: buys, error } = await window.sb
-        .from('purchases')
-        .select('*, song:songs(*)')
-        .eq('fan_id', user.id)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      ALL = (buys || []).filter(function (b) { return b.song; });
-      applyFilter();
-    } catch (e) {
-      document.getElementById('list').innerHTML = 'Error: ' + esc(e.message);
+    const el = document.getElementById('libraryList');
+    const cnt = document.getElementById('libCount');
+    el.innerHTML = "<p class='small center'>Loading...</p>";
+
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) { location.href = 'auth.html'; return; }
+
+    // Bought = purchases approved + song
+    const { data: purchases } = await window.sb
+      .from('purchases')
+      .select('*, songs(*)')
+      .eq('buyer_id', user.id)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+
+    // Fallback: some setups use user_id
+    let boughtSongs = (purchases || []).map(function(p) { return p.songs || p.song; }).filter(Boolean);
+    if (!boughtSongs.length) {
+      const { data: p2 } = await window.sb.from('purchases').select('*, songs(*)').eq('user_id', user.id).eq('status', 'approved');
+      boughtSongs = (p2 || []).map(function(p) { return p.songs || p.song; }).filter(Boolean);
     }
-  }
 
-  async function loadBal() {
-    try {
-      const { user, profile } = await getMyProfile();
-      const el = document.getElementById('topBal');
-      if (el && profile) el.textContent = Number(profile.grind_balance || 0).toFixed(2) + ' G';
-    } catch (e) {}
-  }
+    // Hyped = hypes + song
+    const { data: hypes } = await window.sb.from('hypes').select('*, songs(*)').eq('user_id', user.id).order('created_at', { ascending: false });
+    let hypedSongs = (hypes || []).map(function(h) { return h.songs || h.song; }).filter(Boolean);
+    if (!hypedSongs.length) {
+      const { data: h2 } = await window.sb.from('hypes').select('*, songs(*)').eq('user_id', user.id);
+      hypedSongs = (h2 || []).map(function(h) { return h.songs || h.song; }).filter(Boolean);
+    }
 
-  async function playSong(index) {
-    if (index < 0 || index >= ALL.length) return;
-    const it = ALL[index];
-    const s = it.song;
-    // If same song and playing, pause
-    if (CURRENT && CURRENT.id === s.id) {
-      togglePlay();
-      applyFilter();
+    if (LIB_TAB === 'bought') LIB_SONGS = boughtSongs;
+    else if (LIB_TAB === 'hyped') LIB_SONGS = hypedSongs;
+    else {
+      // All = bought + hyped (no duplicates)
+      const seen = {};
+      LIB_SONGS = [];
+      boughtSongs.concat(hypedSongs).forEach(function(s) {
+        if (s && s.id && !seen[s.id]) { seen[s.id] = 1; LIB_SONGS.push(s); }
+      });
+    }
+
+    cnt.textContent = LIB_TAB === 'bought' ? ('🛒 ' + LIB_SONGS.length + ' bought songs') : LIB_TAB === 'hyped' ? ('🔥 ' + LIB_SONGS.length + ' hyped songs') : ('🎵 ' + LIB_SONGS.length + ' songs');
+
+    if (!LIB_SONGS.length) {
+      el.innerHTML = LIB_TAB === 'bought'
+        ? "<div class='card center'>No bought songs yet.<br><button class='btn' onclick=\"location.href='discover.html'\">🔥 Discover Songs →</button></div>"
+        : "<div class='card center'>Nothing here yet.<br><button class='btn' onclick=\"location.href='discover.html'\">🔥 Discover Songs →</button></div>";
       return;
     }
-    CURRENT_INDEX = index;
-    CURRENT = s;
 
-    document.getElementById('miniPlayer').style.display = 'block';
-    document.getElementById('miniNow').textContent = '🎵 ' + s.title + ' — ' + s.artist_name;
-    document.getElementById('playingLabel').classList.remove('hidden');
-    document.getElementById('playingLabel').textContent = '✅ Playing: ' + s.title;
-    document.getElementById('fullTitle').textContent = s.title;
-    document.getElementById('fullArtist').textContent = s.artist_name;
-    document.getElementById('fullPrice').textContent = 'Artist price: ' + Number(it.price_grind || s.price_grind || 0) + ' G • Owned ✅';
-    document.getElementById('fullCover').innerHTML = s.cover_url ? '<img src="' + esc(s.cover_url) + '">' : '🎵';
+    el.innerHTML = LIB_SONGS.map(function(s, i) {
+      const cover = s.cover_url || 'icon.svg';
+      return '<div class="song">' +
+        '<img src="' + cover + '" onerror="this.src=\'icon.svg\'">' +
+        '<div class="meta"><b>' + escHtml(s.title) + '</b><span>' + escHtml(s.artist_name) + ' • ' + Number(s.price_grind || 0).toFixed(2) + ' G</span></div>' +
+        '<div class="row" style="flex-direction:column;min-width:90px">' +
+          '<button class="play" onclick="playAt(' + i + ')">▶️ Play</button>' +
+          '<button onclick="shareSongLink(\'' + s.id + '\',\'' + escHtml(s.title) + '\',\'' + escHtml(s.artist_name) + '\')">🔗 Share</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 
-    const a = document.getElementById('audio');
-    a.playbackRate = SPEED;
-    a.loop = (REPEAT === 'one');
+  async function playAt(i) {
+    CURRENT_INDEX = i;
+    const s = LIB_SONGS[i];
+    if (!s) return;
+    await playSong(s);
+  }
+
+  async function playSong(s) {
+    const audio = document.getElementById('mainPlayer');
+    const bar = document.getElementById('playerBar');
+    const path = s.audio_path || s.audio_url || s.file_url || '';
+
+    if (!path) {
+      alert('No audio file for this song - ask artist to re-upload it.');
+      return;
+    }
+
+    // If path is already a full https URL (old songs), use it directly, else get signed URL
+    let url = path;
+    if (!path.startsWith('http')) {
+      url = await getSongStreamUrl(path, 3600);
+      if (!url) {
+        alert('Could not play - file not found in Storage > songs bucket. Path: ' + path);
+        return;
+      }
+    }
+
+    bar.style.display = 'block';
+    document.getElementById('nowTitle').textContent = s.title;
+    document.getElementById('nowArtist').textContent = s.artist_name + ' • ' + Number(s.price_grind || 0).toFixed(2) + ' G';
+    document.getElementById('playerCover').src = s.cover_url || 'icon.svg';
+    document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
+
+    audio.src = url;
+    audio.playbackRate = SPEEDS[SPEED_IDX];
+    audio.loop = REPEAT;
 
     try {
-      const { data } = await window.sb.storage.from('songs').createSignedUrl(s.audio_path, 3600);
-      if (data && data.signedUrl) {
-        a.src = data.signedUrl;
-        await a.play();
-        document.getElementById('fullPlayBtn').textContent = '⏸️';
-      }
-    } catch (e) {}
-    applyFilter();
+      await audio.play();
+    } catch (e) {
+      document.getElementById('playPauseBtn').textContent = '▶️ Play';
+      alert('Tap Play again - browser blocked autoplay.');
+    }
   }
 
   function togglePlay() {
-    const a = document.getElementById('audio');
-    if (!a.src) return;
-    if (a.paused) {
-      a.play();
-      document.getElementById('fullPlayBtn').textContent = '⏸️';
+    const audio = document.getElementById('mainPlayer');
+    if (!audio.src) return;
+    if (audio.paused) {
+      audio.play();
+      document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
     } else {
-      a.pause();
-      document.getElementById('fullPlayBtn').textContent = '▶️';
+      audio.pause();
+      document.getElementById('playPauseBtn').textContent = '▶️ Play';
     }
   }
 
   function nextSong() {
-    if (!ALL.length) return;
-    let next = CURRENT_INDEX + 1;
-    if (SHUFFLE) {
-      next = Math.floor(Math.random() * ALL.length);
-    }
-    if (next >= ALL.length) {
-      if (REPEAT === 'all') next = 0;
-      else return;
-    }
-    playSong(next);
+    if (!LIB_SONGS.length) return;
+    CURRENT_INDEX = (CURRENT_INDEX + 1) % LIB_SONGS.length;
+    playSong(LIB_SONGS[CURRENT_INDEX]);
   }
 
   function prevSong() {
-    if (!ALL.length) return;
-    let prev = CURRENT_INDEX - 1;
-    if (prev < 0) prev = ALL.length - 1;
-    playSong(prev);
-  }
-
-  // ---------- SETTINGS ----------
-  function setSpeed(v, btn) {
-    SPEED = v;
-    const a = document.getElementById('audio');
-    a.playbackRate = v;
-    document.querySelectorAll('.settings-row button').forEach(function (b) {
-      if (b.textContent.includes('x')) b.classList.remove('on');
-    });
-    if (btn) btn.classList.add('on');
-  }
-
-  function setRepeat(mode) {
-    REPEAT = mode;
-    const a = document.getElementById('audio');
-    a.loop = (mode === 'one');
-    document.getElementById('repeatLabel').textContent = mode === 'off' ? 'Off' : mode;
-    document.getElementById('repeatLabel2').textContent = mode === 'off' ? 'Off' : mode;
-    document.getElementById('repOffBtn').classList.toggle('on', mode === 'off');
-    document.getElementById('repOneBtn').classList.toggle('on', mode === 'one');
-    document.getElementById('repAllBtn').classList.toggle('on', mode === 'all');
+    if (!LIB_SONGS.length) return;
+    CURRENT_INDEX = (CURRENT_INDEX - 1 + LIB_SONGS.length) % LIB_SONGS.length;
+    playSong(LIB_SONGS[CURRENT_INDEX]);
   }
 
   function toggleRepeat() {
-    const order = ['off', 'one', 'all'];
-    const next = order[(order.indexOf(REPEAT) + 1) % 3];
-    setRepeat(next);
+    REPEAT = !REPEAT;
+    const audio = document.getElementById('mainPlayer');
+    audio.loop = REPEAT;
+    document.getElementById('repeatLabel').textContent = REPEAT ? 'On' : 'Off';
   }
 
-  function toggleShuffle() {
-    SHUFFLE = !SHUFFLE;
-    document.getElementById('shuffleLabel').textContent = SHUFFLE ? 'On' : 'Off';
-    document.getElementById('shuffleLabel2').textContent = SHUFFLE ? 'On' : 'Off';
+  function changeSpeed() {
+    SPEED_IDX = (SPEED_IDX + 1) % SPEEDS.length;
+    const audio = document.getElementById('mainPlayer');
+    audio.playbackRate = SPEEDS[SPEED_IDX];
+    document.getElementById('speedLabel').textContent = SPEEDS[SPEED_IDX] + 'x';
   }
 
   function setVolume(v) {
-    const a = document.getElementById('audio');
-    a.volume = Number(v) / 100;
+    const audio = document.getElementById('mainPlayer');
+    audio.volume = Number(v) / 100;
   }
 
-  function openSettingsFromMini() {
-    openFull();
+  function seekTo(v) {
+    const audio = document.getElementById('mainPlayer');
+    if (!audio.duration) return;
+    audio.currentTime = (Number(v) / 100) * audio.duration;
   }
 
-  // ---------- FULL / SMALL VIEW ----------
-  function openFull() {
-    if (!CURRENT) {
-      alert('Play a song first');
-      return;
-    }
-    document.getElementById('fullPlayer').classList.add('open');
-    document.body.style.overflow = 'hidden';
+  function toggleFull() {
+    const bar = document.getElementById('playerBar');
+    const isFull = bar.classList.toggle('full');
+    document.getElementById('fullBtn').textContent = isFull ? '⛶ Small' : '⛶ Full';
   }
 
-  function closeFull() {
-    document.getElementById('fullPlayer').classList.remove('open');
-    document.body.style.overflow = '';
+  function toggleSettings() {
+    document.getElementById('settingsBox').classList.toggle('hidden');
   }
 
-  // ---------- SHARE ----------
-  function shareSong(title, artist, id) {
-    const text = '🔥 Listen to ' + title + ' by ' + artist + ' on Marotholi Les-Pot';
-    const url = location.origin + '/discover.html?song=' + (id || '');
-    if (navigator.share) {
-      navigator.share({ title: title, text: text, url: url }).catch(function () {});
-    } else {
-      navigator.clipboard.writeText(text + ' ' + url).then(function () {
-        alert('🔗 Link copied! Share it');
-      });
-    }
+  function closePlayer() {
+    const audio = document.getElementById('mainPlayer');
+    audio.pause();
+    audio.src = '';
+    document.getElementById('playerBar').style.display = 'none';
+    document.getElementById('playPauseBtn').textContent = '▶️ Play';
   }
 
   function shareCurrent() {
-    if (!CURRENT) {
-      alert('Play a song first');
-      return;
-    }
-    shareSong(CURRENT.title, CURRENT.artist_name, CURRENT.id);
+    const s = LIB_SONGS[CURRENT_INDEX];
+    if (!s) return;
+    shareSongLink(s.id, s.title, s.artist_name);
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  // Wire audio events
+  const audioEl = document.getElementById('mainPlayer');
+  audioEl.addEventListener('timeupdate', function() {
+    if (!audioEl.duration) return;
+    document.getElementById('seekBar').value = (audioEl.currentTime / audioEl.duration) * 100;
+    document.getElementById('curTime').textContent = fmtTime(audioEl.currentTime);
+    document.getElementById('durTime').textContent = fmtTime(audioEl.duration);
+  });
+  audioEl.addEventListener('ended', function() {
+    if (!REPEAT) nextSong();
+  });
+  audioEl.addEventListener('play', function() {
+    document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
+  });
+  audioEl.addEventListener('pause', function() {
+    document.getElementById('playPauseBtn').textContent = '▶️ Play';
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
     loadLibrary();
-    loadBal();
-    const a = document.getElementById('audio');
-    a.addEventListener('ended', function () {
-      if (REPEAT === 'one') return;
-      nextSong();
-    });
-    a.addEventListener('play', function () {
-      document.getElementById('fullPlayBtn').textContent = '⏸️';
-    });
-    a.addEventListener('pause', function () {
-      document.getElementById('fullPlayBtn').textContent = '▶️';
-    });
   });
 </script>
 </body>
