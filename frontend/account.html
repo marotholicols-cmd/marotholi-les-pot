@@ -1,17 +1,91 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account - LES-POT</title><style>body{background:#0a0a0a;color:#fff;font-family:Arial;padding:20px;text-align:center} .card{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:20px;max-width:400px;margin:20px auto} button{background:#ccff00;color:#000;border:0;padding:12px 20px;border-radius:10px;font-weight:700;width:100%;margin-top:10px} a{color:#ccff00}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account - Marotholi Les-Pot</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+body{background:#0a0a0a;color:#fff;font-family:system-ui,sans-serif;padding:20px;text-align:center;margin:0;padding-bottom:80px}
+.card{background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:20px;max-width:420px;margin:20px auto;text-align:left;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+button{background:#ccff00;color:#000;border:0;padding:12px 20px;border-radius:12px;font-weight:900;width:100%;margin-top:10px;cursor:pointer;font-size:15px}
+button.ghost{background:#222;color:#fff}
+a{color:#ccff00;text-decoration:none}
+.statRow{display:flex;gap:8px;margin-top:12px}
+.statBox{flex:1;background:#111;border:1px solid #333;border-radius:12px;padding:10px;text-align:center}
+.statBox b{font-size:16px;color:#ccff00}
+.statBox div{font-size:11px;opacity:.7}
+.small{font-size:13px;opacity:.7}
+.avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#d4ff3f,#00ff88);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px}
+</style></head>
 <body>
 <h1>👤 My Account</h1>
 <div class="card">
-<p id="info">Loading...</p>
-<p><b>Balance:</b> <span id="bal">-</span></p>
+<div class="avatar" id="avatar">👤</div>
+<p id="info" style="text-align:center">Loading your account...</p>
+<p style="text-align:center"><b>Balance:</b> <span id="bal">-</span> • <span id="balMaloti" style="color:#d4ff3f">M0</span></p>
+<div class="statRow">
+  <div class="statBox"><b id="statOwned">0</b><div>🎵 Songs Owned</div></div>
+  <div class="statBox"><b id="statEarned">0 G</b><div>💰 Total Earned</div></div>
+  <div class="statBox"><b id="statUploads">0</b><div>⬆️ Uploads</div></div>
+</div>
+<p class="small" id="memberSince" style="text-align:center;margin-top:12px"></p>
+<button onclick="location.href='library.html'">📚 My Library</button>
+<button onclick="location.href='wallet.html'" class="ghost">👛 My Wallet</button>
+<button onclick="location.href='upload.html'" class="ghost">⬆️ Upload Song</button>
 <button onclick="logout()">Logout</button>
 </div>
 <p><a href="index.html">← Back to LES-POT</a> | <a href="discover.html">Discover</a> | <a href="wallet.html">Wallet</a></p>
 <script>
-let u = JSON.parse(localStorage.getItem('lespot_user')||localStorage.getItem('user')||'null');
-if(!u){ document.getElementById('info').innerHTML='Not logged in<br><br><a href="auth.html">Go to Login</a>'; }
-else{ document.getElementById('info').innerHTML='Logged in as:<br><b>'+(u.email||u.name||'User')+'</b>'; document.getElementById('bal').innerText=(u.balance||u.grind_balance||'0')+' G'; }
-function logout(){ localStorage.removeItem('lespot_user'); localStorage.removeItem('user'); localStorage.removeItem('token'); location.href='auth.html'; }
+function getSb(){ return window.sb || null; }
+async function loadAccount(){
+  const infoEl = document.getElementById('info');
+  const balEl = document.getElementById('bal');
+  const sb = getSb();
+  if(!sb){ infoEl.innerHTML='App is loading. Please refresh.'; return; }
+  try{
+    const { data: { user } } = await sb.auth.getUser();
+    if(!user){
+      infoEl.innerHTML='Not logged in<br><br><a href="auth.html">Go to Login →</a>';
+      balEl.innerText='0 G';
+      return;
+    }
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    const name = profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || 'Les-Pot Fan';
+    const email = profile?.email || user.email || '';
+    const bal = Number(profile?.grind_balance||0);
+    document.getElementById('avatar').textContent = name.charAt(0).toUpperCase();
+    infoEl.innerHTML = '<b>'+escapeHtml(name)+'</b><br><span class="small">'+escapeHtml(email)+'</span>';
+    balEl.innerText = bal.toFixed(2) + ' G';
+    document.getElementById('balMaloti').textContent = 'M' + (bal*10).toFixed(0);
+    if(user.created_at){ document.getElementById('memberSince').textContent = 'Member since ' + new Date(user.created_at).toLocaleDateString(); }
+    // Stats - owned, uploads, earned
+    try{
+      const { data: pur } = await sb.from('purchases').select('id').eq('fan_id', user.id).eq('status','approved');
+      if(pur) document.getElementById('statOwned').textContent = pur.length;
+    }catch(e){}
+    try{
+      const { data: songs } = await sb.from('songs').select('id').eq('artist_id', user.id);
+      if(songs) document.getElementById('statUploads').textContent = songs.length;
+      if(songs && songs.length){
+        const ids = songs.map(s=>s.id);
+        const { data: sales } = await sb.from('purchases').select('price_grind').in('song_id', ids).eq('status','approved');
+        const earned = (sales||[]).reduce((sum,s)=> sum + Number(s.price_grind||0)*0.63, 0);
+        document.getElementById('statEarned').textContent = earned.toFixed(2) + ' G';
+      }
+    }catch(e){}
+    // Keep legacy localStorage in sync for any old code
+    try{ localStorage.setItem('lespot_user', JSON.stringify({email: email, name: name, grind_balance: bal})); }catch(e){}
+  }catch(e){
+    infoEl.innerHTML='Could not load account. Please try again.';
+  }
+}
+function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function logout(){
+  try{
+    const sb = getSb();
+    if(sb) await sb.auth.signOut();
+  }catch(e){}
+  try{ localStorage.removeItem('lespot_user'); localStorage.removeItem('user'); localStorage.removeItem('token'); }catch(e){}
+  location.href='auth.html';
+}
+loadAccount();
 </script>
-</body></html> 
+</body></html>
