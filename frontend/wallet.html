@@ -7,68 +7,56 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-*{box-sizing:border-box}
-body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;overflow-x:hidden;padding-bottom:80px}
-header{background:#d4ff3f;color:#000;padding:16px;text-align:center;font-weight:900}
-header div{font-size:28px;overflow-wrap:break-word}
-.wrap{max-width:520px;margin:0 auto;padding:16px;width:100%}
-.card{background:#1e1e1e;border:1px solid #333;padding:16px;border-radius:16px;margin-bottom:12px;overflow:hidden;word-break:break-word;box-shadow:0 4px 20px rgba(0,0,0,.25)}
-.card h3{margin:0 0 8px}
-.small{opacity:.7;font-size:13px;line-height:1.5;overflow-wrap:break-word}
-input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #333;background:#222;color:#fff;margin:6px 0;font-size:15px;outline:none}
-input:focus,select:focus{border-color:#d4ff3f}
-button{width:100%;padding:13px;border:0;border-radius:12px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:15px}
+*{box-sizing:border-box} body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:80px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;position:sticky;top:0;z-index:10}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+.card{background:#1e1e1e;border:1px solid #333;padding:16px;border-radius:16px;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.big{font-size:28px;font-weight:900;color:#d4ff3f}
+.small{font-size:13px;opacity:.7;line-height:1.6}
+label{font-size:13px;font-weight:700;display:block;margin:12px 0 6px;opacity:.9}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;font-size:15px}
+button{width:100%;padding:13px;border:0;border-radius:10px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:15px;margin-top:10px}
 button.ghost{background:#333;color:#fff}
-button:disabled{opacity:.55;cursor:not-allowed}
-.nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
-.nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
-.nav a.active{background:#d4ff3f;color:#000;font-weight:900}
-.paybox{background:#000;border:1px solid #333;border-radius:12px;padding:12px;margin:8px 0;word-break:break-word;overflow-wrap:break-word;white-space:normal;line-height:1.6;display:none}
+button:disabled{opacity:.5}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;background:#222;color:#fff}
+.tabs button.on{background:#d4ff3f;color:#000}
+.paybox{background:#000;border:1px solid #333;border-radius:12px;padding:12px;margin-top:10px;line-height:1.6;display:none}
 .paybox.active{display:block}
 .paybox b{color:#d4ff3f;font-size:18px;word-break:break-all}
 .paytag{display:inline-block;background:#d4ff3f;color:#000;font-size:11px;font-weight:900;padding:3px 8px;border-radius:20px;margin-bottom:6px}
-.quickRow{display:flex;gap:8px;margin:8px 0}
-.quickRow button{padding:10px;border-radius:99px;font-size:13px}
-.quickRow button.on{background:#fff;color:#000}
 .copyBtn{width:auto;padding:6px 12px;border-radius:99px;background:#333;color:#fff;font-size:12px;font-weight:700;margin-top:6px}
-.statRow{display:flex;gap:8px;margin-top:12px}
-.statBox{flex:1;background:#111;border:1px solid #333;border-radius:12px;padding:10px;text-align:center}
-.statBox b{font-size:16px;color:#d4ff3f}
-.statBox div{font-size:11px;opacity:.7}
-.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin:8px 0;font-size:13px;line-height:1.5}
-.pausedBox b{color:#d4ff3f}
-.trustRow{display:flex;gap:8px;margin-top:10px}
-.trustRow div{flex:1;background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:10px;text-align:center;font-size:11px;opacity:.85}
+.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.5}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:12px}
+.nav a{color:#fff;text-decoration:none;font-size:13px;opacity:.7} .nav a.active{opacity:1;color:#d4ff3f}
+.row{display:flex;gap:8px} .row button{flex:1}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT — WALLET 🔥<div>YOUR BALANCE • 1G = M10</div><div id="walletBalance" style="font-size:38px">Loading...</div><div class="small" id="walletSub" style="font-weight:700">M0.00 • Min withdraw 2.5 G • M25</div></header>
+<header>MAROTHOLI LES-POT — WALLET 💰</header>
 <div class="wrap">
-<div class="nav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="wallet.html" class="active">👛 Wallet</a><a href="upload.html">⬆️ Upload</a><a href="admin.html">⚙️ Admin</a><a href="auth.html">Logout</a></div>
+<div class="pausedBox"><b>🔒 M-Pesa & PayFast Paused</b><br><span class="small">Use EcoCash or Postbank only. Official Marotholi Les-Pot accounts below. M-Pesa / PayFast will return when business account is ready.</span></div>
 
-<div class="pausedBox"><b>🔒 M-Pesa & PayFast Paused</b><br><span class="small">We are setting up our official Marotholi business account. EcoCash & Postbank are still available. Your Grind and sales are safe.</span></div>
-
-<div class="statRow">
-  <div class="statBox"><b id="statSales">0 G</b><div>💰 Total Earned</div></div>
-  <div class="statBox"><b id="statSongs">0</b><div>🎵 Songs Bought</div></div>
-  <div class="statBox"><b id="statDeposits">0</b><div>➕ Deposits</div></div>
+<div class="card" style="text-align:center">
+<div class="small">Your Balance</div>
+<div class="big" id="balBig">0.00 G</div>
+<div class="small" id="balMaloti">M0.00 • 1G = M10</div>
+<div class="row"><button onclick="showTab('deposit')">⬇️ Top Up</button><button class="ghost" onclick="showTab('withdraw')">⬆️ Withdraw</button></div>
 </div>
 
-<div class="trustRow"><div>✅ Secure<br>Payments</div><div>⚡ Fast<br>Approval</div><div>💰 63% Artist<br>Royalties</div></div>
-
-<div class="card">
-<h3>➕ Top Up / Deposit</h3><p class="small">Stack Grinds to buy songs instantly. Choose how you pay:</p>
-<label class="small">Quick Amount</label>
-<div class="quickRow">
-  <button type="button" onclick="setDeposit(1,this)">1 G<br><span style="font-size:11px;font-weight:400">M10</span></button>
-  <button type="button" onclick="setDeposit(2.5,this)">2.5 G<br><span style="font-size:11px;font-weight:400">M25</span></button>
-  <button type="button" onclick="setDeposit(5,this)">5 G<br><span style="font-size:11px;font-weight:400">M50</span></button>
-  <button type="button" onclick="setDeposit(10,this)">10 G<br><span style="font-size:11px;font-weight:400">M100</span></button>
+<div class="tabs">
+<button id="tabDepositBtn" class="on" onclick="showTab('deposit')">⬇️ Deposit</button>
+<button id="tabWithdrawBtn" onclick="showTab('withdraw')">⬆️ Withdraw</button>
 </div>
-<label class="small">Amount in G</label>
-<input id="depAmount" type="number" step="0.01" placeholder="e.g. 5 = M50">
-<div id="depMaloti" class="small" style="color:#d4ff3f">M0.00</div>
-<label class="small">How you will pay</label>
+
+<!-- DEPOSIT -->
+<div id="depositTab" class="card">
+<h3 style="margin:0">⬇️ Top Up — Deposit</h3>
+<p class="small">1. Pay to official account below<br>2. Copy OTP / Reference<br>3. Paste it here • Min 1G (M10)</p>
+<label>Amount in Grinds (G)</label>
+<input id="depAmt" type="number" step="0.01" min="1" placeholder="e.g. 3 = M30" oninput="updateDepMaloti()">
+<div class="small" id="depMaloti" style="color:#d4ff3f">M0.00</div>
+<label>Method</label>
 <select id="depMethod" onchange="showPaybox()">
 <option value="EcoCash">EcoCash</option>
 <option value="Postbank">Postbank</option>
@@ -76,146 +64,103 @@ button:disabled{opacity:.55;cursor:not-allowed}
 <option value="PayFast" disabled>PayFast — Paused</option>
 </select>
 
-<!-- PAUSED - M-PESA - DO NOT DELETE - WILL RESTORE WITH BUSINESS ACCOUNT
-<div id="pay-Mpesa" class="paybox"><span class="paytag">MPESA</span><br><span class="small">M-Pesa is paused.</span></div>
--->
-<!-- PAUSED - PAYFAST - DO NOT DELETE - WILL RESTORE WITH BUSINESS ACCOUNT
-<div id="pay-PayFast" class="paybox"><span class="paytag">PAYFAST</span><br><span class="small">PayFast is paused.</span></div>
--->
-
 <div id="pay-EcoCash" class="paybox active">
 <span class="paytag">ECOCASH</span><br>
-<span class="small">Pay merchant MAROTHOLI LESPOT MSU to:</span><br>
+<span class="small">Pay merchant Marotholi Lespot MSU to:</span><br>
 <b>128235</b><br>
-<button class="copyBtn" onclick="copyText('128235',this)">📋 Copy Merchant Code</button><br>
+<button class="copyBtn" type="button" onclick="copyText('128235',this)">📋 Copy Merchant Code</button><br>
 <span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
 </div>
 
 <div id="pay-Postbank" class="paybox">
 <span class="paytag">POSTBANK</span><br>
-<span class="small">Deposit to Postbank:</span><br>
-<b>Acc: 1020478800016</b><br>
-<button class="copyBtn" onclick="copyText('1020478800016',this)">📋 Copy Acc No.</button><br>
-<span class="small">Acc Name: MAROTHOLI LESPOT<br>Reference: Your Email / Username<br>Keep deposit slip.</span>
+<span class="small">Deposit to Postbank Visa:</span><br>
+<b>Acc: 1040278800016</b><br>
+<button class="copyBtn" type="button" onclick="copyText('1040278800016',this)">📋 Copy Acc No.</button><br>
+<span class="small">Acc Name: Marotholi Lespot<br>Reference: Your Email / Username<br>Keep deposit slip.</span>
 </div>
 
-<label class="small">OTP CODE / Reference from your payment</label>
+<label>OTP / Reference from your payment</label>
 <input id="depRef" placeholder="e.g. EcoCash OTP / Postbank slip no.">
-<button onclick="doDeposit()">SEND DEPOSIT GET APPROVAL →</button>
-<p class="small" style="text-align:center;margin:8px 0 0">⏳ Admin approves in minutes. Balance updates automatically.</p>
+<button onclick="doDepositWallet()">Send Deposit for Approval →</button>
+<p class="small" id="depMsg"></p>
 </div>
 
-<div class="card">
-<h3>🏧 Request Withdrawal</h3><p class="small">Artist royalties: Min 2.5 G = M25. You keep 63%.</p>
-<label class="small">Amount in G (min 2.5)</label>
-<input id="wdAmount" type="number" step="0.01" placeholder="e.g. 2.5" oninput="document.getElementById('wdMaloti').textContent='You will receive M'+((parseFloat(this.value)||0)*10).toFixed(0)">
-<div id="wdMaloti" class="small" style="color:#d4ff3f">You will receive M0</div>
-<label class="small">Where to receive</label>
-<select id="wdMethod"><option value="EcoCash">EcoCash</option><option value="Postbank">Postbank</option><option value="Mpesa" disabled>Mpesa — Paused</option><option value="PayFast" disabled>PayFast — Paused</option></select>
-<label class="small">Your number / account</label>
-<input id="wdNumber" placeholder="e.g. EcoCash number / Postbank Acc No.">
-<button onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
+<!-- WITHDRAW -->
+<div id="withdrawTab" class="card" style="display:none">
+<h3 style="margin:0">⬆️ Withdraw — Artists</h3>
+<p class="small">Min 2.5G (M25). Balance drops AFTER Admin approves + pays you.<br>Use EcoCash or Postbank only.</p>
+<label>Amount in Grinds (G)</label>
+<input id="wdAmt" type="number" step="0.01" min="2.5" placeholder="e.g. 10 = M100" oninput="updateWdMaloti()">
+<div class="small" id="wdMaloti" style="color:#d4ff3f">M0.00</div>
+<label>Receive Method</label>
+<select id="wdMethod">
+<option value="EcoCash">EcoCash</option>
+<option value="Postbank">Postbank</option>
+<option value="Mpesa" disabled>Mpesa — Paused</option>
+<option value="PayFast" disabled>PayFast — Paused</option>
+</select>
+<label>Your EcoCash Number / Postbank Account</label>
+<input id="wdNumber" placeholder="e.g. EcoCash 6XXXXXXXX / Postbank acc">
+<button onclick="doWithdrawWallet()">Request Withdrawal →</button>
+<p class="small" id="wdMsg"></p>
+<p class="small">💡 Tip: Double-check your number. Wrong number = money lost.</p>
 </div>
 
-<div class="card"><h3>📥 My Deposits</h3><div id="myDeposits">Loading...</div></div>
-<div class="card"><h3>📤 My Withdrawals</h3><div id="myWithdrawals">Loading...</div></div>
-<div class="card"><h3>💰 My Sales (63% Royalties)</h3><div id="mySales">Loading...</div></div>
-<p style="text-align:center"><a href="discover.html" style="color:#d4ff3f">🔥 Buy more in Discover →</a> • <a href="upload.html" style="color:#d4ff3f">⬆️ Upload to Earn →</a></p>
+<div class="card"><h3 style="margin:0 0 10px">📜 My Deposits</h3><div id="myDeposits">Loading...</div></div>
+<div class="card"><h3 style="margin:0 0 10px">📜 My Withdrawals</h3><div id="myWithdrawals">Loading...</div></div>
 </div>
+
+<div class="nav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="upload.html">⬆️ Upload</a><a href="wallet.html" class="active">💰 Wallet</a><a href="admin.html">🛠️ Admin</a><a href="account.html">👤 Account</a></div>
+
 <script>
+function showTab(t){
+  document.getElementById('depositTab').style.display = t==='deposit' ? 'block' : 'none';
+  document.getElementById('withdrawTab').style.display = t==='withdraw' ? 'block' : 'none';
+  document.getElementById('tabDepositBtn').classList.toggle('on', t==='deposit');
+  document.getElementById('tabWithdrawBtn').classList.toggle('on', t==='withdraw');
+}
 function showPaybox(){
   const m = document.getElementById('depMethod').value;
   document.querySelectorAll('.paybox').forEach(b=>b.classList.remove('active'));
   const el = document.getElementById('pay-'+m);
   if(el) el.classList.add('active');
 }
-function setDeposit(val, btn){
-  document.getElementById('depAmount').value = val;
-  document.querySelectorAll('.quickRow button').forEach(b=>b.classList.remove('on'));
-  if(btn) btn.classList.add('on');
-  document.getElementById('depMaloti').textContent = 'M' + (val*10).toFixed(0) + '.00';
-}
 function copyText(txt, btn){
   if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>{ if(btn){ btn.textContent='✅ Copied!'; setTimeout(()=>btn.textContent='📋 Copy',1500); } }); }
   else { prompt('Copy:', txt); }
 }
-document.getElementById('depAmount').addEventListener('input', function(){
-  const v = parseFloat(this.value)||0;
-  document.getElementById('depMaloti').textContent = 'M' + (v*10).toFixed(2);
-});
-async function doDeposit(){
-  const amt = document.getElementById('depAmount').value;
+function updateDepMaloti(){ const v=parseFloat(document.getElementById('depAmt').value)||0; document.getElementById('depMaloti').textContent='M'+(v*10).toFixed(2); }
+function updateWdMaloti(){ const v=parseFloat(document.getElementById('wdAmt').value)||0; document.getElementById('wdMaloti').textContent='M'+(v*10).toFixed(2); }
+async function doDepositWallet(){
+  const amt = document.getElementById('depAmt').value;
   const method = document.getElementById('depMethod').value;
   const ref = document.getElementById('depRef').value.trim();
-  if(method === 'Mpesa' || method === 'PayFast'){ alert('M-Pesa and PayFast are paused. Please use EcoCash or Postbank for now.'); return; }
-  if(!amt || Number(amt) <= 0){ alert('Enter amount first'); return; }
-  if(!ref){ alert('Enter your OTP / Reference from payment'); return; }
+  const msg = document.getElementById('depMsg');
+  if(method==='Mpesa'||method==='PayFast'){ msg.textContent='M-Pesa and PayFast are paused. Please use EcoCash or Postbank.'; return; }
+  if(!amt || !ref){ msg.textContent='Enter amount + reference'; return; }
+  msg.textContent='Sending...';
   await submitDeposit(amt, method, ref);
 }
-async function doWithdraw(){
-  const amt = document.getElementById('wdAmount').value;
+async function doWithdrawWallet(){
+  const amt = document.getElementById('wdAmt').value;
   const method = document.getElementById('wdMethod').value;
   const num = document.getElementById('wdNumber').value.trim();
-  if(method === 'Mpesa' || method === 'PayFast'){ alert('M-Pesa and PayFast are paused. Please use EcoCash or Postbank for now.'); return; }
-  if(!amt || Number(amt) < 2.5){ alert('Min withdraw is 2.5 G = M25'); return; }
-  if(!num){ alert('Enter your number / account'); return; }
+  const msg = document.getElementById('wdMsg');
+  if(method==='Mpesa'||method==='PayFast'){ msg.textContent='M-Pesa and PayFast are paused. Please use EcoCash or Postbank.'; return; }
+  if(!amt || !num){ msg.textContent='Enter amount + your number / account'; return; }
+  msg.textContent='Sending...';
   await submitWithdrawal(amt, method, num);
 }
-async function loadSales(){
-  const el = document.getElementById('mySales');
-  if(!el) return;
+document.addEventListener('DOMContentLoaded', async ()=>{
   try{
-    const { data: { user } } = await window.sb.auth.getUser();
-    if(!user){ el.innerHTML = '<p class="small">Login first</p>'; return; }
-    const { data: songs } = await window.sb.from('songs').select('id').eq('artist_id', user.id);
-    const songIds = (songs||[]).map(s=>s.id);
-    if(!songIds.length){ el.innerHTML = '<p class="small">No sales yet. Upload a song!</p>'; return; }
-    const { data: sales } = await window.sb.from('purchases').select('*').in('song_id', songIds).eq('status','approved').order('created_at',{ascending:false}).limit(20);
-    if(!sales || !sales.length){ el.innerHTML = '<p class="small">No sales yet.</p>'; return; }
-    const totalEarned = sales.reduce((sum,s)=> sum + (Number(s.price_grind||0)*0.63), 0);
-    const stat = document.getElementById('statSales');
-    if(stat) stat.textContent = totalEarned.toFixed(2) + ' G';
-    el.innerHTML = sales.map(s=>`<div style="padding:8px 0;border-bottom:1px solid #333"><b>+${(Number(s.price_grind||0)*0.63).toFixed(2)} G</b> <span class="small">royalty from ${s.price_grind} G sale • ${new Date(s.created_at).toLocaleString()}</span></div>`).join('');
-  }catch(e){ el.innerHTML = '<p class="small">Sales failed: '+e.message+'</p>'; }
-}
-async function fixWalletBalance(){
-  try{
-    const { user, profile } = await getMyProfile();
-    if(!profile) return;
-    const bal = Number(profile.grind_balance||0);
-    const big = document.getElementById('walletBalance');
-    if(big) big.textContent = bal.toFixed(2) + ' G';
-    const sub = document.getElementById('walletSub');
-    if(sub) sub.textContent = 'M' + (bal*10).toFixed(0) + '.00 • Min withdraw 2.5 G • M25';
-  }catch(e){}
-}
-async function loadMyLists(){
-  try{
-    const { data: { user } } = await window.sb.auth.getUser();
-    if(!user) return;
-    const { data: deps } = await window.sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(10);
-    const depEl = document.getElementById('myDeposits');
-    if(depEl){
-      if(deps && deps.length){
-        document.getElementById('statDeposits').textContent = deps.length;
-        depEl.innerHTML = deps.map(d=>`<div style="padding:8px 0;border-bottom:1px solid #333"><b>${d.amount_grind||d.amount||'?'} G</b> <span class="small">• ${d.method||''} • ${d.status||'pending'} • ${new Date(d.created_at).toLocaleDateString()}</span></div>`).join('');
-      } else depEl.innerHTML = '<p class="small">No deposits yet.</p>';
-    }
-    const { data: wds } = await window.sb.from('withdrawals').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(10);
-    const wdEl = document.getElementById('myWithdrawals');
-    if(wdEl){
-      if(wds && wds.length){ wdEl.innerHTML = wds.map(w=>`<div style="padding:8px 0;border-bottom:1px solid #333"><b>${w.amount_grind||w.amount||'?'} G</b> <span class="small">• ${w.method||''} • ${w.status||'pending'} • ${new Date(w.created_at).toLocaleDateString()}</span></div>`).join(''); }
-      else wdEl.innerHTML = '<p class="small">No withdrawals yet.</p>';
-    }
-    const { data: pur } = await window.sb.from('purchases').select('id').eq('fan_id', user.id).eq('status','approved');
-    if(pur) document.getElementById('statSongs').textContent = pur.length;
-  }catch(e){}
-}
-document.addEventListener('DOMContentLoaded', ()=>{
-  fixWalletBalance();
-  loadSales();
-  loadMyLists();
-  setTimeout(()=>{ fixWalletBalance(); loadMyLists(); }, 1500);
+    const {user, profile} = await getMyProfile();
+    if(!user){ location.href='auth.html'; return; }
+    const bal = Number(profile?.grind_balance||0);
+    const big = document.getElementById('balBig'); if(big) big.textContent = bal.toFixed(2)+' G';
+    const mal = document.getElementById('balMaloti'); if(mal) mal.textContent = 'M'+(bal*10).toFixed(2)+' • 1G = M10';
+    loadMyDeposits(user.id); loadMyWithdrawals(user.id);
+  }catch(e){ location.href='auth.html'; }
 });
 </script>
 </body>
