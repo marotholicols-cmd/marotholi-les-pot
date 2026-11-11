@@ -12,13 +12,14 @@ body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;ove
 header{background:#d4ff3f;color:#000;padding:16px;text-align:center;font-weight:900}
 header div{font-size:28px;overflow-wrap:break-word}
 .wrap{max-width:520px;margin:0 auto;padding:16px;width:100%}
-.card{background:#1e1e1e;border:1px solid #333;padding:16px;border-radius:16px;margin-bottom:12px;overflow:hidden;word-break:break-word}
+.card{background:#1e1e1e;border:1px solid #333;padding:16px;border-radius:16px;margin-bottom:12px;overflow:hidden;word-break:break-word;box-shadow:0 4px 20px rgba(0,0,0,.25)}
 .card h3{margin:0 0 8px}
 .small{opacity:.7;font-size:13px;line-height:1.5;overflow-wrap:break-word}
 input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #333;background:#222;color:#fff;margin:6px 0;font-size:15px;outline:none}
 input:focus,select:focus{border-color:#d4ff3f}
 button{width:100%;padding:13px;border:0;border-radius:12px;background:#d4ff3f;color:#000;font-weight:900;cursor:pointer;font-size:15px}
 button.ghost{background:#333;color:#fff}
+button:disabled{opacity:.55;cursor:not-allowed}
 .nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center}
 .nav a{background:#222;color:#fff;text-decoration:none;padding:8px 12px;border-radius:20px;font-size:13px}
 .nav a.active{background:#d4ff3f;color:#000;font-weight:900}
@@ -34,6 +35,10 @@ button.ghost{background:#333;color:#fff}
 .statBox{flex:1;background:#111;border:1px solid #333;border-radius:12px;padding:10px;text-align:center}
 .statBox b{font-size:16px;color:#d4ff3f}
 .statBox div{font-size:11px;opacity:.7}
+.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin:8px 0;font-size:13px;line-height:1.5}
+.pausedBox b{color:#d4ff3f}
+.trustRow{display:flex;gap:8px;margin-top:10px}
+.trustRow div{flex:1;background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:10px;text-align:center;font-size:11px;opacity:.85}
 </style>
 </head>
 <body>
@@ -41,11 +46,15 @@ button.ghost{background:#333;color:#fff}
 <div class="wrap">
 <div class="nav"><a href="discover.html">🔥 Discover</a><a href="library.html">📚 Library</a><a href="wallet.html" class="active">👛 Wallet</a><a href="upload.html">⬆️ Upload</a><a href="admin.html">⚙️ Admin</a><a href="auth.html">Logout</a></div>
 
+<div class="pausedBox"><b>🔒 M-Pesa & PayFast Paused</b><br><span class="small">We are setting up our official Marotholi business account. EcoCash & Postbank are still available. Your Grind and sales are safe.</span></div>
+
 <div class="statRow">
   <div class="statBox"><b id="statSales">0 G</b><div>💰 Total Earned</div></div>
   <div class="statBox"><b id="statSongs">0</b><div>🎵 Songs Bought</div></div>
   <div class="statBox"><b id="statDeposits">0</b><div>➕ Deposits</div></div>
 </div>
+
+<div class="trustRow"><div>✅ Secure<br>Payments</div><div>⚡ Fast<br>Approval</div><div>💰 63% Artist<br>Royalties</div></div>
 
 <div class="card">
 <h3>➕ Top Up / Deposit</h3><p class="small">Stack Grinds to buy songs instantly. Choose how you pay:</p>
@@ -61,34 +70,25 @@ button.ghost{background:#333;color:#fff}
 <div id="depMaloti" class="small" style="color:#d4ff3f">M0.00</div>
 <label class="small">How you will pay</label>
 <select id="depMethod" onchange="showPaybox()">
-<option value="Mpesa">Mpesa</option>
 <option value="EcoCash">EcoCash</option>
-<option value="PayFast">PayFast</option>
 <option value="Postbank">Postbank</option>
+<option value="Mpesa" disabled>Mpesa — Paused</option>
+<option value="PayFast" disabled>PayFast — Paused</option>
 </select>
 
-<div id="pay-Mpesa" class="paybox active">
-<span class="paytag">MPESA</span><br>
-<span class="small">Pay TSOSANE MOLIBELI to:</span><br>
-<b>+266 59070688</b><br>
-<button class="copyBtn" onclick="copyText('26659070688',this)">📋 Copy Number</button><br>
-<span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
-</div>
+<!-- PAUSED - M-PESA - DO NOT DELETE - WILL RESTORE WITH BUSINESS ACCOUNT
+<div id="pay-Mpesa" class="paybox"><span class="paytag">MPESA</span><br><span class="small">M-Pesa is paused.</span></div>
+-->
+<!-- PAUSED - PAYFAST - DO NOT DELETE - WILL RESTORE WITH BUSINESS ACCOUNT
+<div id="pay-PayFast" class="paybox"><span class="paytag">PAYFAST</span><br><span class="small">PayFast is paused.</span></div>
+-->
 
-<div id="pay-EcoCash" class="paybox">
+<div id="pay-EcoCash" class="paybox active">
 <span class="paytag">ECOCASH</span><br>
 <span class="small">Pay merchant MAROTHOLI LESPOT MSU to:</span><br>
 <b>128235</b><br>
 <button class="copyBtn" onclick="copyText('128235',this)">📋 Copy Merchant Code</button><br>
 <span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
-</div>
-
-<div id="pay-PayFast" class="paybox">
-<span class="paytag">PAYFAST</span><br>
-<span class="small">Pay via PayFast TSOSANE MOLIBELI:</span><br>
-<b>37129143</b><br>
-<button class="copyBtn" onclick="copyText('37129143',this)">📋 Copy Number</button><br>
-<span class="small">Pay EXACT amount. Keep PayFast Reference.</span>
 </div>
 
 <div id="pay-Postbank" class="paybox">
@@ -100,7 +100,7 @@ button.ghost{background:#333;color:#fff}
 </div>
 
 <label class="small">OTP CODE / Reference from your payment</label>
-<input id="depRef" placeholder="e.g. MP250... / PayFast ID / Postbank slip no.">
+<input id="depRef" placeholder="e.g. EcoCash OTP / Postbank slip no.">
 <button onclick="doDeposit()">SEND DEPOSIT GET APPROVAL →</button>
 <p class="small" style="text-align:center;margin:8px 0 0">⏳ Admin approves in minutes. Balance updates automatically.</p>
 </div>
@@ -111,9 +111,9 @@ button.ghost{background:#333;color:#fff}
 <input id="wdAmount" type="number" step="0.01" placeholder="e.g. 2.5" oninput="document.getElementById('wdMaloti').textContent='You will receive M'+((parseFloat(this.value)||0)*10).toFixed(0)">
 <div id="wdMaloti" class="small" style="color:#d4ff3f">You will receive M0</div>
 <label class="small">Where to receive</label>
-<select id="wdMethod"><option value="Mpesa">Mpesa</option><option value="EcoCash">EcoCash</option><option value="PayFast">PayFast</option><option value="Postbank">Postbank</option></select>
+<select id="wdMethod"><option value="EcoCash">EcoCash</option><option value="Postbank">Postbank</option><option value="Mpesa" disabled>Mpesa — Paused</option><option value="PayFast" disabled>PayFast — Paused</option></select>
 <label class="small">Your number / account</label>
-<input id="wdNumber" placeholder="e.g. Mpesa 59070688 / EcoCash 128235 / Postbank Acc No.">
+<input id="wdNumber" placeholder="e.g. EcoCash number / Postbank Acc No.">
 <button onclick="doWithdraw()">REQUEST WITHDRAWAL →</button>
 </div>
 
@@ -147,6 +147,7 @@ async function doDeposit(){
   const amt = document.getElementById('depAmount').value;
   const method = document.getElementById('depMethod').value;
   const ref = document.getElementById('depRef').value.trim();
+  if(method === 'Mpesa' || method === 'PayFast'){ alert('M-Pesa and PayFast are paused. Please use EcoCash or Postbank for now.'); return; }
   if(!amt || Number(amt) <= 0){ alert('Enter amount first'); return; }
   if(!ref){ alert('Enter your OTP / Reference from payment'); return; }
   await submitDeposit(amt, method, ref);
@@ -155,6 +156,7 @@ async function doWithdraw(){
   const amt = document.getElementById('wdAmount').value;
   const method = document.getElementById('wdMethod').value;
   const num = document.getElementById('wdNumber').value.trim();
+  if(method === 'Mpesa' || method === 'PayFast'){ alert('M-Pesa and PayFast are paused. Please use EcoCash or Postbank for now.'); return; }
   if(!amt || Number(amt) < 2.5){ alert('Min withdraw is 2.5 G = M25'); return; }
   if(!num){ alert('Enter your number / account'); return; }
   await submitWithdrawal(amt, method, num);
@@ -188,7 +190,6 @@ async function fixWalletBalance(){
   }catch(e){}
 }
 async function loadMyLists(){
-  // Deposits & Withdrawals counts - tries to load if tables exist, otherwise leaves Loading text
   try{
     const { data: { user } } = await window.sb.auth.getUser();
     if(!user) return;
@@ -206,7 +207,6 @@ async function loadMyLists(){
       if(wds && wds.length){ wdEl.innerHTML = wds.map(w=>`<div style="padding:8px 0;border-bottom:1px solid #333"><b>${w.amount_grind||w.amount||'?'} G</b> <span class="small">• ${w.method||''} • ${w.status||'pending'} • ${new Date(w.created_at).toLocaleDateString()}</span></div>`).join(''); }
       else wdEl.innerHTML = '<p class="small">No withdrawals yet.</p>';
     }
-    // Bought count
     const { data: pur } = await window.sb.from('purchases').select('id').eq('fan_id', user.id).eq('status','approved');
     if(pur) document.getElementById('statSongs').textContent = pur.length;
   }catch(e){}
