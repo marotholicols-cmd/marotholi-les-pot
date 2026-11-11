@@ -4,357 +4,79 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Library - Marotholi Les-Pot</title>
+<link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="player.js"></script>
+<link rel="stylesheet" href="style.css">
 <style>
-    * { box-sizing: border-box; }
-  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
-  header { background: #d4ff3f; color: #000; padding: 14px; text-align: center; font-weight: 900; font-size: 18px; position: sticky; top: 0; z-index: 50; }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 14px; }
-  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 14px; margin-bottom: 12px; }
-  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
-  .center { text-align: center; }
-  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 10px; }
-  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
-  .choice { display: flex; gap: 8px; margin: 6px 0; }
-  .choice button { flex: 1; padding: 11px; border-radius: 12px; border: 2px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; font-size: 13px; }
-  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
-  input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; outline: none; }
-  .song { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 12px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; }
-  .song img { width: 62px; height: 62px; border-radius: 12px; object-fit: cover; background: #333; flex-shrink: 0; }
-  .song .meta { flex: 1; min-width: 0; }
-  .song b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .song span { font-size: 13px; opacity: .7; }
-  .row { display: flex; gap: 6px; margin-top: 8px; }
-  .row button { flex: 1; padding: 9px 4px; border-radius: 99px; border: 1px solid #444; background: #222; color: #fff; font-weight: 800; cursor: pointer; font-size: 12px; }
-  .row button.play { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
-  /* PLAYER */
-  #playerBar { display: none; position: fixed; bottom: 62px; left: 10px; right: 10px; background: #1e1e1e; border: 1px solid #d4ff3f; border-radius: 20px; padding: 12px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
-  #playerBar.full { top: 10px; bottom: 70px; left: 10px; right: 10px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; }
-  #playerBar.full #playerCover { width: 220px !important; height: 220px !important; }
-  #playerBar.full #nowTitle { font-size: 22px !important; }
-  #playerBar.full #nowArtist { font-size: 16px !important; }
-  #playerCover { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; background: #333; }
-  #nowTitle { font-weight: 900; font-size: 15px; }
-  #nowArtist { font-size: 13px; opacity: .7; }
-  .pcontrols { display: flex; gap: 6px; margin-top: 10px; }
-  .pcontrols button { flex: 1; padding: 10px 4px; border-radius: 99px; border: 1px solid #444; background: #222; color: #fff; font-weight: 800; cursor: pointer; font-size: 12px; }
-  .pcontrols button.main { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
-  input[type=range] { width: 100%; accent-color: #d4ff3f; margin: 8px 0; }
-  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
-  .bottomnav a { color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; text-align: center; opacity: .7; padding: 6px; }
-  .bottomnav a.active { color: #d4ff3f; opacity: 1; }
-  .hidden { display: none !important; }
+body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:180px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px;position:sticky;top:0;z-index:10}
+header small{display:block;font-size:12px;font-weight:700;opacity:.7}
+.wrap{max-width:600px;margin:0 auto;padding:14px}
+.card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:14px;margin-bottom:12px}
+.small{font-size:13px;opacity:.7;line-height:1.5}
+.btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer}
+.song{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
+.song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0}
+.song .meta{flex:1;min-width:0}
+.song .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row{display:flex;gap:6px;margin-top:9px}
+.row button{flex:1;padding:10px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+.row button.play{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.player{position:fixed;left:10px;right:10px;bottom:72px;background:#1e1e1e;border:1px solid #d4ff3f;border-radius:18px;padding:10px;display:none;gap:10px;align-items:center;z-index:50}
+.player.show{display:flex}
+.player img{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#333}
+.player .meta{flex:1;min-width:0}
+.player .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.player .meta span{font-size:12px;opacity:.7}
+.player button{background:#d4ff3f;color:#000;border:0;width:42px;height:42px;border-radius:99px;font-weight:900;font-size:18px;cursor:pointer;flex-shrink:0}
+.player button.stop{background:#333;color:#fff}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0;z-index:40}
+.bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
+.bottomnav a.active{color:#d4ff3f;opacity:1}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT — LIBRARY</header>
+<header>MAROTHOLI LES-POT<small>📚 My Library • Bought Songs = FULL</small></header>
 <div class="wrap">
-
-  <div class="card">
-    <h3 style="margin:0">📚 My Library</h3>
-    <p class="small">Bought songs play FULL. Hyped songs are previews only. Stream-only — no download.</p>
-    <div class="choice">
-      <button type="button" id="tabBought" class="on" onclick="setTab('bought')">🛒 Bought</button>
-      <button type="button" id="tabHyped" onclick="setTab('hyped')">🔥 Hyped</button>
-      <button type="button" id="tabAll" onclick="setTab('all')">🎵 All</button>
-    </div>
-    <p class="small center" id="libCount">Loading...</p>
-  </div>
-
-  <div id="libraryList"><p class="small center">Loading...</p></div>
-
-  <button class="btn-dark" onclick="location.href='discover.html'">🔥 Go Discover More Songs</button>
-  <button class="btn-dark" onclick="location.href='wallet.html'">💰 Wallet</button>
-
+<div class="card"><h3 style="margin:0">My Bought Songs</h3><p class="small" style="margin:6px 0 0 0">Only songs you bought play FULL here. No download — stream only, works on lock screen.</p></div>
+<div id="list"><p class="small">Loading library...</p></div>
 </div>
-
-<!-- PLAYER BAR - Small / Full Screen / Settings / Share -->
-<div id="playerBar">
-  <div style="display:flex;gap:10px;align-items:center">
-    <img id="playerCover" src="" alt="">
-    <div style="flex:1;min-width:0">
-      <div id="nowTitle">No song playing</div>
-      <div id="nowArtist">—</div>
-    </div>
-    <button onclick="toggleFull()" style="background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:99px;font-weight:800;cursor:pointer" id="fullBtn">⛶ Full</button>
-    <button onclick="closePlayer()" style="background:#222;color:#fff;border:1px solid #444;padding:8px 10px;border-radius:99px;font-weight:800;cursor:pointer">✕</button>
-  </div>
-
-  <audio id="mainPlayer" preload="auto" controlslist="nodownload" style="width:100%;margin-top:10px"></audio>
-
-  <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" oninput="seekTo(this.value)">
-
-  <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.7">
-    <span id="curTime">0:00</span>
-    <span id="durTime">0:00</span>
-  </div>
-
-  <div class="pcontrols">
-    <button onclick="prevSong()">⏮️ Prev</button>
-    <button class="main" id="playPauseBtn" onclick="togglePlay()">▶️ Play</button>
-    <button onclick="nextSong()">⏭️ Next</button>
-    <button onclick="toggleRepeat()">🔁 <span id="repeatLabel">Off</span></button>
-  </div>
-
-  <div class="pcontrols">
-    <button onclick="changeSpeed()">⏩ Speed: <span id="speedLabel">1x</span></button>
-    <button onclick="shareCurrent()">🔗 Share</button>
-    <button onclick="toggleSettings()">⚙️ Settings</button>
-  </div>
-
-  <!-- SETTINGS -->
-  <div id="settingsBox" class="hidden" style="background:#111;border:1px solid #333;border-radius:14px;padding:10px;margin-top:8px">
-    <label style="font-size:13px;opacity:.8">Volume</label>
-    <input type="range" min="0" max="100" value="100" oninput="setVolume(this.value)">
-    <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="setVolume(0)" style="flex:1;background:#222;color:#fff;border:1px solid #444;padding:8px;border-radius:99px">🔇 Mute</button>
-      <button onclick="setVolume(100)" style="flex:1;background:#222;color:#fff;border:1px solid #444;padding:8px;border-radius:99px">🔊 Max</button>
-    </div>
-    <p class="small">Playback: Stream-only. No download. Signed URL expires in 1 hour — auto-refreshes if you press Play again.</p>
-    <button onclick="toggleSettings()" style="width:100%;background:#d4ff3f;color:#000;border:0;padding:9px;border-radius:99px;font-weight:800">Close Settings</button>
-  </div>
-</div>
-
-<div class="bottomnav">
-  <a href="discover.html">🔥<br>Discover</a>
-  <a href="library.html" class="active">📚<br>Library</a>
-  <a href="upload.html">⬆️<br>Upload</a>
-  <a href="wallet.html">💰<br>Wallet</a>
-  <a href="withdraw.html">🏧<br>Withdraw</a>
-  <a href="account.html">👤<br>Account</a>
-</div>
-
+<div class="player" id="playerBar"><img id="playerCover" src="icon.svg"><div class="meta"><b id="playerTitle">No song playing</b><span id="playerArtist">Marotholi Les-Pot</span></div><button id="playerBtn" onclick="togglePlayer()">▶</button><button class="stop" onclick="stopPlayer()">✕</button></div>
+<audio id="mainAudio" preload="none"></audio>
+<div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html" class="active">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-  // LIBRARY - FULL
-  // Uses app.js: SUPA_URL + SUPA_KEY, getSongStreamUrl(), shareSongLink(), escHtml()
-  // Bought = FULL play via signed URL (private bucket), Hyped = preview list
-  // Player: Small / Full Screen, Settings, Share, Prev/Next, Repeat, Speed, Volume, Seek
-
-  let LIB_TAB = 'bought';
-  let LIB_SONGS = [];
-  let CURRENT_INDEX = -1;
-  let REPEAT = false;
-  let SPEEDS = [1, 1.25, 1.5, 2];
-  let SPEED_IDX = 0;
-
-  function setTab(tab) {
-    LIB_TAB = tab;
-    document.getElementById('tabBought').classList.toggle('on', tab === 'bought');
-    document.getElementById('tabHyped').classList.toggle('on', tab === 'hyped');
-    document.getElementById('tabAll').classList.toggle('on', tab === 'all');
-    loadLibrary();
-  }
-
-  function fmtTime(sec) {
-    if (!sec || isNaN(sec)) return '0:00';
-    sec = Math.floor(sec);
-    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
-  }
-
-  async function loadLibrary() {
-    const el = document.getElementById('libraryList');
-    const cnt = document.getElementById('libCount');
-    el.innerHTML = "<p class='small center'>Loading...</p>";
-
-    const { data: { user } } = await window.sb.auth.getUser();
-    if (!user) { location.href = 'auth.html'; return; }
-
-    // Bought = purchases approved + song
-    const { data: purchases } = await window.sb
-      .from('purchases')
-      .select('*, songs(*)')
-      .eq('buyer_id', user.id)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false });
-
-    // Fallback: some setups use user_id
-    let boughtSongs = (purchases || []).map(function(p) { return p.songs || p.song; }).filter(Boolean);
-    if (!boughtSongs.length) {
-      const { data: p2 } = await window.sb.from('purchases').select('*, songs(*)').eq('user_id', user.id).eq('status', 'approved');
-      boughtSongs = (p2 || []).map(function(p) { return p.songs || p.song; }).filter(Boolean);
+let mySongs=[];
+async function loadLibrary(){
+  const list=document.getElementById('list');
+  const user=await getCurrentUser();
+  if(!user){list.innerHTML="<div class='card'>Login to see your bought songs.<br><button class='btn' style='margin-top:10px' onclick=\"location.href='auth.html'\">Login →</button></div>";return;}
+  try{
+    const {data:purchases,error}=await window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
+    if(error) throw error;
+    let songs=(purchases||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
+    // Fallback: also try user_id column if buyer_id empty
+    if(!songs.length){
+      const {data:p2}=await window.sb.from('purchases').select('*, songs(*)').eq('user_id',user.id).order('created_at',{ascending:false});
+      songs=(p2||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
     }
-
-    // Hyped = hypes + song
-    const { data: hypes } = await window.sb.from('hypes').select('*, songs(*)').eq('user_id', user.id).order('created_at', { ascending: false });
-    let hypedSongs = (hypes || []).map(function(h) { return h.songs || h.song; }).filter(Boolean);
-    if (!hypedSongs.length) {
-      const { data: h2 } = await window.sb.from('hypes').select('*, songs(*)').eq('user_id', user.id);
-      hypedSongs = (h2 || []).map(function(h) { return h.songs || h.song; }).filter(Boolean);
-    }
-
-    if (LIB_TAB === 'bought') LIB_SONGS = boughtSongs;
-    else if (LIB_TAB === 'hyped') LIB_SONGS = hypedSongs;
-    else {
-      // All = bought + hyped (no duplicates)
-      const seen = {};
-      LIB_SONGS = [];
-      boughtSongs.concat(hypedSongs).forEach(function(s) {
-        if (s && s.id && !seen[s.id]) { seen[s.id] = 1; LIB_SONGS.push(s); }
-      });
-    }
-
-    cnt.textContent = LIB_TAB === 'bought' ? ('🛒 ' + LIB_SONGS.length + ' bought songs') : LIB_TAB === 'hyped' ? ('🔥 ' + LIB_SONGS.length + ' hyped songs') : ('🎵 ' + LIB_SONGS.length + ' songs');
-
-    if (!LIB_SONGS.length) {
-      el.innerHTML = LIB_TAB === 'bought'
-        ? "<div class='card center'>No bought songs yet.<br><button class='btn' onclick=\"location.href='discover.html'\">🔥 Discover Songs →</button></div>"
-        : "<div class='card center'>Nothing here yet.<br><button class='btn' onclick=\"location.href='discover.html'\">🔥 Discover Songs →</button></div>";
-      return;
-    }
-
-    el.innerHTML = LIB_SONGS.map(function(s, i) {
-      const cover = s.cover_url || 'icon.svg';
-      return '<div class="song">' +
-        '<img src="' + cover + '" onerror="this.src=\'icon.svg\'">' +
-        '<div class="meta"><b>' + escHtml(s.title) + '</b><span>' + escHtml(s.artist_name) + ' • ' + Number(s.price_grind || 0).toFixed(2) + ' G</span></div>' +
-        '<div class="row" style="flex-direction:column;min-width:90px">' +
-          '<button class="play" onclick="playAt(' + i + ')">▶️ Play</button>' +
-          '<button onclick="shareSongLink(\'' + s.id + '\',\'' + escHtml(s.title) + '\',\'' + escHtml(s.artist_name) + '\')">🔗 Share</button>' +
-        '</div>' +
-      '</div>';
+    mySongs=songs;
+    if(!songs.length){list.innerHTML="<div class='card'>No bought songs yet.<br><span class='small'>Go to Discover, preview 30s, buy, it appears here FULL.</span><br><button class='btn' style='margin-top:10px' onclick=\"location.href='discover.html'\">Go to Discover →</button></div>";return;}
+    list.innerHTML=songs.map(function(s){
+      const cover=getCoverUrl(s.cover_url||s.cover_path);
+      return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • Bought • FULL</span><div class='row'><button class='play' onclick=\"playFull('"+s.id+"')\">▶ Play FULL</button><button onclick=\"shareSongLink('"+s.id+"','"+escHtml(s.title)+"','"+escHtml(s.artist_name)+"')\">🔗 Share</button></div></div></div>";
     }).join('');
-  }
-
-  async function playAt(i) {
-    CURRENT_INDEX = i;
-    const s = LIB_SONGS[i];
-    if (!s) return;
-    await playSong(s);
-  }
-
-  async function playSong(s) {
-    const audio = document.getElementById('mainPlayer');
-    const bar = document.getElementById('playerBar');
-    const path = s.audio_path || s.audio_url || s.file_url || '';
-
-    if (!path) {
-      alert('No audio file for this song - ask artist to re-upload it.');
-      return;
-    }
-
-    // If path is already a full https URL (old songs), use it directly, else get signed URL
-    let url = path;
-    if (!path.startsWith('http')) {
-      url = await getSongStreamUrl(path, 3600);
-      if (!url) {
-        alert('Could not play - file not found in Storage > songs bucket. Path: ' + path);
-        return;
-      }
-    }
-
-    bar.style.display = 'block';
-    document.getElementById('nowTitle').textContent = s.title;
-    document.getElementById('nowArtist').textContent = s.artist_name + ' • ' + Number(s.price_grind || 0).toFixed(2) + ' G';
-    document.getElementById('playerCover').src = s.cover_url || 'icon.svg';
-    document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
-
-    audio.src = url;
-    audio.playbackRate = SPEEDS[SPEED_IDX];
-    audio.loop = REPEAT;
-
-    try {
-      await audio.play();
-    } catch (e) {
-      document.getElementById('playPauseBtn').textContent = '▶️ Play';
-      alert('Tap Play again - browser blocked autoplay.');
-    }
-  }
-
-  function togglePlay() {
-    const audio = document.getElementById('mainPlayer');
-    if (!audio.src) return;
-    if (audio.paused) {
-      audio.play();
-      document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
-    } else {
-      audio.pause();
-      document.getElementById('playPauseBtn').textContent = '▶️ Play';
-    }
-  }
-
-  function nextSong() {
-    if (!LIB_SONGS.length) return;
-    CURRENT_INDEX = (CURRENT_INDEX + 1) % LIB_SONGS.length;
-    playSong(LIB_SONGS[CURRENT_INDEX]);
-  }
-
-  function prevSong() {
-    if (!LIB_SONGS.length) return;
-    CURRENT_INDEX = (CURRENT_INDEX - 1 + LIB_SONGS.length) % LIB_SONGS.length;
-    playSong(LIB_SONGS[CURRENT_INDEX]);
-  }
-
-  function toggleRepeat() {
-    REPEAT = !REPEAT;
-    const audio = document.getElementById('mainPlayer');
-    audio.loop = REPEAT;
-    document.getElementById('repeatLabel').textContent = REPEAT ? 'On' : 'Off';
-  }
-
-  function changeSpeed() {
-    SPEED_IDX = (SPEED_IDX + 1) % SPEEDS.length;
-    const audio = document.getElementById('mainPlayer');
-    audio.playbackRate = SPEEDS[SPEED_IDX];
-    document.getElementById('speedLabel').textContent = SPEEDS[SPEED_IDX] + 'x';
-  }
-
-  function setVolume(v) {
-    const audio = document.getElementById('mainPlayer');
-    audio.volume = Number(v) / 100;
-  }
-
-  function seekTo(v) {
-    const audio = document.getElementById('mainPlayer');
-    if (!audio.duration) return;
-    audio.currentTime = (Number(v) / 100) * audio.duration;
-  }
-
-  function toggleFull() {
-    const bar = document.getElementById('playerBar');
-    const isFull = bar.classList.toggle('full');
-    document.getElementById('fullBtn').textContent = isFull ? '⛶ Small' : '⛶ Full';
-  }
-
-  function toggleSettings() {
-    document.getElementById('settingsBox').classList.toggle('hidden');
-  }
-
-  function closePlayer() {
-    const audio = document.getElementById('mainPlayer');
-    audio.pause();
-    audio.src = '';
-    document.getElementById('playerBar').style.display = 'none';
-    document.getElementById('playPauseBtn').textContent = '▶️ Play';
-  }
-
-  function shareCurrent() {
-    const s = LIB_SONGS[CURRENT_INDEX];
-    if (!s) return;
-    shareSongLink(s.id, s.title, s.artist_name);
-  }
-
-  // Wire audio events
-  const audioEl = document.getElementById('mainPlayer');
-  audioEl.addEventListener('timeupdate', function() {
-    if (!audioEl.duration) return;
-    document.getElementById('seekBar').value = (audioEl.currentTime / audioEl.duration) * 100;
-    document.getElementById('curTime').textContent = fmtTime(audioEl.currentTime);
-    document.getElementById('durTime').textContent = fmtTime(audioEl.duration);
-  });
-  audioEl.addEventListener('ended', function() {
-    if (!REPEAT) nextSong();
-  });
-  audioEl.addEventListener('play', function() {
-    document.getElementById('playPauseBtn').textContent = '⏸️ Pause';
-  });
-  audioEl.addEventListener('pause', function() {
-    document.getElementById('playPauseBtn').textContent = '▶️ Play';
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    loadLibrary();
-  });
+  }catch(e){list.innerHTML="<div class='card'>❌ "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadLibrary()'>🔄 Try Again</button></div>";}
+}
+async function playFull(id){
+  const s=mySongs.find(function(x){return String(x.id)===String(id);});
+  if(!s) return;
+  const url=await getSongStreamUrl(s.audio_path||s.audio_url,3600);
+  if(!url){alert('No audio for this song');return;}
+  playWithPlayer(url,s,0,null,true);
+}
+document.addEventListener('DOMContentLoaded',loadLibrary);
 </script>
 </body>
 </html>
