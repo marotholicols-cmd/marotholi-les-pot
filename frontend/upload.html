@@ -7,418 +7,104 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-    * {
-    box-sizing: border-box;
-  }
-
-  body {
-    background: #0f0f0f;
-    color: #fff;
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    overflow-x: hidden;
-    padding-bottom: 110px;
-  }
-
-  header {
-    background: #d4ff3f;
-    color: #000;
-    padding: 14px;
-    text-align: center;
-    font-weight: 900;
-    font-size: 20px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    letter-spacing: .3px;
-  }
-
-  .wrap {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 14px;
-    width: 100%;
-  }
-
-  .page-title {
-    font-size: 26px;
-    font-weight: 900;
-    margin: 6px 0 14px;
-  }
-
-  .card {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 18px;
-    padding: 16px;
-    margin-bottom: 12px;
-    overflow: hidden;
-  }
-
-  label {
-    display: block;
-    font-size: 14px;
-    opacity: .8;
-    margin: 12px 0 4px;
-  }
-
-  label:first-child {
-    margin-top: 0;
-  }
-
-  input,
-  select,
-  textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #333;
-    background: #111;
-    color: #fff;
-    font-size: 15px;
-    outline: none;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: #d4ff3f;
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
-
-  input[type="file"] {
-    background: #111;
-    padding: 10px;
-  }
-
-  input[type="checkbox"] {
-    width: auto;
-    accent-color: #d4ff3f;
-  }
-
-  .small {
-    font-size: 13px;
-    opacity: .7;
-    line-height: 1.5;
-  }
-
-  .center {
-    text-align: center;
-  }
-
-  .btn {
-    width: 100%;
-    background: #d4ff3f;
-    color: #000;
-    border: 0;
-    padding: 14px;
-    border-radius: 99px;
-    font-weight: 900;
-    cursor: pointer;
-    font-size: 15px;
-    margin-top: 14px;
-  }
-
-  .btn:disabled {
-    opacity: .5;
-  }
-
-  .btn-dark {
-    width: 100%;
-    background: #222;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 12px;
-    border-radius: 99px;
-    font-weight: 800;
-    cursor: pointer;
-    font-size: 14px;
-    margin-top: 8px;
-  }
-
-  /* DROP NOW / LATER - BIG CHOICE */
-  .drop-choice {
-    display: flex;
-    gap: 8px;
-    margin: 6px 0 4px;
-  }
-
-  .drop-choice button {
-    flex: 1;
-    padding: 13px 8px;
-    border-radius: 14px;
-    border: 2px solid #333;
-    background: #111;
-    color: #fff;
-    font-weight: 900;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .drop-choice button.on {
-    background: #d4ff3f;
-    color: #000;
-    border-color: #d4ff3f;
-  }
-
-  .schedule-box {
-    background: #0a0a10;
-    border: 1px solid #d4ff3f;
-    border-radius: 14px;
-    padding: 12px;
-    margin-top: 10px;
-  }
-
-  .schedule-box h4 {
-    margin: 0 0 6px;
-    font-size: 14px;
-    color: #d4ff3f;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .file-info {
-    font-size: 12px;
-    opacity: .7;
-    margin-top: 4px;
-  }
-
-  .file-info.bad {
-    color: #ff6666;
-    opacity: 1;
-    font-weight: 800;
-  }
-
-  .file-info.good {
-    color: #00ff88;
-    opacity: 1;
-    font-weight: 700;
-  }
-
-  .copyright-box {
-    background: #0a0a10;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 12px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-  }
-
-  .copyright-box p {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .price-preview {
-    background: #0a0a10;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 10px;
-    margin-top: 6px;
-    text-align: center;
-    font-weight: 800;
-  }
-
-  .price-preview span {
-    color: #d4ff3f;
-  }
-
-  .progress {
-    height: 8px;
-    background: #333;
-    border-radius: 99px;
-    overflow: hidden;
-    margin-top: 10px;
-    display: none;
-  }
-
-  .progress div {
-    height: 100%;
-    background: #d4ff3f;
-    width: 0%;
-    transition: width .3s;
-  }
-
-  .my-songs-card {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 10px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .my-songs-card .cover {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #ff2ea6, #ffcc00, #d4ff3f);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    overflow: hidden;
-  }
-
-  .my-songs-card .cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .share-link-box {
-    background: #0a0a10;
-    border: 1px solid #d4ff3f;
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 10px;
-    word-break: break-all;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .bottomnav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #111;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    z-index: 50;
-  }
-
-  .bottomnav a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    text-align: center;
-    opacity: .7;
-    padding: 6px;
-  }
-
-  .bottomnav a.active {
-    color: #d4ff3f;
-    opacity: 1;
-  }
+    * { box-sizing: border-box; }
+  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding-bottom: 110px; overflow-x: hidden; }
+  header { background: #ff2ea6; color: #fff; padding: 14px; text-align: center; font-weight: 900; font-size: 18px; position: sticky; top: 0; z-index: 50; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 14px; }
+  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: 14px; opacity: .8; margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: #d4ff3f; }
+  textarea { min-height: 70px; resize: vertical; }
+  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
+  .center { text-align: center; }
+  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+  .btn-pink { width: 100%; background: #ff2ea6; color: #fff; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+  .choice { display: flex; gap: 8px; margin: 6px 0; }
+  .choice button { flex: 1; padding: 11px; border-radius: 12px; border: 2px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; font-size: 13px; }
+  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
+  .summary { background: linear-gradient(135deg,#d4ff3f,#00ff88); color: #000; border-radius: 16px; padding: 14px; text-align: center; margin-bottom: 12px; }
+  .summary b { font-size: 20px; }
+  .check { background: #111; border: 1px solid #333; border-radius: 12px; padding: 12px; margin-top: 10px; display: flex; gap: 10px; align-items: flex-start; }
+  .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: #d4ff3f; flex-shrink: 0; }
+  .hidden { display: none; }
+  .bottomnav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
+  .bottomnav a { color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; text-align: center; opacity: .7; padding: 6px; }
+  .bottomnav a.active { color: #d4ff3f; opacity: 1; }
 </style>
 </head>
 <body>
-
-<header>MAROTHOLI LES-POT</header>
-
+<header>MAROTHOLI LES-POT — UPLOAD</header>
 <div class="wrap">
 
-  <div class="page-title">⬆️ Upload Song</div>
-
-  <!-- ============ MAIN UPLOAD CARD - SAME LAYOUT AS SCREENSHOT ============ -->
+  <!-- UPLOAD FORM -->
   <div class="card">
-    <label>Song Title</label>
-    <input id="title" placeholder="e.g. Test">
+    <h3 style="margin:0">⬆️ Upload Your Song</h3>
+    <p class="small">Only YOUR OWN copyright music. No stolen songs. Artist sets OWN price — never 1G fixed. 1G = M10. You get 63% per buy.</p>
 
-    <label>Artist Name</label>
-    <input id="artist" placeholder="e.g. FlackoBird">
+    <label>Song Title *</label>
+    <input id="songTitle" placeholder="e.g. Marotholi Anthem">
 
-    <label>Price in Grind (G) — e.g. 0.45 — YOU set it</label>
-    <input id="price" type="number" step="0.01" min="0.01" placeholder="0.2" oninput="updatePricePreview()">
-    <div class="price-preview" id="pricePreview">
-      Your price: <span>—</span><br>
-      <small style="opacity:.7;font-weight:400">You get 63% • Example: 0.5 G = M5 • 0.2 G = M2</small>
-    </div>
+    <label>Artist Name *</label>
+    <input id="artistName" placeholder="Your artist name">
 
     <label>Genre</label>
-    <select id="genre">
-      <option>Hip Hop</option>
-      <option>Amapiano</option>
-      <option>Afrobeat</option>
-      <option>Gospel</option>
-      <option>R&B</option>
-      <option>House</option>
-      <option>Other</option>
+    <select id="songGenre">
+      <option value="Hip Hop">Hip Hop</option>
+      <option value="Amapiano">Amapiano</option>
+      <option value="Afrobeat">Afrobeat</option>
+      <option value="Gospel">Gospel</option>
+      <option value="Sesotho">Sesotho</option>
+      <option value="R&B">R&B</option>
+      <option value="Trap">Trap</option>
+      <option value="House">House</option>
+      <option value="Other">Other</option>
     </select>
 
-    <label>Cover ART (optional) — less than 3MB</label>
-    <input id="cover" type="file" accept="image/*" onchange="checkCover(this)">
-    <div class="file-info" id="coverInfo">JPG / PNG, max 3MB. If no cover, we use 🎵</div>
-
-    <label>Audio File — MP3 — less than 10MB</label>
-    <input id="audioFile" type="file" accept="audio/mpeg,audio/mp3,audio/*" onchange="checkAudio(this)">
-    <div class="file-info" id="audioInfo">MP3 only, max 10MB. No one can download it — stream only after they buy.</div>
-
-    <!-- DROP NOW / LATER -->
-    <label>When should it drop?</label>
-    <div class="drop-choice">
-      <button type="button" id="btnNow" class="on" onclick="setDropMode('now')">🚀 DROP NOW</button>
-      <button type="button" id="btnLater" onclick="setDropMode('later')">⏰ DROP LATER</button>
-    </div>
-
-    <div id="scheduleBox" class="schedule-box hidden">
-      <h4>⏰ Scheduled Drop — Auto Drops Instantly</h4>
-      <p class="small" style="margin:0 0 8px">
-        Pick day + time. When that time comes, your song auto-drops instantly at that exact time — no need to come back. We set a reminder + auto-release it.
-      </p>
-      <label style="margin-top:6px">Drop Date</label>
-      <input id="dropDate" type="date">
-      <label>Drop Time</label>
-      <input id="dropTime" type="time" value="12:00">
-      <p class="small" id="schedulePreview" style="color:#d4ff3f;opacity:1;font-weight:700"></p>
-    </div>
+    <label>YOUR Price in Grind (G) * — e.g. 0.5 = M5, 1 = M10, 2 = M20</label>
+    <input id="songPrice" type="number" step="0.01" min="0.01" placeholder="0.5">
+    <p class="small" id="pricePreview">You will get 63% per buy • App keeps 37%</p>
 
     <label>Description (optional)</label>
-    <textarea id="desc" placeholder="Tell fans about this song..."></textarea>
+    <textarea id="songDesc" placeholder="About this song..."></textarea>
 
-    <!-- COPYRIGHT - MUST TICK -->
-    <div class="copyright-box">
-      <input type="checkbox" id="copyrightCheck">
-      <p>
-        <b>©️ I confirm this is MY OWN music.</b><br>
-        I own the copyright / I made this song. I did NOT steal / upload someone else's song. If I lie, my song can be removed + account blocked.
-      </p>
+    <label>🎵 Audio File * — MP3 / M4A — MAX 10MB</label>
+    <input id="audioFile" type="file" accept="audio/*">
+    <p class="small" id="audioInfo">No file yet</p>
+
+    <label>🖼️ Cover Image — MAX 3MB</label>
+    <input id="coverFile" type="file" accept="image/*">
+    <p class="small" id="coverInfo">No cover yet — optional</p>
+
+    <label>Drop — When should it go live?</label>
+    <div class="choice">
+      <button type="button" id="btnNow" class="on" onclick="setDrop('now')">🚀 Drop NOW</button>
+      <button type="button" id="btnLater" onclick="setDrop('later')">⏰ Drop LATER</button>
     </div>
 
-    <div class="copyright-box">
-      <input type="checkbox" id="noDownloadCheck" checked disabled>
-      <p>
-        <b>🔒 Locked:</b> No one can download my song. Fans can only stream in-app AFTER they buy it. Share link goes straight to app to the song — NOT to download out.
-      </p>
+    <div id="dropLaterBox" class="hidden">
+      <label>Drop Date + Time — Auto-drops at exact time</label>
+      <input id="dropDate" type="datetime-local">
+      <p class="small">Song stays as UPCOMING until this time, then auto-publishes. Fans can see it but not buy until it drops.</p>
     </div>
 
-    <button class="btn" id="uploadBtn" onclick="doUpload()">UPLOAD SONG →</button>
-
-    <div class="progress" id="prog"><div id="progBar"></div></div>
-    <p id="msg" class="small center" style="margin-top:8px"></p>
-
-    <div id="afterUpload" class="hidden">
-      <div class="share-link-box">
-        <b>🔗 Your Share Link (to app, NOT download):</b><br>
-        <span id="shareLinkText"></span><br><br>
-        <button class="btn" style="margin:0" onclick="copyShare()">📋 COPY SHARE LINK</button>
-        <button class="btn-dark" onclick="location.href='discover.html'">🔥 See it in Discover →</button>
-      </div>
+    <div class="check">
+      <input id="copyrightCheck" type="checkbox">
+      <label style="margin:0;font-size:13px;line-height:1.5;opacity:1" for="copyrightCheck">✅ I confirm this is MY OWN music / I own the copyright. I understand stolen music = song deleted + account banned.</label>
     </div>
+
+    <button class="btn-pink" id="uploadBtn" onclick="doUpload()">⬆️ UPLOAD SONG →</button>
+    <p id="uploadMsg" class="small center"></p>
+    <p id="uploadProgress" class="small center"></p>
   </div>
 
-  <a href="upload.html" style="color:#d4ff3f;font-weight:800">Open full Upload page →</a>
-
-  <!-- MY UPLOADS -->
-  <h3 style="margin:20px 0 10px">🎵 My Uploads</h3>
-  <div id="mySongs">
-    <p class="small">Loading...</p>
+  <!-- MY UPLOADS - ARTIST DASHBOARD -->
+  <div class="card">
+    <h3 style="margin:0">📊 My Uploads — How Many Times Bought</h3>
+    <p class="small">Live count from purchases. Artist gets 63% per buy.</p>
+    <div id="myUploads"><p class="small">Loading...</p></div>
+    <button class="btn-dark" onclick="loadMyUploads()">🔄 Refresh My Uploads</button>
   </div>
 
 </div>
@@ -428,304 +114,261 @@
   <a href="library.html">📚<br>Library</a>
   <a href="upload.html" class="active">⬆️<br>Upload</a>
   <a href="wallet.html">💰<br>Wallet</a>
-  <a href="admin.html">🛠️<br>Admin</a>
+  <a href="withdraw.html">🏧<br>Withdraw</a>
   <a href="account.html">👤<br>Account</a>
 </div>
 
 <script>
-  // -------------------------------------------------
-  // UPLOAD - SAME LAYOUT, WAY BETTER
-  // RULES:
-  // - Artist sets OWN price, never 1G fixed
-  // - Drop NOW or Drop LATER (auto-drop at exact time)
-  // - Only OWN copyright music
-  // - Audio < 10MB, Cover < 3MB
-  // - No download, stream only after buy
-  // - Share link = to app to song, NOT download
-  // -------------------------------------------------
+  // UPLOAD - FULL
+  // Uses app.js: SUPA_URL = https://mmkxiniybctmgoozaecp.supabase.co
+  // SUPA_KEY = sb_publishable_... (publishable, safe)
+  // Rules: Artist sets OWN price, 1G = M10, Artist 63%
+  // Drop NOW / Drop LATER auto-drops, Copyright required
+  // Audio MAX 10MB, Cover MAX 3MB, Stream-only via signed URL
 
   let DROP_MODE = 'now';
-  let LAST_SHARE_URL = '';
 
-  function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function setDropMode(mode) {
+  function setDrop(mode) {
     DROP_MODE = mode;
     document.getElementById('btnNow').classList.toggle('on', mode === 'now');
     document.getElementById('btnLater').classList.toggle('on', mode === 'later');
-    document.getElementById('scheduleBox').classList.toggle('hidden', mode !== 'later');
-    if (mode === 'later') {
-      const d = document.getElementById('dropDate');
-      if (!d.value) {
-        const t = new Date();
-        t.setDate(t.getDate() + 2);
-        d.value = t.toISOString().split('T')[0];
-      }
-      updateSchedulePreview();
-    }
+    document.getElementById('dropLaterBox').classList.toggle('hidden', mode !== 'later');
   }
 
-  function updateSchedulePreview() {
-    const d = document.getElementById('dropDate').value;
-    const t = document.getElementById('dropTime').value || '12:00';
-    const el = document.getElementById('schedulePreview');
-    if (!el) return;
-    if (d) {
-      el.textContent = '⏰ Will auto-drop on ' + d + ' at ' + t + ' — instantly, no need to come back.';
-    }
-  }
-
-  document.addEventListener('change', function (e) {
-    if (e.target && (e.target.id === 'dropDate' || e.target.id === 'dropTime')) {
-      updateSchedulePreview();
+  // Price preview - show artist cut
+  document.getElementById('songPrice').addEventListener('input', function() {
+    const p = Number(this.value || 0);
+    const el = document.getElementById('pricePreview');
+    if (p > 0) {
+      el.textContent = 'Fans pay ' + p.toFixed(2) + ' G = M' + (p * 10).toFixed(2) + ' • You get ' + (p * 0.63).toFixed(2) + ' G (63%) • App keeps ' + (p * 0.37).toFixed(2) + ' G';
+      el.style.color = '#d4ff3f';
+      el.style.opacity = '1';
+      el.style.fontWeight = '800';
+    } else {
+      el.textContent = 'You will get 63% per buy • App keeps 37%';
     }
   });
 
-  function updatePricePreview() {
-    const v = Number(document.getElementById('price').value || 0);
-    const el = document.getElementById('pricePreview');
-    if (!v || v <= 0) {
-      el.innerHTML = 'Your price: <span>—</span><br><small style="opacity:.7;font-weight:400">You get 63% • Example: 0.5 G = M5 • 0.2 G = M2</small>';
-      return;
-    }
-    const maloti = (v * 10).toFixed(2);
-    const youGet = (v * 0.63).toFixed(2);
-    el.innerHTML = 'Your price: <span>' + v + ' G = M' + maloti + '</span><br><small style="opacity:.7;font-weight:400">You get 63% = ' + youGet + ' G per sale • Buyer pays exactly ' + v + ' G</small>';
-  }
-
-  function checkAudio(input) {
-    const f = input.files[0];
+  // Audio size check - MAX 10MB
+  document.getElementById('audioFile').addEventListener('change', function() {
+    const f = this.files[0];
     const info = document.getElementById('audioInfo');
-    if (!f) return;
-    const mb = f.size / 1024 / 1024;
-    if (mb > 10) {
-      info.textContent = '❌ Too big: ' + mb.toFixed(1) + 'MB — must be LESS than 10MB. Compress / cut it.';
-      info.className = 'file-info bad';
-      input.value = '';
-      return;
+    if (!f) { info.textContent = 'No file yet'; return; }
+    const mb = (f.size / 1024 / 1024).toFixed(2);
+    if (f.size > 10 * 1024 * 1024) {
+      info.textContent = '❌ Too big: ' + mb + 'MB - MAX 10MB. Compress it.';
+      info.style.color = '#ff6666';
+      this.value = '';
+    } else {
+      info.textContent = '✅ ' + f.name + ' • ' + mb + 'MB';
+      info.style.color = '#00ff88';
     }
-    info.textContent = '✅ Good: ' + f.name + ' • ' + mb.toFixed(1) + 'MB / 10MB';
-    info.className = 'file-info good';
-  }
+  });
 
-  function checkCover(input) {
-    const f = input.files[0];
+  // Cover size check - MAX 3MB
+  document.getElementById('coverFile').addEventListener('change', function() {
+    const f = this.files[0];
     const info = document.getElementById('coverInfo');
-    if (!f) return;
-    const mb = f.size / 1024 / 1024;
-    if (mb > 3) {
-      info.textContent = '❌ Too big: ' + mb.toFixed(1) + 'MB — cover must be LESS than 3MB.';
-      info.className = 'file-info bad';
-      input.value = '';
-      return;
+    if (!f) { info.textContent = 'No cover yet — optional'; return; }
+    const mb = (f.size / 1024 / 1024).toFixed(2);
+    if (f.size > 3 * 1024 * 1024) {
+      info.textContent = '❌ Too big: ' + mb + 'MB - MAX 3MB. Compress it.';
+      info.style.color = '#ff6666';
+      this.value = '';
+    } else {
+      info.textContent = '✅ ' + f.name + ' • ' + mb + 'MB';
+      info.style.color = '#00ff88';
     }
-    info.textContent = '✅ Good: ' + f.name + ' • ' + mb.toFixed(1) + 'MB / 3MB';
-    info.className = 'file-info good';
-  }
+  });
 
   async function doUpload() {
-    const msg = document.getElementById('msg');
     const btn = document.getElementById('uploadBtn');
+    const msg = document.getElementById('uploadMsg');
+    const prog = document.getElementById('uploadProgress');
 
-    const title = document.getElementById('title').value.trim();
-    const artist = document.getElementById('artist').value.trim();
-    const price = document.getElementById('price').value;
-    const genre = document.getElementById('genre').value;
-    const desc = document.getElementById('desc').value.trim();
+    const title = document.getElementById('songTitle').value.trim();
+    const artist = document.getElementById('artistName').value.trim();
+    const genre = document.getElementById('songGenre').value;
+    const price = Number(document.getElementById('songPrice').value);
+    const desc = document.getElementById('songDesc').value.trim();
     const audioFile = document.getElementById('audioFile').files[0];
-    const coverFile = document.getElementById('cover').files[0];
-    const copyrightOk = document.getElementById('copyrightCheck').checked;
+    const coverFile = document.getElementById('coverFile').files[0];
+    const copyright = document.getElementById('copyrightCheck').checked;
 
     if (!title) { msg.textContent = 'Enter song title'; return; }
     if (!artist) { msg.textContent = 'Enter artist name'; return; }
-    if (!price || Number(price) <= 0) { msg.textContent = 'Set YOUR price — e.g. 0.2, 0.45, 0.5'; return; }
-    if (Number(price) < 0.01) { msg.textContent = 'Min price 0.01 G'; return; }
-    if (!audioFile) { msg.textContent = 'Choose audio file first'; return; }
-    if (audioFile.size > 10 * 1024 * 1024) { msg.textContent = '❌ Audio must be LESS than 10MB'; return; }
-    if (coverFile && coverFile.size > 3 * 1024 * 1024) { msg.textContent = '❌ Cover must be LESS than 3MB'; return; }
-    if (!copyrightOk) { msg.textContent = '❌ Tick the copyright box — only YOUR OWN music allowed'; alert('You must confirm this is YOUR OWN copyright music.'); return; }
+    if (!price || price < 0.01) { msg.textContent = 'Enter YOUR price - min 0.01 G'; return; }
+    if (!audioFile) { msg.textContent = 'Pick audio file first'; return; }
+    if (audioFile.size > 10 * 1024 * 1024) { msg.textContent = 'Audio too big - MAX 10MB'; return; }
+    if (coverFile && coverFile.size > 3 * 1024 * 1024) { msg.textContent = 'Cover too big - MAX 3MB'; return; }
+    if (!copyright) { msg.textContent = 'Tick copyright box - you must own this music'; return; }
 
-    // DROP LATER - validate date/time + reminder
-    let dropDateTime = null;
+    let dropDate = null;
     let status = 'published';
     let isUpcoming = false;
 
     if (DROP_MODE === 'later') {
       const d = document.getElementById('dropDate').value;
-      const t = document.getElementById('dropTime').value || '12:00';
-      if (!d) { msg.textContent = 'Pick drop date for Later'; return; }
-      dropDateTime = new Date(d + 'T' + t + ':00');
-      if (isNaN(dropDateTime.getTime())) { msg.textContent = 'Pick valid date + time'; return; }
-      if (dropDateTime <= new Date()) { msg.textContent = 'Drop time must be in future — pick later date'; return; }
+      if (!d) { msg.textContent = 'Pick drop date + time for Drop LATER'; return; }
+      dropDate = new Date(d).toISOString();
+      if (new Date(dropDate) <= new Date()) { msg.textContent = 'Drop date must be in the future - or use Drop NOW'; return; }
       status = 'upcoming';
       isUpcoming = true;
     }
 
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) { location.href = 'auth.html'; return; }
+
     btn.disabled = true;
-    btn.textContent = 'UPLOADING...';
-    document.getElementById('prog').style.display = 'block';
-    document.getElementById('progBar').style.width = '20%';
-    msg.textContent = 'Uploading... please wait';
+    btn.textContent = 'Uploading...';
+    msg.textContent = '';
+    prog.textContent = 'Uploading audio...';
 
     try {
-      const { data: { user } } = await window.sb.auth.getUser();
-      if (!user) { location.href = 'auth.html'; return; }
+      // 1. Upload audio to PRIVATE bucket 'songs'
+      const safeName = audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const audioPath = user.id + '/' + Date.now() + '_' + safeName;
+      const { error: audioErr } = await window.sb.storage.from('songs').upload(audioPath, audioFile);
+      if (audioErr) throw new Error('Audio upload failed: ' + audioErr.message);
 
-      // Upload audio - private bucket, stream only, no public download
-      const audioName = user.id + '/' + Date.now() + '-' + audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      document.getElementById('progBar').style.width = '40%';
-
-      const { error: upErr } = await window.sb.storage.from('songs').upload(audioName, audioFile);
-      if (upErr) throw upErr;
-
-      // Upload cover
-      let coverPath = null;
+      // 2. Upload cover to PUBLIC bucket 'covers' if provided
+      let coverUrl = null;
       if (coverFile) {
-        const coverName = user.id + '/' + Date.now() + '-cover-' + coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const { error: covErr } = await window.sb.storage.from('covers').upload(coverName, coverFile);
-        if (!covErr) {
-          const { data: covUrl } = await window.sb.storage.from('covers').getPublicUrl(coverName);
-          coverPath = covUrl.publicUrl;
+        prog.textContent = 'Uploading cover...';
+        const safeCover = coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const coverPath = user.id + '/' + Date.now() + '_' + safeCover;
+        const { error: coverErr } = await window.sb.storage.from('covers').upload(coverPath, coverFile);
+        if (!coverErr) {
+          const { data: pub } = window.sb.storage.from('covers').getPublicUrl(coverPath);
+          coverUrl = pub.publicUrl;
         }
       }
 
-      document.getElementById('progBar').style.width = '70%';
-
-      // Insert song
-      const insertData = {
+      // 3. Insert song row - audio_path is what library uses to play via signed URL
+      prog.textContent = 'Saving song...';
+      const { error: insertErr } = await window.sb.from('songs').insert({
         title: title,
         artist_name: artist,
-        price_grind: Number(price),
-        genre: genre,
-        description: desc,
-        audio_path: audioName,
-        cover_url: coverPath,
-        artist_id: user.id,
+        artist_id: artist,
         uploader_id: user.id,
+        genre: genre,
+        price_grind: price,
+        description: desc,
+        audio_path: audioPath,
+        cover_url: coverUrl,
         status: status,
         is_upcoming: isUpcoming,
-        drop_date: dropDateTime ? dropDateTime.toISOString() : null,
+        drop_date: dropDate,
+        copyright_confirmed: true,
         total_buys: 0,
         hype_count: 0,
-        copyright_confirmed: true
-      };
+        total_hypes: 0
+      });
 
-      const { data: inserted, error: insErr } = await window.sb.from('songs').insert(insertData).select().single();
-      if (insErr) throw insErr;
-
-      document.getElementById('progBar').style.width = '100%';
-
-      // Share link - straight to app to song, NOT download
-      LAST_SHARE_URL = location.origin + '/discover.html?song=' + inserted.id;
-      document.getElementById('shareLinkText').textContent = LAST_SHARE_URL;
-      document.getElementById('afterUpload').classList.remove('hidden');
-
-      if (isUpcoming) {
-        msg.textContent = '✅ Scheduled! Will auto-drop on ' + dropDateTime.toLocaleString() + ' instantly. Reminder set.';
-        // Local reminder - will alert when time comes if app open
-        scheduleReminder(title, dropDateTime);
-        alert('⏰ Reminder set! Your song "' + title + '" will AUTO-DROP on ' + dropDateTime.toLocaleString() + ' instantly.');
-      } else {
-        msg.textContent = '✅ Dropped NOW! Live in Discover.';
+      // Fallback if your songs table uses artist_id as uuid (some setups) - try again with uuid
+      if (insertErr && insertErr.message && insertErr.message.includes('artist_id')) {
+        const { error: retryErr } = await window.sb.from('songs').insert({
+          title: title,
+          artist_name: artist,
+          artist_id: user.id,
+          uploader_id: user.id,
+          genre: genre,
+          price_grind: price,
+          description: desc,
+          audio_path: audioPath,
+          cover_url: coverUrl,
+          status: status,
+          is_upcoming: isUpcoming,
+          drop_date: dropDate,
+          copyright_confirmed: true,
+          total_buys: 0,
+          hype_count: 0,
+          total_hypes: 0
+        });
+        if (retryErr) throw new Error('Save failed: ' + retryErr.message);
+      } else if (insertErr) {
+        throw new Error('Save failed: ' + insertErr.message);
       }
 
-      loadMySongs();
-
-      // Reset form but keep artist name
-      document.getElementById('title').value = '';
-      document.getElementById('price').value = '';
-      document.getElementById('audioFile').value = '';
-      document.getElementById('cover').value = '';
-      updatePricePreview();
+      prog.textContent = '';
+      if (isUpcoming) {
+        alert('✅ Scheduled! Your song will AUTO-DROP at ' + new Date(dropDate).toLocaleString() + '\nFans can see it as UPCOMING.');
+      } else {
+        alert('✅ Uploaded! Your song is LIVE in Discover at ' + price + ' G. You get 63% per buy.');
+      }
+      location.href = 'discover.html';
 
     } catch (e) {
       msg.textContent = '❌ ' + e.message;
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'UPLOAD SONG →';
-  }
-
-  function scheduleReminder(title, when) {
-    const ms = when.getTime() - Date.now();
-    if (ms > 0 && ms < 2147483647) {
-      setTimeout(function () {
-        alert('🔥 IT DROPPED! Your song "' + title + '" just auto-dropped NOW!');
-        // Auto-refresh Discover logic: if song is upcoming and time passed, mark published
-        autoDropCheck();
-      }, ms);
+      btn.disabled = false;
+      btn.textContent = '⬆️ UPLOAD SONG →';
+      prog.textContent = '';
     }
   }
 
-  // Auto-drop: if any of MY upcoming songs have drop_date passed, flip to published
-  async function autoDropCheck() {
+  // ARTIST DASHBOARD - Shows how many times EACH song was bought + earnings
+  async function loadMyUploads() {
+    const el = document.getElementById('myUploads');
+    if (!el) return;
+    el.innerHTML = "<p class='small'>Loading your songs...</p>";
+
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) { el.innerHTML = "<p class='small'>Login first</p>"; return; }
+
+    // Try artist_id = user.id first (correct), fallback to uploader_id
+    let songs = null;
+    let q1 = await window.sb.from('songs').select('*').eq('artist_id', user.id).order('created_at', { ascending: false });
+    songs = q1.data;
+    if (!songs || !songs.length) {
+      let q2 = await window.sb.from('songs').select('*').eq('uploader_id', user.id).order('created_at', { ascending: false });
+      songs = q2.data;
+    }
+
+    if (!songs || !songs.length) {
+      el.innerHTML = "<p class='small'>No uploads yet. Upload your first song above.</p>";
+      return;
+    }
+
+    let totalBuysAll = 0;
+    let totalEarnedG = 0;
+    let html = '';
+
+    for (const s of songs) {
+      const { data: buys } = await window.sb.from('purchases').select('id, price_grind').eq('song_id', s.id).eq('status', 'approved');
+      const buysCount = buys ? buys.length : Number(s.total_buys || 0);
+      const price = Number(s.price_grind || 0);
+      const earned = buysCount * price * 0.63;
+      totalBuysAll += buysCount;
+      totalEarnedG += earned;
+
+      html +=
+        '<div style="border:1px solid #333;border-radius:16px;padding:12px;margin-bottom:10px;background:#111">' +
+          '<b>' + escHtml(s.title) + '</b> • ' + price.toFixed(2) + ' G = M' + (price * 10).toFixed(2) + '<br>' +
+          '<div style="display:flex;gap:8px;margin:8px 0">' +
+            '<div style="flex:1;background:#000;padding:10px;border-radius:12px;text-align:center"><b style="font-size:20px;color:#d4ff3f">' + buysCount + '</b><br><span class="small">🛒 Times Bought</span></div>' +
+            '<div style="flex:1;background:#000;padding:10px;border-radius:12px;text-align:center"><b style="font-size:20px;color:#00ff88">' + earned.toFixed(2) + ' G</b><br><span class="small">💰 You Earned (63%)</span></div>' +
+            '<div style="flex:1;background:#000;padding:10px;border-radius:12px;text-align:center"><b style="font-size:20px">M' + (earned * 10).toFixed(2) + '</b><br><span class="small">M Earned</span></div>' +
+          '</div>' +
+          '<p class="small">Status: ' + escHtml(s.status) + ' • Hypes: ' + Number(s.hype_count || s.total_hypes || 0) + ' • ' + new Date(s.created_at).toLocaleDateString() + '</p>' +
+          '<button onclick="shareSongLink(\'' + s.id + '\',\'' + escHtml(s.title) + '\',\'' + escHtml(s.artist_name) + '\')" style="width:100%;background:#222;color:#fff;border:1px solid #444;padding:10px;border-radius:99px;font-weight:800">🔗 Share This Song</button>' +
+        '</div>';
+    }
+
+    const summary =
+      '<div class="summary"><b>📊 Total: ' + totalBuysAll + ' Buys • ' + totalEarnedG.toFixed(2) + ' G Earned</b><br><span>= M' + (totalEarnedG * 10).toFixed(2) + ' • 63% of sales</span></div>';
+
+    el.innerHTML = summary + html;
+  }
+
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Pre-fill artist name from profile
     try {
-      const { data: { user } } = await window.sb.auth.getUser();
-      if (!user) return;
-      const { data: ups } = await window.sb.from('songs').select('*').eq('artist_id', user.id).eq('status', 'upcoming');
-      const now = new Date();
-      for (const s of (ups || [])) {
-        if (s.drop_date && new Date(s.drop_date) <= now) {
-          await window.sb.from('songs').update({ status: 'published', is_upcoming: false }).eq('id', s.id);
-        }
+      const { profile } = await getMyProfile();
+      if (profile && profile.username) {
+        document.getElementById('artistName').value = profile.username;
       }
     } catch (e) {}
-  }
-
-  function copyShare() {
-    if (!LAST_SHARE_URL) return;
-    navigator.clipboard.writeText(LAST_SHARE_URL).then(function () {
-      alert('🔗 Share link copied! It goes straight to app to your song — NOT to download.');
-    });
-  }
-
-  function shareMySong(id, title, artist) {
-    const url = location.origin + '/discover.html?song=' + id;
-    const text = '🔥 Listen to ' + title + ' by ' + artist + ' on Marotholi Les-Pot — stream in app only';
-    if (navigator.share) {
-      navigator.share({ title: title, text: text, url: url }).catch(function () {});
-    } else {
-      navigator.clipboard.writeText(text + ' ' + url).then(function () {
-        alert('🔗 Link copied!');
-      });
-    }
-  }
-
-  async function loadMySongs() {
-    const el = document.getElementById('mySongs');
-    try {
-      const { data: { user } } = await window.sb.auth.getUser();
-      if (!user) { el.innerHTML = '<p class="small">Login to see your uploads</p>'; return; }
-      const { data: songs } = await window.sb.from('songs').select('*').eq('artist_id', user.id).order('created_at', { ascending: false });
-      if (!songs || !songs.length) { el.innerHTML = '<p class="small">No uploads yet. Upload your first song above 🔥</p>'; return; }
-      el.innerHTML = songs.map(function (s) {
-        const cover = s.cover_url ? '<div class="cover"><img src="' + esc(s.cover_url) + '"></div>' : '<div class="cover">🎵</div>';
-        const status = s.status === 'upcoming'
-          ? '⏰ DROPS ' + new Date(s.drop_date).toLocaleString()
-          : '✅ LIVE • ' + Number(s.total_buys || 0) + ' buys';
-        return (
-          '<div class="my-songs-card">' +
-            cover +
-            '<div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(s.title) + '</b>' +
-            '<span class="small">' + esc(s.artist_name) + ' • ' + Number(s.price_grind || 0) + ' G • ' + status + '</span></div>' +
-            '<button class="btn-dark" style="width:auto;margin:0;padding:8px 12px" onclick="shareMySong(\'' + s.id + '\',\'' + esc(s.title) + '\',\'' + esc(s.artist_name) + '\')">🔗 Share</button>' +
-          '</div>'
-        );
-      }).join('');
-    } catch (e) {
-      el.innerHTML = 'Error: ' + esc(e.message);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    loadMySongs();
-    autoDropCheck();
-    // Check every 60s - if drop time passed, auto-drop instantly
-    setInterval(autoDropCheck, 60000);
+    loadMyUploads();
   });
 </script>
 </body>
