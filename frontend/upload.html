@@ -8,16 +8,18 @@
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=99"></script>
+<script src="app.js"></script>
 </head>
 <body>
 <div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
 <div class="wrap">
-  <div class="card"><h2>⬆️ Upload Song</h2><p class="small">MP3 only • You set price in Grinds (1 Grind = M10) • You earn when fans buy</p>
+  <div class="card"><h2>⬆️ Upload Song</h2><p class="small">MP3 only • YOU set price • Minimum 0.01G = M0.10 • 1 Grind = M10</p>
     <input id="title" placeholder="Song Title *">
     <input id="artistName" placeholder="Artist Name *">
     <select id="genre"><option>Amapiano</option><option>Hip Hop</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>R&B</option><option>Other</option></select>
-    <input id="price" type="number" min="1" value="1" placeholder="Price in Grinds (1 = M10)">
+    <label class="small" style="display:block;margin-top:12px">💰 Price in Grinds — Minimum 0.01G (M0.10)</label>
+    <input id="price" type="number" min="0.01" step="0.01" value="0.01">
+    <p class="small" id="pricePreview" style="margin-top:6px">You earn: 0.01G = M0.10 per sale</p>
     <label class="small" style="display:block;margin-top:12px">🎵 MP3 File *</label><input id="audioFile" type="file" accept=".mp3,audio/mpeg,audio/*">
     <label class="small" style="display:block;margin-top:12px">🖼️ Cover Image (optional)</label><input id="coverFile" type="file" accept="image/*">
     <button id="uploadBtn" onclick="doUpload()">Upload Song 🚀</button>
@@ -30,13 +32,17 @@
 const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+document.getElementById('price').addEventListener('input', function(){
+  const v=parseFloat(this.value)||0.01;
+  document.getElementById('pricePreview').textContent='You earn: '+v.toFixed(2)+'G = M'+(v*10).toFixed(2)+' per sale';
+});
 async function loadBucket(){
   const box=document.getElementById('bucketList');
   const {data:files}=await sb.storage.from('songs').list('',{limit:100});
   if(!files || !files.length){ box.innerHTML='No files in bucket yet.'; return; }
   box.innerHTML=files.map(f=>{
     const {data:pub}=sb.storage.from('songs').getPublicUrl(f.name);
-    return `<div style="padding:8px 0;border-bottom:1px solid #222"><b>${esc(f.name)}</b><br><a href="${pub.publicUrl}" target="_blank" style="color:#c8ff00;font-size:12px">▶ Test Play This Link</a> • ${Math.round((f.metadata?.size||0)/1024)} KB</div>`;
+    return `<div style="padding:8px 0;border-bottom:1px solid #222"><b>${esc(f.name)}</b><br><a href="${pub.publicUrl}" target="_blank" style="color:#c8ff00;font-size:12px">▶ Test Play This Link</a></div>`;
   }).join('');
 }
 async function doUpload(){
@@ -46,7 +52,8 @@ async function doUpload(){
   const title=document.getElementById('title').value.trim();
   const artistName=document.getElementById('artistName').value.trim() || profile.display_name || profile.username || 'Unknown';
   const genre=document.getElementById('genre').value;
-  const price=parseInt(document.getElementById('price').value)||1;
+  const price=parseFloat(document.getElementById('price').value) || 0.01;
+  if(price < 0.01){ alert('Minimum price is 0.01 Grinds (M0.10)'); return; }
   const audioFile=document.getElementById('audioFile').files[0];
   if(!title){ alert('Enter song title'); return; }
   if(!audioFile){ alert('Pick MP3 file'); return; }
@@ -69,25 +76,24 @@ async function doUpload(){
     }
     status.textContent='Saving song to database...';
     const row={title:title, artist_name:artistName, artist:artistName, genre:genre, price_grind:price, price_grinds:price, audio_path:fileName, audio_url:publicUrl, cover_url:coverUrl, artist_id:user.id, uploader_id:user.id};
-    const {data, error}=await sb.from('songs').insert([row]).select().maybeSingle();
+    const {error}=await sb.from('songs').insert([row]);
     if(error){
-      // Retry without extra columns if table is strict
       const row2={title:title, artist_name:artistName, genre:genre, price_grind:price, audio_path:fileName, artist_id:user.id};
       const {error:e2}=await sb.from('songs').insert([row2]);
       if(e2) throw e2;
     }
-    status.textContent='✅ Uploaded! Song is now in Discover.';
-    alert('✅ Uploaded! "'+title+'" is live in Discover.');
+    status.textContent='✅ Uploaded! At '+price.toFixed(2)+'G (M'+(price*10).toFixed(2)+')';
+    alert('✅ Uploaded! "'+title+'" is live at '+price.toFixed(2)+'G.');
     document.getElementById('uploadBtn').textContent='Upload Song 🚀';
     loadBucket();
   }catch(e){
-    console.log(e); status.textContent='❌ Error: '+e.message; alert('Upload failed: '+e.message);
+    status.textContent='❌ Error: '+e.message; alert('Upload failed: '+e.message);
     document.getElementById('uploadBtn').textContent='Upload Song 🚀';
   }
 }
 document.addEventListener('DOMContentLoaded', async()=>{
   const {profile}=await getMyProfile();
-  if(profile) document.getElementById('topBal').textContent=(profile.grind_balance ?? profile.grinds ?? 0)+' Grinds';
+  if(profile) document.getElementById('topBal').textContent=parseFloat(profile.grind_balance ?? profile.grinds ?? 0).toFixed(2)+' Grinds';
   loadBucket();
 });
 </script>
