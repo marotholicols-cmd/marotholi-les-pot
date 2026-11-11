@@ -130,4 +130,4 @@ window.seekSong = seekSong;
 window.setVolumePlayer = setVolumePlayer;
 window.setSpeedPlayer = setSpeedPlayer;
 window.lespotAudio = audio;
-window.getCurrentSong = ()=> currentSong;S
+window.getCurrentSong = ()=> currentSong;
