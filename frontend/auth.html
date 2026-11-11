@@ -4,79 +4,172 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Login - Marotholi Les-Pot</title>
+<link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<link rel="stylesheet" href="style.css">
 <style>
-    * { box-sizing: border-box; }
-  body { background: #0f0f0f; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
-  .wrap { max-width: 420px; margin: 0 auto; }
-  .logo { background: #d4ff3f; color: #000; padding: 18px; border-radius: 20px; text-align: center; font-weight: 900; font-size: 20px; margin-bottom: 16px; }
-  .card { background: #1e1e1e; border: 1px solid #333; border-radius: 18px; padding: 16px; }
-  label { display: block; font-size: 14px; opacity: .8; margin: 10px 0 4px; }
-  input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 15px; }
-  .small { font-size: 13px; opacity: .7; line-height: 1.5; }
-  .center { text-align: center; }
-  .btn { width: 100%; background: #d4ff3f; color: #000; border: 0; padding: 13px; border-radius: 99px; font-weight: 900; cursor: pointer; margin-top: 12px; }
-  .btn-dark { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 11px; border-radius: 99px; font-weight: 800; cursor: pointer; margin-top: 8px; }
-  .choice { display: flex; gap: 8px; margin-bottom: 10px; }
-  .choice button { flex: 1; padding: 11px; border-radius: 99px; border: 1px solid #333; background: #111; color: #fff; font-weight: 900; cursor: pointer; }
-  .choice button.on { background: #d4ff3f; color: #000; border-color: #d4ff3f; }
-  .hidden { display: none; }
+body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:110px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
+header small{display:block;font-size:12px;font-weight:700;opacity:.7}
+.wrap{max-width:480px;margin:0 auto;padding:14px}
+.card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
+.card h3{margin:0 0 8px 0;font-size:18px}
+label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
+input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
+.btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
+.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
+.small{font-size:13px;opacity:.7;line-height:1.5}
+.tabs{display:flex;gap:8px;margin-bottom:4px}
+.tabs button{flex:1;padding:11px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;cursor:pointer}
+.tabs button.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.msg{margin-top:10px;font-size:14px;min-height:20px}
+.msg.error{color:#ff6b6b}
+.msg.ok{color:#d4ff3f}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
+.bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
+.bottomnav a.active{color:#d4ff3f;opacity:1}
+.center{text-align:center}
+.big{font-size:42px}
 </style>
 </head>
 <body>
+<header>MAROTHOLI LES-POT<small>🐂 🌧️ Login / Sign Up</small></header>
+
 <div class="wrap">
-  <div class="logo">MAROTHOLI LES-POT 🔥<br><span style="font-size:12px;font-weight:700">LESOTHO MUSIC • ARTIST SETS OWN PRICE</span></div>
-  <div class="card">
-    <div class="choice">
-      <button id="btnLogin" class="on" onclick="setMode('login')">Login</button>
-      <button id="btnSignup" onclick="setMode('signup')">Sign Up</button>
-    </div>
-    <div id="signupNameBox" class="hidden">
-      <label>Username / Artist Name</label>
-      <input id="authUsername" placeholder="e.g. FlackoBird">
-    </div>
-    <label>Email</label>
-    <input id="authEmail" type="email" placeholder="you@email.com">
-    <label>Password</label>
-    <input id="authPass" type="password" placeholder="••••••••">
-    <button class="btn" id="authBtn" onclick="doAuth()">LOGIN →</button>
-    <p id="authMsg" class="small center"></p>
-    <p class="small center">By signing up you agree: only upload YOUR OWN copyright music. 1G = M10.</p>
-  </div>
-  <button class="btn-dark" onclick="location.href='discover.html'">🔥 Browse without login →</button>
+
+<!-- BOX 1: LOGIN / SIGNUP - Shown ONLY when NOT logged in -->
+<div class="card" id="loginBox">
+<h3>Welcome to Les-Pot</h3>
+<p class="small">Login to buy songs, upload, deposit Grinds. 1G = M10 FIXED.</p>
+
+<div class="tabs">
+<button id="tabLogin" class="active" onclick="switchTab('login')">Login</button>
+<button id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
 </div>
+
+<!-- LOGIN FORM -->
+<div id="loginForm">
+<label>Email</label>
+<input id="loginEmail" type="email" placeholder="you@gmail.com" autocomplete="email">
+<label>Password</label>
+<input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password">
+<button class="btn" onclick="doLogin()">Login →</button>
+<p class="msg" id="loginMsg"></p>
+</div>
+
+<!-- SIGNUP FORM -->
+<div id="signupForm" style="display:none">
+<label>Stage Name / Username</label>
+<input id="signupName" type="text" placeholder="e.g. SHUTTER" autocomplete="username">
+<label>Email</label>
+<input id="signupEmail" type="email" placeholder="you@gmail.com" autocomplete="email">
+<label>Password</label>
+<input id="signupPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+<label>Are you an Artist?</label>
+<select id="signupRole" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px">
+<option value="fan">Fan - I listen & buy</option>
+<option value="artist">Artist - I upload & sell</option>
+</select>
+<button class="btn" onclick="doSignup()">Create Account →</button>
+<p class="small" style="margin-top:10px">By signing up you agree: No download, stream only. Preview 30 sec. Artist gets 63%.</p>
+<p class="msg" id="signupMsg"></p>
+</div>
+</div>
+
+<!-- BOX 2: LOGGED IN - Shown ONLY when logged in -->
+<div class="card center" id="loggedInBox" style="display:none">
+<div class="big">✅</div>
+<h3>You are logged in</h3>
+<p class="small" id="loggedInEmail"></p>
+<p class="small" id="loggedInBalance"></p>
+<button class="btn" onclick="location.href='index.html'">Go to Home →</button>
+<button class="btn2" onclick="location.href='account.html'">My Account</button>
+<button class="btn2" onclick="doLogout()">Logout</button>
+</div>
+
+<div class="card">
+<h3>ℹ️ Need help?</h3>
+<p class="small">Forgot password? Use your email to login, then go to Account to change it. If you are stuck, go to Home and try again.</p>
+</div>
+
+</div>
+
+<div class="bottomnav">
+<a href="index.html">🏠<br>Home</a>
+<a href="discover.html">🎵<br>Discover</a>
+<a href="library.html">📚<br>Library</a>
+<a href="upload.html">⬆️<br>Upload</a>
+<a href="wallet.html">💰<br>Wallet</a>
+<a href="account.html">👤<br>Account</a>
+</div>
+
 <script>
-  let MODE = 'login';
-  function setMode(m) {
-    MODE = m;
-    document.getElementById('btnLogin').classList.toggle('on', m === 'login');
-    document.getElementById('btnSignup').classList.toggle('on', m === 'signup');
-    document.getElementById('signupNameBox').classList.toggle('hidden', m !== 'signup');
-    document.getElementById('authBtn').textContent = m === 'login' ? 'LOGIN →' : 'SIGN UP →';
+let currentTab = 'login';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabLogin').className = tab === 'login' ? 'active' : '';
+  document.getElementById('tabSignup').className = tab === 'signup' ? 'active' : '';
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg = document.getElementById('loginMsg');
+  if (!email || !password) { msg.textContent = 'Fill email + password'; msg.className = 'msg error'; return; }
+  msg.textContent = 'Logging in...'; msg.className = 'msg';
+  const { data, error } = await window.sb.auth.signInWithPassword({ email: email, password: password });
+  if (error) { msg.textContent = '❌ ' + error.message; msg.className = 'msg error'; return; }
+  msg.textContent = '✅ Logged in!'; msg.className = 'msg ok';
+  setTimeout(function() { location.href = 'index.html'; }, 800);
+}
+
+async function doSignup() {
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const role = document.getElementById('signupRole').value;
+  const msg = document.getElementById('signupMsg');
+  if (!name || !email || !password) { msg.textContent = 'Fill name + email + password'; msg.className = 'msg error'; return; }
+  if (password.length < 6) { msg.textContent = 'Password must be 6+ characters'; msg.className = 'msg error'; return; }
+  msg.textContent = 'Creating account...'; msg.className = 'msg';
+  const { data, error } = await window.sb.auth.signUp({ email: email, password: password });
+  if (error) { msg.textContent = '❌ ' + error.message; msg.className = 'msg error'; return; }
+  const user = data.user;
+  if (user) {
+    // Create profile: username, role, starting balance 0
+    await window.sb.from('profiles').insert({ id: user.id, username: name, display_name: name, artist_name: name, role: role, balance_grind: 0 });
   }
-  async function doAuth() {
-    const email = document.getElementById('authEmail').value.trim();
-    const pass = document.getElementById('authPass').value;
-    const name = document.getElementById('authUsername').value.trim();
-    const msg = document.getElementById('authMsg');
-    if (!email || !pass) { msg.textContent = 'Enter email + password'; return; }
-    if (pass.length < 6) { msg.textContent = 'Password must be 6+ chars'; return; }
-    msg.textContent = 'Loading...';
-    if (MODE === 'signup') {
-      const u = await signUp(email, pass, name || email.split('@')[0]);
-      if (u) { msg.textContent = '✅ Signed up! Check email if needed, then login.'; setMode('login'); }
-      else msg.textContent = '';
-    } else {
-      const u = await signIn(email, pass);
-      if (u) { location.href = 'discover.html'; }
-      else msg.textContent = '';
-    }
+  msg.textContent = '✅ Account created! Check your email, then login.'; msg.className = 'msg ok';
+  setTimeout(function() { switchTab('login'); document.getElementById('loginEmail').value = email; }, 1200);
+}
+
+async function doLogout() {
+  await window.sb.auth.signOut();
+  location.reload();
+}
+
+// On load: show ONLY ONE box
+async function checkAuth() {
+  const user = await getCurrentUser();
+  const loginBox = document.getElementById('loginBox');
+  const loggedBox = document.getElementById('loggedInBox');
+  if (user) {
+    loginBox.style.display = 'none';
+    loggedBox.style.display = 'block';
+    document.getElementById('loggedInEmail').textContent = user.email;
+    const { data } = await window.sb.from('profiles').select('balance_grind, username').eq('id', user.id).single();
+    if (data) document.getElementById('loggedInBalance').textContent = 'Hi ' + (data.username || '') + ' • Balance: ' + Number(data.balance_grind || 0).toFixed(2) + ' G = M' + grindToMaloti(data.balance_grind || 0);
+  } else {
+    loginBox.style.display = 'block';
+    loggedBox.style.display = 'none';
   }
-  document.addEventListener('DOMContentLoaded', async function () {
-    const { data: { user } } = await window.sb.auth.getUser();
-    if (user) location.href = 'discover.html';
-  });
+}
+
+document.addEventListener('DOMContentLoaded', checkAuth);
 </script>
 </body>
 </html>
