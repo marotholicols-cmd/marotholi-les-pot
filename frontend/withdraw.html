@@ -19,34 +19,65 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
+.method{border:1px solid #333;border-radius:14px;padding:12px;margin-top:8px;cursor:pointer}
+.method.active{border-color:#d4ff3f;background:#222}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 </style>
 </head>
 <body>
-<header>MAROTHOLI LES-POT<small>💸 Withdraw Royalties • Min 3.5G = M35</small></header>
+<header>MAROTHOLI LES-POT<small>💸 Withdraw Royalties • Min 3.5G = M35 • Any Method OK</small></header>
 <div class="wrap">
-<div class="card"><h3>💰 Available Balance</h3><p style="font-size:28px;font-weight:900;margin:4px 0" id="bal">Loading...</p><p class="small" id="balM"></p><p class="small">Min withdraw: <b style="color:#d4ff3f">3.5G = M35</b> — Admin approves manually.</p></div>
+<div class="card"><h3>💰 Available Balance</h3><p style="font-size:28px;font-weight:900;margin:4px 0" id="bal">Loading...</p><p class="small" id="balM"></p><p class="small">Min withdraw: <b style="color:#d4ff3f">3.5G = M35</b> — You choose how you want to be paid. Any account / card is OK.</p></div>
 <div class="card">
-<h3>Request Withdrawal</h3>
-<label>Amount in Grinds (G) — Min 3.5G</label>
+<h3>How Do You Want To Be Paid?</h3>
+<p class="small">Pick ANY — all are open. No locked methods for withdrawals.</p>
+<div id="methods"></div>
+
+<label style="margin-top:14px">Amount in Grinds (G) — Min 3.5G</label>
 <input id="amountG" type="number" step="0.01" min="3.5" placeholder="e.g. 3.5">
 <p class="small" id="amountM">3.5 G = M35.00</p>
-<label>Pay Me Via</label>
-<select id="method"><option value="ecocash">EcoCash</option><option value="postbank">PostBank</option><option value="mpesa">M-Pesa (Locked - Coming Soon)</option></select>
-<label>Your Number / Account Number</label>
-<input id="account" placeholder="e.g. 6288... or PostBank 1040...">
-<label>Your Full Name (must match account)</label>
+
+<label id="accountLabel">Your EcoCash Number</label>
+<input id="account" placeholder="e.g. 6288...">
+<label>Your Full Name (must match account / card)</label>
 <input id="fullName" placeholder="e.g. Thabo Mokoena">
+<label>Bank Name (only if you picked BANK)</label>
+<input id="bankName" placeholder="e.g. Standard Lesotho / FNB / Nedbank / PostBank - leave empty if not BANK">
+
 <button class="btn" onclick="submitWithdraw()">Request Withdrawal →</button>
 <p class="msg" id="msg"></p>
+<p class="small">Admin approves manually, then pays you to the account/card you gave.</p>
 </div>
 <div class="card"><h3>📋 My Withdrawals</h3><div id="list"><p class="small">Loading...</p></div></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 let myBal=0;
+let selectedMethod='ecocash';
+const METHODS=[
+  {id:'ecocash',name:'EcoCash',hint:'Mobile Money',label:'Your EcoCash Number',placeholder:'e.g. 6288...'},
+  {id:'mpesa',name:'M-Pesa',hint:'Mobile Money',label:'Your M-Pesa Number',placeholder:'e.g. 5088...'},
+  {id:'bank',name:'BANK',hint:'Any Bank - Standard / FNB / Nedbank / PostBank',label:'Your Bank Account Number',placeholder:'e.g. 1234567890'},
+  {id:'visa',name:'VISA',hint:'Visa Card',label:'Your Visa Card Number',placeholder:'e.g. 4111...'},
+  {id:'postbank',name:'PostBank',hint:'PostBank Account',label:'Your PostBank Account Number',placeholder:'e.g. 1040...'}
+];
+function renderMethods(){
+  document.getElementById('methods').innerHTML=METHODS.map(function(m){
+    return "<div class='method' id='m_"+m.id+"' onclick=\"selectMethod('"+m.id+"')\"><b>✅ "+m.name+"</b> • <span class='small'>"+m.hint+"</span></div>";
+  }).join('');
+  selectMethod('ecocash');
+}
+function selectMethod(id){
+  selectedMethod=id;
+  document.querySelectorAll('.method').forEach(function(el){el.classList.remove('active');});
+  const el=document.getElementById('m_'+id); if(el) el.classList.add('active');
+  const m=METHODS.find(function(x){return x.id===id;});
+  document.getElementById('accountLabel').textContent=m.label;
+  document.getElementById('account').placeholder=m.placeholder;
+  document.getElementById('account').value='';
+}
 document.getElementById('amountG').addEventListener('input',function(){const g=Number(this.value||0);document.getElementById('amountM').textContent=g.toFixed(2)+" G = M"+grindToMaloti(g);});
 async function loadBal(){
   const user=await getCurrentUser(); if(!user) return;
@@ -61,29 +92,29 @@ async function loadList(){
   if(!data||!data.length){document.getElementById('list').innerHTML="<p class='small'>No withdrawals yet.</p>";return;}
   document.getElementById('list').innerHTML=data.map(function(w){
     const col=w.status==='approved'?'#d4ff3f':w.status==='rejected'?'#ff6b6b':'#ffb020';
-    return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>"+Number(w.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(w.amount_grind||0)+"</b> • "+escHtml(w.method||'')+" • <span style='color:"+col+"'>"+escHtml(w.status||'pending')+"</span><br><span class='small'>"+escHtml(w.account||w.account_number||'')+" • "+new Date(w.created_at).toLocaleDateString()+"</span></div>";
+    return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>"+Number(w.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(w.amount_grind||0)+"</b> • "+escHtml(w.method||'')+" • <span style='color:"+col+"'>"+escHtml(w.status||'pending')+"</span><br><span class='small'>"+escHtml(w.account||w.account_number||'')+(w.bank_name?" • Bank: "+escHtml(w.bank_name):"")+" • "+escHtml(w.full_name||'')+" • "+new Date(w.created_at).toLocaleDateString()+"</span></div>";
   }).join('');
 }
 async function submitWithdraw(){
   const user=await requireLogin(); if(!user) return;
   const msg=document.getElementById('msg');
   const amountG=Number(document.getElementById('amountG').value||0);
-  const method=document.getElementById('method').value;
   const account=document.getElementById('account').value.trim();
   const fullName=document.getElementById('fullName').value.trim();
-  if(method==='mpesa'){msg.textContent='M-Pesa is LOCKED for now. Use EcoCash or PostBank.';msg.className='msg error';return;}
+  const bankName=document.getElementById('bankName').value.trim();
   if(!amountG||amountG<3.5){msg.textContent='Min withdraw is 3.5G = M35';msg.className='msg error';return;}
   if(amountG>myBal){msg.textContent='Not enough balance. You have '+myBal.toFixed(2)+' G';msg.className='msg error';return;}
-  if(!account||!fullName){msg.textContent='Fill account number + full name';msg.className='msg error';return;}
+  if(!account||!fullName){msg.textContent='Fill account/card number + full name';msg.className='msg error';return;}
+  if(selectedMethod==='bank'&&!bankName){msg.textContent='For BANK, please fill Bank Name (Standard / FNB / Nedbank / PostBank)';msg.className='msg error';return;}
   msg.textContent='Submitting...';msg.className='msg';
   try{
-    const {error}=await window.sb.from('withdrawals').insert({user_id:user.id,amount_grind:amountG,amount_maloti:amountG*10,amount:amountG*10,method:method,account:account,account_number:account,full_name:fullName,status:'pending'});
+    const {error}=await window.sb.from('withdrawals').insert({user_id:user.id,amount_grind:amountG,amount_maloti:amountG*10,amount:amountG*10,method:selectedMethod,account:account,account_number:account,full_name:fullName,bank_name:bankName,status:'pending'});
     if(error) throw error;
-    msg.textContent='✅ Request sent! Admin will approve manually. Do not submit again.';msg.className='msg ok';
+    msg.textContent='✅ Request sent! Admin will pay you via '+selectedMethod.toUpperCase()+' to '+account;msg.className='msg ok';
     loadList();
   }catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
 }
-document.addEventListener('DOMContentLoaded',async function(){await loadBal();await loadList();});
+document.addEventListener('DOMContentLoaded',async function(){renderMethods();await loadBal();await loadList();});
 </script>
 </body>
 </html>
