@@ -90,7 +90,6 @@ if(!window.sb && window.supabase){
 let ALL_SONGS = [];
 let MY_PURCHASES = [];
 let CURRENT_GENRE = '';
-let CURRENT_USER_ID = null;
 
 function esc(s){
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -111,7 +110,7 @@ function renderSongs(){
     if(q && !((s.title||'').toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q))) return false;
     return true;
   });
-  if(!list.length){ box.innerHTML = 'No songs found. <a href="upload.html">Be the first to upload!</a>'; return; }
+  if(!list.length){ box.innerHTML = 'No songs found.<br><br>Check: Supabase → Storage → songs bucket → Are files there?<br>Or <a href="upload.html">Upload a song</a>'; return; }
   box.innerHTML = list.map(s=>{
     const owned = MY_PURCHASES.includes(s.id);
     const price = s.price_grinds || 1;
@@ -119,10 +118,11 @@ function renderSongs(){
     const title = esc(s.title || 'Untitled');
     const artist = esc(s.artist || 'Unknown');
     const audio = esc(s.audio_url || '');
+    const isBucket = String(s.id).startsWith('bucket-');
     return `
     <div class="songCard">
       <img src="${cover}" onerror="this.src='icon.svg'">
-      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${price} Grind${price>1?'s':''} = M${price*10}</small><br><small>${owned ? '✅ Owned — Full Song' : '🎧 30s Preview Free'}</small></div>
+      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${price} Grind${price>1?'s':''} = M${price*10}</small><br><small>${isBucket ? '📦 From Your Bucket' : ''} ${owned ? '✅ Owned — Full Song' : '🎧 30s Preview Free'}</small></div>
       <div class="actions">
         ${owned
           ? `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button>`
@@ -134,6 +134,11 @@ function renderSongs(){
 }
 
 async function buyThis(id, price, title){
+  // Bucket songs not in purchases table yet - if bucket song, just play full after confirm
+  if(String(id).startsWith('bucket-')){
+    alert('Bucket song: ' + title + ' - ' + price + 'G. Buy via table song after upload saves it. For now playing preview.');
+    return;
+  }
   const ok = await buySongById(id, price, title);
   if(ok){
     MY_PURCHASES.push(id);
@@ -145,10 +150,41 @@ async function buyThis(id, price, title){
 
 async function loadSongs(){
   const box = document.getElementById('songList');
+  box.innerHTML = 'Loading songs from your bucket...';
   try{
-    const {data, error} = await sb.from('songs').select('*').order('created_at',{ascending:false});
-    if(error) throw error;
-    ALL_SONGS = data || [];
+    // 1. TABLE songs
+    const {data: tableSongs} = await sb.from('songs').select('*').order('created_at',{ascending:false});
+    ALL_SONGS = tableSongs || [];
+
+    // 2. BUCKET songs - YOUR Supabase Storage Bucket 'songs'
+    const {data: files, error: ferr} = await sb.storage.from('songs').list('', {limit: 100});
+    if(!ferr && files && files.length){
+      for(const f of files){
+        if(!f.name || f.name.endsWith('/')) continue;
+        if(!f.name.match(/\.(mp3|m4a|wav|ogg|mp4)$/i)) continue;
+        const {data: pub} = sb.storage.from('songs').getPublicUrl(f.name);
+        const url = pub.publicUrl;
+        const already = ALL_SONGS.some(s => s.audio_url === url);
+        if(!already){
+          const cleanName = f.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/^\d+\s*-?\s*/, "");
+          ALL_SONGS.push({
+            id: 'bucket-' + f.name,
+            title: cleanName || f.name,
+            artist: 'From Your Bucket',
+            genre: 'Music',
+            price_grinds: 1,
+            audio_url: url,
+            cover_url: 'icon.svg',
+            is_bucket: true
+          });
+        }
+      }
+    }
+
+    if(!ALL_SONGS.length){
+      box.innerHTML = 'No songs found in TABLE or BUCKET.<br><br>Check: Supabase → Storage → songs bucket → Are files there?';
+      return;
+    }
     renderSongs();
   }catch(e){ box.innerHTML = 'Could not load songs: ' + e.message; }
 }
@@ -158,7 +194,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const {user, profile} = await getMyProfile();
   if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
   if(user){
-    CURRENT_USER_ID = user.id;
     MY_PURCHASES = await getMyPurchases(user.id);
   }
   loadSongs();
