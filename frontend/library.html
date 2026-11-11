@@ -56,11 +56,7 @@ async function loadLibrary(){
     const {data:purchases,error}=await window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
     if(error) throw error;
     let songs=(purchases||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
-    // Fallback: also try user_id column if buyer_id empty
-    if(!songs.length){
-      const {data:p2}=await window.sb.from('purchases').select('*, songs(*)').eq('user_id',user.id).order('created_at',{ascending:false});
-      songs=(p2||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
-    }
+    // FIXED: Removed user_id fallback - that column does not exist in purchases, it was crashing Buy
     mySongs=songs;
     if(!songs.length){list.innerHTML="<div class='card'>No bought songs yet.<br><span class='small'>Go to Discover, preview 30s, buy, it appears here FULL.</span><br><button class='btn' style='margin-top:10px' onclick=\"location.href='discover.html'\">Go to Discover →</button></div>";return;}
     list.innerHTML=songs.map(function(s){
@@ -71,10 +67,46 @@ async function loadLibrary(){
 }
 async function playFull(id){
   const s=mySongs.find(function(x){return String(x.id)===String(id);});
-  if(!s) return;
-  const url=await getSongStreamUrl(s.audio_path||s.audio_url,3600);
-  if(!url){alert('No audio for this song');return;}
-  playWithPlayer(url,s,0,null,true);
+  if(!s){ alert('Song not found'); return; }
+  // FIXED: Use audio_url directly, bypass broken getSongStreamUrl + playWithPlayer
+  let url = s.audio_url;
+  if(!url || !String(url).startsWith('http')){
+    alert('No audio_url for this song');
+    return;
+  }
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  const titleEl = document.getElementById('playerTitle');
+  const artistEl = document.getElementById('playerArtist');
+  const coverEl = document.getElementById('playerCover');
+  const btn = document.getElementById('playerBtn');
+  if(titleEl) titleEl.textContent = s.title || 'Unknown';
+  if(artistEl) artistEl.textContent = s.artist_name || '';
+  if(coverEl && s.cover_url) coverEl.src = s.cover_url;
+  if(bar) bar.classList.add('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
+  audio.src = url;
+  audio.currentTime = 0;
+  try{
+    await audio.play();
+    if(btn) btn.textContent = '⏸';
+  }catch(e){
+    alert('Play failed: ' + e.message);
+  }
+  // NO 30s limit here - FULL song
+}
+function togglePlayer(){
+  const audio = document.getElementById('mainAudio');
+  const btn = document.getElementById('playerBtn');
+  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
+  else { audio.pause(); if(btn) btn.textContent='▶'; }
+}
+function stopPlayer(){
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  audio.pause(); audio.src='';
+  if(bar) bar.classList.remove('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
 }
 document.addEventListener('DOMContentLoaded',loadLibrary);
 </script>
