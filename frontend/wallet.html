@@ -4,168 +4,654 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Wallet - Marotholi Les-Pot</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c8ff00">
-<link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="player.js"></script>
 <style>
-  .balBig{background:linear-gradient(135deg,#1a1a22 0%,#2a2a00 100%);border:1px solid #c8ff00;border-radius:18px;padding:22px;text-align:center}
-  .balBig b{font-size:42px;color:#d4ff3f;display:block}
-  .balBig small{color:#9a9aab}
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
-  .payBox b{color:#d4ff3f}
-  .histItem{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #222;font-size:13px}
-  .histItem:last-child{border-bottom:none}
-  .histItem small{color:#9a9aab}
-  .status-pending{color:#ffcc00;font-weight:800}
-  .status-approved{color:#c8ff00;font-weight:800}
-  .status-rejected{color:#ff4444;font-weight:800}
+    * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: #0f0f0f;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  header {
+    background: #d4ff3f;
+    color: #000;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: 900;
+  }
+
+  header div {
+    font-size: 28px;
+    overflow-wrap: break-word;
+  }
+
+  .wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+    width: 100%;
+  }
+
+  .card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  .card h3 {
+    margin: 0 0 8px;
+  }
+
+  .small {
+    opacity: .7;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    margin: 6px 0;
+    font-size: 15px;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: #d4ff3f;
+    outline: none;
+  }
+
+  button {
+    width: 100%;
+    padding: 13px;
+    border: 0;
+    border-radius: 10px;
+    background: #d4ff3f;
+    color: #000;
+    font-weight: 900;
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  button:active {
+    opacity: .85;
+  }
+
+  .nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav a {
+    background: #222;
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+  }
+
+  .paybox {
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 8px 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.6;
+    display: none;
+  }
+
+  .paybox.active {
+    display: block;
+  }
+
+  .paybox b {
+    color: #d4ff3f;
+    font-size: 18px;
+    word-break: break-all;
+  }
+
+  .paytag {
+    display: inline-block;
+    background: #d4ff3f;
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+  }
+
+  .paytag.paused {
+    background: #ff4444;
+    color: #fff;
+  }
+
+  .paytag.live {
+    background: #00ff88;
+    color: #000;
+  }
+
+  .paused-box {
+    border-color: #ff4444;
+  }
+
+  .paused-text {
+    color: #ff6666;
+    font-weight: 900;
+    font-size: 14px;
+  }
+
+  .history-row {
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+  }
+
+  .country-note {
+    background: #0a0a10;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 8px 0;
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
-  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
-</div>
+<!-- ================= HEADER / BALANCE ================= -->
+<header>
+  MAROTHOLI LES-POT — WALLET
+  <div>
+    YOUR BALANCE • 1G = M10
+  </div>
+  <div
+    id="walletBalance"
+    style="font-size:36px"
+  >
+    Loading...
+  </div>
+  <div
+    class="small"
+    id="walletSub"
+    style="font-weight:700"
+  >
+    M0.00 • Min withdraw 2.5 G • M25
+  </div>
+</header>
 
 <div class="wrap">
 
-  <!-- BALANCE -->
-  <div class="balBig">
-    <small>YOUR BALANCE</small>
-    <b id="bigBal">0</b>
-    <small>Grinds • 1 Grind = M10 • <span id="balRand">M0</span></small>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button style="margin-top:0" onclick="location.href='deposit.html'">💳 Top Up</button>
-      <button class="ghost" style="margin-top:0" onclick="location.href='discover.html'">🎵 Buy Music</button>
+  <!-- ================= NAV ================= -->
+  <div class="nav">
+    <a href="discover.html">Discover</a>
+    <a href="library.html">Library</a>
+    <a href="wallet.html">Wallet</a>
+    <a href="upload.html">Upload</a>
+    <a href="admin.html">Admin</a>
+    <a href="auth.html">Logout</a>
+  </div>
+
+  <!-- ================= TOP UP / DEPOSIT ================= -->
+  <div class="card">
+    <h3>
+      ➕ Top Up / Deposit
+    </h3>
+    <p class="small">
+      Stack Grinds to buy songs instantly. Choose how you pay:
+    </p>
+    <p class="small">
+      ✅ LIVE: EcoCash + Postbank / Visa<br>
+      ⏸️ PAUSED: Mpesa + PayFast — do not pay to them
+    </p>
+
+    <label class="small">
+      Amount in G
+    </label>
+    <input
+      id="depAmount"
+      type="number"
+      step="0.01"
+      placeholder="e.g. 5 = M50"
+    >
+
+    <label class="small">
+      How you will pay
+    </label>
+    <select
+      id="depMethod"
+      onchange="showPaybox()"
+    >
+      <option value="EcoCash">EcoCash — LIVE</option>
+      <option value="Postbank">Postbank / Visa — LIVE</option>
+      <option value="Mpesa" disabled>Mpesa — PAUSED</option>
+      <option value="PayFast" disabled>PayFast — PAUSED</option>
+    </select>
+
+    <!-- ECOCASH - LIVE -->
+    <div
+      id="pay-EcoCash"
+      class="paybox active"
+    >
+      <span class="paytag live">ECOCASH • LIVE</span>
+      <br>
+      <span class="small">
+        Pay merchant MAROTHOLI LESPOT MSU to:
+      </span>
+      <br>
+      <b>
+        128235
+      </b>
+      <br>
+      <span class="small">
+        Merchant Name: Marotholi Lespot MSU
+      </span>
+      <br>
+      <span class="small">
+        Pay EXACT amount. Keep OTP / Reference.
+      </span>
+    </div>
+
+    <!-- POSTBANK / VISA - LIVE -->
+    <div
+      id="pay-Postbank"
+      class="paybox"
+    >
+      <span class="paytag live">POSTBANK / VISA • LIVE</span>
+      <br>
+      <span class="small">
+        Deposit to Postbank / Visa:
+      </span>
+      <br>
+      <b>
+        Acc: 1040278800016
+      </b>
+      <br>
+      <span class="small">
+        Acc Name: MAROTHOLI LESPOT
+        <br>
+        Reference: Your Email / Username
+        <br>
+        Keep deposit slip / reference.
+      </span>
+    </div>
+
+    <!-- MPESA - PAUSED -->
+    <div
+      id="pay-Mpesa"
+      class="paybox paused-box"
+    >
+      <span class="paytag paused">MPESA • PAUSED</span>
+      <br>
+      <span class="paused-text">
+        ⏸️ Mpesa is PAUSED. Do NOT send money here.
+      </span>
+      <br>
+      <span class="small">
+        Use EcoCash or Postbank / Visa instead.
+      </span>
+    </div>
+
+    <!-- PAYFAST - PAUSED -->
+    <div
+      id="pay-PayFast"
+      class="paybox paused-box"
+    >
+      <span class="paytag paused">PAYFAST • PAUSED</span>
+      <br>
+      <span class="paused-text">
+        ⏸️ PayFast is PAUSED. Do NOT send money here.
+      </span>
+      <br>
+      <span class="small">
+        Use EcoCash or Postbank / Visa instead.
+      </span>
+    </div>
+
+    <label class="small">
+      OTP CODE / Reference from your payment
+    </label>
+    <input
+      id="depRef"
+      placeholder="e.g. EcoCash OTP / Postbank slip no."
+    >
+
+    <button
+      id="depBtn"
+      onclick="doDeposit()"
+    >
+      SEND DEPOSIT GET APPROVAL →
+    </button>
+    <p
+      id="depMsg"
+      class="small"
+      style="text-align:center;margin-top:8px"
+    ></p>
+  </div>
+
+  <!-- ================= WITHDRAWAL - ANY ACCOUNT, LS + ZA ONLY ================= -->
+  <div class="card">
+    <h3>
+      🏧 Request Withdrawal
+    </h3>
+    <p class="small">
+      Artist royalties: Min 2.5 G = M25. You keep 63%.
+    </p>
+
+    <div class="country-note">
+      <b style="color:#d4ff3f">🌍 Withdrawals: Lesotho + South Africa ONLY</b>
+      <br>
+      <span class="small">
+        You can use ANY account you want — EcoCash, Mpesa, Bank, Capitec, FNB, Postbank, etc. — as long as it is in Lesotho or South Africa. Other countries will be rejected.
+      </span>
+    </div>
+
+    <label class="small">
+      Amount in G (min 2.5)
+    </label>
+    <input
+      id="wdAmount"
+      type="number"
+      step="0.01"
+      placeholder="e.g. 2.5"
+    >
+
+    <label class="small">
+      Your Country — Lesotho or South Africa ONLY
+    </label>
+    <select id="wdCountry">
+      <option value="Lesotho">🇱🇸 Lesotho</option>
+      <option value="South Africa">🇿🇦 South Africa</option>
+      <option value="Other">🌍 Other — NOT ALLOWED</option>
+    </select>
+
+    <label class="small">
+      Where to receive — ANY account you want
+    </label>
+    <select id="wdMethod">
+      <option value="EcoCash">EcoCash</option>
+      <option value="Mpesa">Mpesa</option>
+      <option value="Postbank">Postbank</option>
+      <option value="Bank - Lesotho">Bank - Lesotho (Standard / Nedbank / First National)</option>
+      <option value="Bank - South Africa">Bank - South Africa (Capitec / FNB / Standard / Absa / Nedbank)</option>
+      <option value="Capitec">Capitec</option>
+      <option value="FNB">FNB</option>
+      <option value="Standard Bank">Standard Bank</option>
+      <option value="Absa">Absa</option>
+      <option value="Nedbank">Nedbank</option>
+      <option value="Other Bank">Other Bank / Account</option>
+    </select>
+
+    <label class="small">
+      Your number / account details
+    </label>
+    <input
+      id="wdNumber"
+      placeholder="e.g. EcoCash 63... / Mpesa 59... / Bank Acc No. + Branch + Full Name"
+    >
+
+    <label class="small">
+      Account Holder Full Name (must match account)
+    </label>
+    <input
+      id="wdName"
+      placeholder="e.g. Tsosane Molibeli"
+    >
+
+    <button
+      id="wdBtn"
+      onclick="doWithdraw()"
+    >
+      REQUEST WITHDRAWAL →
+    </button>
+    <p
+      id="wdMsg"
+      class="small"
+      style="text-align:center;margin-top:8px"
+    ></p>
+  </div>
+
+  <!-- ================= MY DEPOSITS ================= -->
+  <div class="card">
+    <h3>
+      My Deposits
+    </h3>
+    <div id="myDeposits">
+      Loading...
     </div>
   </div>
 
-  <!-- TOP UP INFO - SAME AS BEFORE -->
+  <!-- ================= MY WITHDRAWALS ================= -->
   <div class="card">
-    <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
-    <div class="payBox" style="margin-top:10px">
-      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
-      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+    <h3>
+      My Withdrawals
+    </h3>
+    <div id="myWithdrawals">
+      Loading...
     </div>
-    <button onclick="location.href='deposit.html'">Top Up Now →</button>
-    <p class="small center" style="margin-top:8px">Send money → Copy Reference → Paste in Deposit → Admin approves → Grinds added to THIS wallet</p>
   </div>
 
-  <!-- MY SONGS -->
+  <!-- ================= MY SALES ================= -->
   <div class="card">
-    <h3>🎵 My Songs — Owned</h3>
-    <div id="mySongs" style="margin-top:10px">Loading...</div>
-  </div>
-
-  <!-- DEPOSITS -->
-  <div class="card">
-    <h3>💰 My Deposits</h3>
-    <div id="myDeposits" style="margin-top:10px">Loading...</div>
-  </div>
-
-  <!-- PURCHASES -->
-  <div class="card">
-    <h3>🧾 My Purchases</h3>
-    <div id="myPurchasesList" style="margin-top:10px">Loading...</div>
-  </div>
-
-  <div class="card center">
-    <button class="ghost" onclick="logoutUser()">Log Out</button>
+    <h3>
+      My Sales (63% Royalties)
+    </h3>
+    <div id="mySales">
+      Loading...
+    </div>
   </div>
 
 </div>
-
-<div class="miniPlayer hidden" id="miniPlayer">
-  <img id="pCover" src="icon.svg">
-  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
-  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
-  <button class="closeBtn" onclick="stopSong(true)">✕</button>
-</div>
-
-<nav class="bottomnav">
-  <a href="index.html">🏠<br>Home</a>
-  <a href="discover.html">🎵<br>Discover</a>
-  <a href="wallet.html" class="active">👛<br>Wallet</a>
-  <a href="upload.html">⬆️<br>Upload</a>
-  <a href="auth.html">👤<br>Account</a>
-</nav>
 
 <script>
-const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
-const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
-if(!window.sb && window.supabase){
-  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
-}
+  // -------------------------------------------------
+  // WALLET.HTML - FULL PAGE LOGIC
+  // DEPOSITS: EcoCash 128235 + Postbank 1040278800016 ONLY
+  // Mpesa + PayFast PAUSED for deposits
+  // WITHDRAWALS: ANY account, but Lesotho + South Africa ONLY
+  // -------------------------------------------------
 
-function esc(s){
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+  function showPaybox() {
+    const m = document.getElementById('depMethod').value;
 
-async function loadWallet(){
-  const {user, profile} = await getMyProfile();
-  if(!user){
-    document.getElementById('mySongs').innerHTML = 'Please <a href="auth.html">log in</a> to see wallet.';
-    document.getElementById('myDeposits').innerHTML = 'Please <a href="auth.html">log in</a>.';
-    document.getElementById('myPurchasesList').innerHTML = 'Please <a href="auth.html">log in</a>.';
-    return;
-  }
+    document
+      .querySelectorAll('.paybox')
+      .forEach(function (b) {
+        b.classList.remove('active');
+      });
 
-  // BALANCE - SAME SOURCE AS INDEX / DISCOVER - profile.grind_balance
-  const bal = profile ? (profile.grind_balance || 0) : 0;
-  document.getElementById('bigBal').textContent = bal;
-  document.getElementById('balRand').textContent = 'M' + (bal * 10);
-  document.getElementById('topBal').textContent = bal + ' Grinds';
+    const el = document.getElementById('pay-' + m);
 
-  // MY SONGS - from purchases + songs
-  try{
-    const {data: purchases} = await sb.from('purchases').select('song_id,price_grinds,created_at').eq('user_id', user.id).order('created_at',{ascending:false});
-    if(!purchases || !purchases.length){
-      document.getElementById('mySongs').innerHTML = 'No songs yet. <a href="discover.html">Buy one →</a>';
-      document.getElementById('myPurchasesList').innerHTML = 'No purchases yet.';
-    } else {
-      const ids = purchases.map(p=>p.song_id);
-      const {data: songs} = await sb.from('songs').select('*').in('id', ids);
-      const songMap = {};
-      (songs||[]).forEach(s=> songMap[s.id]=s);
-      document.getElementById('mySongs').innerHTML = purchases.map(p=>{
-        const s = songMap[p.song_id];
-        if(!s) return '';
-        const cover = esc(s.cover_url || 'icon.svg');
-        const title = esc(s.title || 'Untitled');
-        const artist = esc(s.artist || 'Unknown');
-        const audio = esc(s.audio_url || '');
-        return `<div class="songCard"><img src="${cover}" onerror="this.src='icon.svg'"><div class="info"><b>${title}</b><small>${artist} • Owned • Full Song</small></div><div class="actions"><button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button></div></div>`;
-      }).join('');
-      document.getElementById('myPurchasesList').innerHTML = purchases.map(p=>{
-        const s = songMap[p.song_id];
-        return `<div class="histItem"><div><b>${esc(s ? s.title : 'Song')}</b><br><small>${new Date(p.created_at).toLocaleDateString()}</small></div><div><b>-${p.price_grinds}G</b></div></div>`;
-      }).join('');
+    if (el) {
+      el.classList.add('active');
     }
-  }catch(e){
-    document.getElementById('mySongs').innerHTML = 'Could not load songs: ' + e.message;
   }
 
-  // MY DEPOSITS - from deposits table
-  try{
-    const {data: deps} = await sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
-    if(!deps || !deps.length){
-      document.getElementById('myDeposits').innerHTML = 'No deposits yet. <a href="deposit.html">Top up →</a>';
-    } else {
-      document.getElementById('myDeposits').innerHTML = deps.map(d=>{
-        const st = (d.status || 'pending').toLowerCase();
-        return `<div class="histItem"><div><b>M${d.amount_maloti || 0} → ${d.grinds || Math.floor((d.amount_maloti||0)/10)} Grinds</b><br><small>${esc(d.method || '')} • Ref: ${esc(d.reference || '')} • ${new Date(d.created_at).toLocaleDateString()}</small></div><div class="status-${st}">${st.toUpperCase()}</div></div>`;
-      }).join('');
+  async function doDeposit() {
+    const amt = document.getElementById('depAmount').value;
+    const method = document.getElementById('depMethod').value;
+    const ref = document.getElementById('depRef').value.trim();
+    const msgEl = document.getElementById('depMsg');
+
+    if (method === 'Mpesa' || method === 'PayFast') {
+      if (msgEl) msgEl.textContent = '⏸️ ' + method + ' is PAUSED. Use EcoCash or Postbank.';
+      alert('⏸️ ' + method + ' is PAUSED. Use EcoCash or Postbank.');
+      return;
     }
-  }catch(e){
-    document.getElementById('myDeposits').innerHTML = 'Could not load deposits: ' + e.message;
-  }
-}
 
-document.addEventListener('DOMContentLoaded', loadWallet);
+    if (!amt || Number(amt) <= 0) {
+      if (msgEl) msgEl.textContent = 'Enter amount in G';
+      return;
+    }
+
+    if (!ref) {
+      if (msgEl) msgEl.textContent = 'Paste OTP / Reference first';
+      return;
+    }
+
+    if (msgEl) msgEl.textContent = 'Sending...';
+
+    await submitDeposit(amt, method, ref);
+  }
+
+  async function doWithdraw() {
+    const amt = document.getElementById('wdAmount').value;
+    const country = document.getElementById('wdCountry').value;
+    const method = document.getElementById('wdMethod').value;
+    const num = document.getElementById('wdNumber').value.trim();
+    const name = document.getElementById('wdName').value.trim();
+    const msgEl = document.getElementById('wdMsg');
+
+    // RULE: Lesotho + South Africa ONLY
+    if (country !== 'Lesotho' && country !== 'South Africa') {
+      if (msgEl) msgEl.textContent = '❌ Withdrawals are Lesotho + South Africa ONLY.';
+      alert('❌ Sorry, withdrawals are Lesotho + South Africa ONLY. Other countries are not allowed.');
+      return;
+    }
+
+    if (!amt || Number(amt) < 2.5) {
+      if (msgEl) msgEl.textContent = 'Minimum is 2.5 G';
+      return;
+    }
+
+    if (!num) {
+      if (msgEl) msgEl.textContent = 'Enter your number / account details';
+      return;
+    }
+
+    if (!name) {
+      if (msgEl) msgEl.textContent = 'Enter account holder full name';
+      return;
+    }
+
+    if (msgEl) msgEl.textContent = 'Sending...';
+
+    // Send full details to app.js: "Country | Method | Details | Name"
+    // So Admin sees exactly where to pay, for ANY account type
+    const fullDetails = country + ' | ' + method + ' | ' + num + ' | Name: ' + name;
+
+    await submitWithdrawal(amt, method, fullDetails);
+  }
+
+  async function loadSales() {
+    const el = document.getElementById('mySales');
+
+    if (!el) {
+      return;
+    }
+
+    try {
+      const { data: { user } } = await window.sb.auth.getUser();
+
+      if (!user) {
+        el.innerHTML = '<p class="small">Login first</p>';
+        return;
+      }
+
+      const { data: songs } = await window.sb
+        .from('songs')
+        .select('id')
+        .eq('artist_id', user.id);
+
+      const songIds = (songs || []).map(function (s) {
+        return s.id;
+      });
+
+      if (!songIds.length) {
+        el.innerHTML = '<p class="small">No sales yet. Upload a song!</p>';
+        return;
+      }
+
+      const { data: sales } = await window.sb
+        .from('purchases')
+        .select('*')
+        .in('song_id', songIds)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (!sales || !sales.length) {
+        el.innerHTML = '<p class="small">No sales yet.</p>';
+        return;
+      }
+
+      el.innerHTML = sales.map(function (s) {
+        const royalty = (Number(s.price_grind || 0) * 0.63).toFixed(2);
+        const date = new Date(s.created_at).toLocaleString();
+
+        return (
+          '<div class="history-row">' +
+            '<b>+' + royalty + ' G</b> ' +
+            '<span class="small">royalty from ' + s.price_grind + ' G sale • ' + date + '</span>' +
+          '</div>'
+        );
+      }).join('');
+
+    } catch (e) {
+      el.innerHTML = '<p class="small">Sales failed: ' + e.message + '</p>';
+    }
+  }
+
+  async function fixWalletBalance() {
+    try {
+      const { user, profile } = await getMyProfile();
+
+      if (!profile) {
+        return;
+      }
+
+      const bal = Number(profile.grind_balance || 0);
+
+      const big = document.getElementById('walletBalance');
+      if (big) {
+        big.textContent = bal.toFixed(2) + ' G';
+      }
+
+      const sub = document.getElementById('walletSub');
+      if (sub) {
+        sub.textContent = 'M' + (bal * 10).toFixed(0) + '.00 • Min withdraw 2.5 G • M25';
+      }
+
+    } catch (e) {
+      // keep Loading... if profile fails, don't crash page
+    }
+  }
+
+  // -------------------------------------------------
+  // PAGE START - FULLY WIRED
+  // -------------------------------------------------
+  document.addEventListener('DOMContentLoaded', function () {
+    fixWalletBalance();
+    loadSales();
+
+    if (window.loadWallet) {
+      loadWallet();
+    }
+
+    setTimeout(fixWalletBalance, 1500);
+  });
 </script>
 </body>
 </html>
