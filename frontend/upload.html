@@ -1,20 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Upload — Marotholi Les-Pot</title><link rel="stylesheet" href="style.css"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Upload - Marotholi Les-Pot</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8ff00">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+  .tipBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:13px;line-height:1.8}
+  .tipBox b{color:#d4ff3f}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
+  .payBox b{color:#d4ff3f}
+  .mySongRow{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #222}
+  .mySongRow img{width:56px;height:56px;border-radius:12px;object-fit:cover;background:#222;border:1px solid #333;flex-shrink:0}
+  .mySongRow .meta{flex:1;min-width:0}
+  .mySongRow .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mySongRow .meta small{color:#9a9aab}
+  .delBtn{width:auto;padding:8px 14px;font-size:12px;background:#3a1515;border-color:#ff5252;border-radius:999px}
+</style>
+</head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">📤 UPLOAD</span></div>
-<div class="wrap"><div class="card"><h2>Upload Your Song</h2><p>Earn royalties. 1 Grind = M10. Withdraw to EcoCash / Postbank or VISA / M-Pesa.</p>
-<label>Song Title</label><input id="title" placeholder="Song title">
-<label>Artist Name</label><input id="artist" placeholder="Your artist name">
-<label>Genre</label><select id="genre"><option>Amapiano</option><option>Hip Hop</option><option>Gospel</option><option>Afro</option><option>House</option><option>R&B</option><option>Traditional</option><option>Other</option></select>
-<label>Price in Grinds (1-10)</label><input id="price" type="number" min="1" max="10" value="1"><p class="priceHint" id="priceHint">You get M10 per sale</p>
-<label>Cover Image URL</label><input id="cover" placeholder="https://...">
-<label>Audio URL (mp3)</label><input id="audio" placeholder="https://...mp3">
-<label>Drop Date (optional)</label><input id="dropDate" type="date">
-<div class="toggleRow"><button id="btnPublic" class="on" onclick="setVis('public')">🌍 Public</button><button id="btnPrivate" onclick="setVis('private')">🔒 Private</button></div>
-<button onclick="submitUpload()" style="margin-top:14px">Upload Song</button><p id="msg" class="small center"></p>
-</div></div>
-<nav class="bottomnav"><a href="discover.html">🏠<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">💰<br>Wallet</a><a href="upload.html" class="active">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
-<script>let VIS='public';function setVis(v){VIS=v;document.getElementById('btnPublic').classList.toggle('on',v==='public');document.getElementById('btnPrivate').classList.toggle('on',v==='private');}document.getElementById('price').addEventListener('input',e=>{document.getElementById('priceHint').textContent='You get M'+((parseFloat(e.target.value)||1)*10).toFixed(2)+' per sale';});function submitUpload(){document.getElementById('msg').textContent='✅ Upload saved (connect Supabase in app.js to go live).';}</script>
+
+<div class="topbar">
+  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
+  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>⬆️ Upload Song</h2>
+    <p class="small" style="margin-top:6px">Upload your song. Set your price in Grinds. Fans buy it, you earn.</p>
+
+    <label style="margin-top:16px">Song Title *</label>
+    <input id="uTitle" placeholder="e.g. Marotholi Anthem">
+
+    <label>Artist Name *</label>
+    <input id="uArtist" placeholder="e.g. Your stage name">
+
+    <label>Price in Grinds *</label>
+    <input id="uPrice" type="number" value="1" min="1" max="100">
+    <p class="small" id="pricePreview">Fans pay: 1 Grind = M10</p>
+
+    <label>Genre</label>
+    <select id="uGenre">
+      <option value="">Select genre (optional)</option>
+      <option value="Amapiano">Amapiano</option>
+      <option value="Hip Hop">Hip Hop</option>
+      <option value="Afrobeat">Afrobeat</option>
+      <option value="Gospel">Gospel</option>
+      <option value="Sesotho Traditional">Sesotho Traditional</option>
+      <option value="R&B">R&B</option>
+      <option value="House">House</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>Audio Link (mp3) *</label>
+    <input id="uAudio" placeholder="Paste audio link — e.g. https://...mp3">
+    <p class="small">Upload your mp3 to a hosting link (Google Drive public link, Dropbox, SoundCloud download link, etc.) and paste it here.</p>
+
+    <label>Cover Image Link</label>
+    <input id="uCover" placeholder="Paste cover image link — e.g. https://...jpg">
+    <p class="small">If empty, default Marotholi cover will be used.</p>
+
+    <button onclick="doUpload()" id="upBtn">Upload Song</button>
+    <p class="small" id="uMsg" style="margin-top:10px;text-align:center;min-height:20px"></p>
+  </div>
+
+  <div class="card">
+    <h3>📝 Upload Tips</h3>
+    <div class="tipBox">
+      <b>1.</b> Use a clear song title + your real artist name.<br>
+      <b>2.</b> Price 1 Grind (M10) sells fastest for new artists.<br>
+      <b>3.</b> Make sure your audio link plays in a browser before you upload.<br>
+      <b>4.</b> First 30 seconds will be the free preview, so start strong.<br>
+      <b>5.</b> Only upload music you own.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🎵 My Uploads</h3>
+    <div id="mySongs" style="margin-top:10px">Login to see your uploads.</div>
+  </div>
+
+  <div class="card">
+    <h3>💳 Fans Top Up With — ONLY THESE 2</h3>
+    <div class="payBox">
+      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html">🎵<br>Discover</a>
+  <a href="wallet.html">👛<br>Wallet</a>
+  <a href="upload.html" class="active">⬆️<br>Upload</a>
+  <a href="auth.html">👤<br>Account</a>
+</nav>
+
+<script>
+const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
+const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase){
+  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
+}
+
+let CURRENT_USER = null;
+
+function setMsg(text, isError){
+  const el = document.getElementById('uMsg');
+  el.textContent = text;
+  el.style.color = isError ? '#ff5252' : '#00ff88';
+}
+
+async function doUpload(){
+  if(!CURRENT_USER) return location.href='auth.html';
+  const title = document.getElementById('uTitle').value.trim();
+  const artist = document.getElementById('uArtist').value.trim();
+  const price = parseInt(document.getElementById('uPrice').value || 1);
+  const audio_url = document.getElementById('uAudio').value.trim();
+  const cover_url = document.getElementById('uCover').value.trim();
+  const genre = document.getElementById('uGenre').value;
+
+  if(!title) return setMsg('Enter song title', true);
+  if(!artist) return setMsg('Enter artist name', true);
+  if(!audio_url) return setMsg('Enter audio link (mp3)', true);
+  if(!audio_url.startsWith('http')) return setMsg('Audio link must start with https://', true);
+  if(price < 1) return setMsg('Price must be at least 1 Grind', true);
+
+  const btn = document.getElementById('upBtn');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  setMsg('Uploading song...', false);
+
+  const {error} = await sb.from('songs').insert({
+    title: title,
+    artist: artist,
+    price_grinds: price,
+    audio_url: audio_url,
+    cover_url: cover_url || '',
+    genre: genre || '',
+    uploader_id: CURRENT_USER.id
+  });
+
+  btn.disabled = false; btn.textContent = 'Upload Song';
+  if(error) return setMsg('Upload failed: ' + error.message, true);
+  setMsg('✅ Uploaded! Your song is now live in Discover.', false);
+  document.getElementById('uTitle').value = '';
+  document.getElementById('uAudio').value = '';
+  document.getElementById('uCover').value = '';
+  document.getElementById('uPrice').value = '1';
+  loadMySongs();
+  setTimeout(()=> location.href='discover.html', 1200);
+}
+
+async function loadMySongs(){
+  if(!CURRENT_USER) return;
+  const box = document.getElementById('mySongs');
+  try{
+    const {data, error} = await sb.from('songs').select('*').eq('uploader_id', CURRENT_USER.id).order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data || !data.length){ box.innerHTML = 'You have not uploaded any songs yet.'; return; }
+    box.innerHTML = data.map(s=>`
+      <div class="mySongRow">
+        <img src="${s.cover_url || 'icon.svg'}" onerror="this.src='icon.svg'">
+        <div class="meta"><b>${s.title || 'Untitled'}</b><small>${s.artist || ''} • ${s.price_grinds || 1} Grind</small></div>
+        <button class="delBtn" onclick="deleteSong('${s.id}')">Delete</button>
+      </div>
+    `).join('');
+  }catch(e){ box.innerHTML = 'Could not load your songs.'; }
+}
+
+async function deleteSong(id){
+  if(!confirm('Delete this song?')) return;
+  const {error} = await sb.from('songs').delete().eq('id', id);
+  if(error) return alert('Delete failed: ' + error.message);
+  loadMySongs();
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  document.getElementById('uPrice').addEventListener('input', (e)=>{
+    const v = parseInt(e.target.value || 0);
+    document.getElementById('pricePreview').textContent = v > 0 ? ('Fans pay: ' + v + ' Grind(s) = M' + (v*10)) : 'Fans pay: 1 Grind = M10';
+  });
+  const {user, profile} = await getMyProfile();
+  if(!user) return location.href='auth.html';
+  CURRENT_USER = user;
+  if(profile){
+    document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
+    if(!document.getElementById('uArtist').value) document.getElementById('uArtist').value = profile.full_name || '';
+  }
+  loadMySongs();
+});
+</script>
 </body>
 </html>
