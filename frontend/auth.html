@@ -1,9 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login — Marotholi Les-Pot</title><link rel="stylesheet" href="style.css"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Account - Marotholi Les-Pot</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8ff00">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<style>
+  .tabs{display:flex;gap:10px;margin-bottom:16px}
+  .tabs button{flex:1;padding:12px;font-size:14px}
+  .tabs button.active{background:#d4ff3f;color:#000}
+  .tabContent{display:none}
+  .tabContent.show{display:block}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
+  .payBox b{color:#d4ff3f}
+  .profileBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:14px;padding:16px;text-align:center}
+  .profileBox b{font-size:20px}
+  .profileBox .bigBal{font-size:36px;color:#d4ff3f;font-weight:900;margin:10px 0}
+</style>
+</head>
 <body>
-<div class="wrap"><div class="card center"><h1>MAROTHOLI <span style="color:#d4ff3f">LES-POT</span></h1><p>Login to buy & earn</p></div>
-<div class="card"><label>Email</label><input id="email" type="email" placeholder="you@email.com"><label>Password</label><input id="pass" type="password" placeholder="Password"><button onclick="login()">Login</button><a class="link" href="#" onclick="register()">Create Account</a><p id="msg" class="small center"></p></div></div>
-<script>function login(){document.getElementById('msg').textContent='Connecting... (wire Supabase in app.js)';}function register(){document.getElementById('msg').textContent='Register via Supabase Auth.';}</script>
+
+<div class="topbar">
+  <div class="logo">MAROTHOLI <span>LES-POT</span></div>
+  <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
+</div>
+
+<div class="wrap">
+
+  <!-- LOGGED IN VIEW -->
+  <div id="loggedInView" style="display:none">
+    <div class="card">
+      <div class="profileBox">
+        <p class="small">LOGGED IN AS</p>
+        <b id="profName">User</b>
+        <p class="small" id="profEmail"></p>
+        <p class="small" id="profPhone"></p>
+        <div class="bigBal"><span id="profBal">0</span> Grinds</div>
+        <p class="small" id="profRand">M0</p>
+      </div>
+      <br>
+      <button onclick="location.href='deposit.html'">💳 Top Up Wallet</button>
+      <br><br>
+      <button class="ghost" onclick="location.href='wallet.html'">👛 View Wallet</button>
+      <br><br>
+      <button class="ghost" onclick="location.href='discover.html'">🎵 Discover Music</button>
+      <br><br>
+      <button class="ghost" id="adminBtn" style="display:none" onclick="location.href='admin.html'">🛠 Admin Panel</button>
+      <br><br id="adminBr" style="display:none">
+      <button class="ghost" onclick="doLogout()" style="background:#3a1515;border-color:#ff5252">🚪 Logout</button>
+    </div>
+
+    <div class="card">
+      <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
+      <div class="payBox">
+        <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+        <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN / REGISTER VIEW -->
+  <div id="authView">
+    <div class="card">
+      <h2>👤 My Account</h2>
+      <p class="small" style="margin-top:6px">Login or create your Marotholi Les-Pot account. Your Grinds are saved to your account.</p>
+
+      <div class="tabs" style="margin-top:16px">
+        <button id="tabLogin" class="active" onclick="showTab('login')">Login</button>
+        <button id="tabRegister" onclick="showTab('register')">Register</button>
+        <button id="tabReset" onclick="showTab('reset')">Forgot?</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="tab-login" class="tabContent show">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="you@email.com" autocomplete="email">
+        <label>Password</label>
+        <input id="loginPass" type="password" placeholder="Your password" autocomplete="current-password">
+        <button onclick="doLogin()" id="loginBtn">Login</button>
+        <p class="small" id="loginMsg" style="margin-top:10px;text-align:center;min-height:20px"></p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="tab-register" class="tabContent">
+        <label>Full Name</label>
+        <input id="regName" placeholder="e.g. Thabo Mokoena">
+        <label>Phone (EcoCash / Postbank number)</label>
+        <input id="regPhone" placeholder="e.g. 5XXXXXXX" type="tel">
+        <label>Email</label>
+        <input id="regEmail" type="email" placeholder="you@email.com" autocomplete="email">
+        <label>Password (min 6 characters)</label>
+        <input id="regPass" type="password" placeholder="Choose password" autocomplete="new-password">
+        <label>Confirm Password</label>
+        <input id="regPass2" type="password" placeholder="Repeat password" autocomplete="new-password">
+        <button onclick="doRegister()" id="regBtn">Create Account</button>
+        <p class="small" id="regMsg" style="margin-top:10px;text-align:center;min-height:20px"></p>
+        <p class="small" style="text-align:center;margin-top:6px">By registering you agree to Marotholi Les-Pot terms. 1 Grind = M10.</p>
+      </div>
+
+      <!-- RESET -->
+      <div id="tab-reset" class="tabContent">
+        <label>Email</label>
+        <input id="resetEmail" type="email" placeholder="Your account email">
+        <button onclick="doReset()" id="resetBtn">Send Reset Link</button>
+        <p class="small" id="resetMsg" style="margin-top:10px;text-align:center;min-height:20px"></p>
+        <p class="small" style="text-align:center">Check your email inbox + spam for the reset link.</p>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
+      <div class="payBox">
+        <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+        <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html">🎵<br>Discover</a>
+  <a href="wallet.html">👛<br>Wallet</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="auth.html" class="active">👤<br>Account</a>
+</nav>
+
+<script>
+const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
+const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase){
+  window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
+}
+
+function showTab(name){
+  document.querySelectorAll('.tabContent').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('show');
+  if(name==='login') document.getElementById('tabLogin').classList.add('active');
+  if(name==='register') document.getElementById('tabRegister').classList.add('active');
+  if(name==='reset') document.getElementById('tabReset').classList.add('active');
+}
+
+function setMsg(id, text, isError){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.color = isError ? '#ff5252' : '#00ff88';
+}
+
+async function ensureProfile(user, name, phone){
+  try{
+    const {data: existing} = await sb.from('profiles').select('*').eq('id', user.id).single();
+    if(existing) return existing;
+    const {data, error} = await sb.from('profiles').insert({
+      id: user.id,
+      email: user.email,
+      full_name: name || user.email,
+      phone: phone || '',
+      grind_balance: 0
+    }).select().single();
+    if(error) console.warn('Profile create:', error.message);
+    return data;
+  }catch(e){ console.warn(e); return null; }
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email || !pass) return setMsg('loginMsg','Enter email + password', true);
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in...';
+  setMsg('loginMsg','Logging in...', false);
+  const {data, error} = await sb.auth.signInWithPassword({email, password: pass});
+  btn.disabled = false; btn.textContent = 'Login';
+  if(error) return setMsg('loginMsg', error.message, true);
+  if(data.user) await ensureProfile(data.user, '', '');
+  setMsg('loginMsg','✅ Logged in! Loading...', false);
+  setTimeout(()=> location.reload(), 500);
+}
+
+async function doRegister(){
+  const name = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if(!name) return setMsg('regMsg','Enter your full name', true);
+  if(!phone) return setMsg('regMsg','Enter your phone number', true);
+  if(!email) return setMsg('regMsg','Enter your email', true);
+  if(pass.length < 6) return setMsg('regMsg','Password must be at least 6 characters', true);
+  if(pass !== pass2) return setMsg('regMsg','Passwords do not match', true);
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  setMsg('regMsg','Creating account...', false);
+  const {data, error} = await sb.auth.signUp({
+    email,
+    password: pass,
+    options: { data: { full_name: name, phone: phone } }
+  });
+  btn.disabled = false; btn.textContent = 'Create Account';
+  if(error) return setMsg('regMsg', error.message, true);
+  if(data.user){
+    await ensureProfile(data.user, name, phone);
+    setMsg('regMsg','✅ Account created! You can now login.', false);
+    setTimeout(()=>{
+      showTab('login');
+      document.getElementById('loginEmail').value = email;
+      setMsg('loginMsg','✅ Account created. Now login.', false);
+    }, 800);
+  } else {
+    setMsg('regMsg','✅ Check your email to confirm, then login.', false);
+  }
+}
+
+async function doReset(){
+  const email = document.getElementById('resetEmail').value.trim();
+  if(!email) return setMsg('resetMsg','Enter your email', true);
+  const btn = document.getElementById('resetBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo: window.location.origin + '/auth.html'});
+  btn.disabled = false; btn.textContent = 'Send Reset Link';
+  if(error) return setMsg('resetMsg', error.message, true);
+  setMsg('resetMsg','✅ Reset link sent. Check email + spam.', false);
+}
+
+async function doLogout(){
+  if(!confirm('Logout?')) return;
+  await sb.auth.signOut();
+  location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const {user, profile} = await getMyProfile();
+    if(user && profile){
+      document.getElementById('authView').style.display = 'none';
+      document.getElementById('loggedInView').style.display = 'block';
+      document.getElementById('profName').textContent = profile.full_name || profile.email;
+      document.getElementById('profEmail').textContent = profile.email || user.email;
+      document.getElementById('profPhone').textContent = profile.phone || '';
+      document.getElementById('profBal').textContent = profile.grind_balance || 0;
+      document.getElementById('profRand').textContent = 'M' + ((profile.grind_balance || 0) * 10);
+      document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
+      if(profile.is_admin){
+        document.getElementById('adminBtn').style.display = 'block';
+        document.getElementById('adminBr').style.display = 'block';
+      }
+    }
+  }catch(e){ console.log(e); }
+});
+</script>
 </body>
 </html>
