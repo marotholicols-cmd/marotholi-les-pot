@@ -80,7 +80,7 @@ async function previewSong(id){
   let url = s.audio_url;
   console.log('PLAYING URL:', url);
   if(!url || !String(url).startsWith('http')){
-    alert('No audio_url for this song: ' + JSON.stringify(s).slice(0,300));
+    alert('No audio_url for this song');
     return;
   }
   const audio = document.getElementById('mainAudio');
@@ -100,7 +100,8 @@ async function previewSong(id){
     await audio.play();
     if(btn) btn.textContent = '⏸';
   }catch(e){
-    alert('Play blocked / failed: ' + e.message + '\nURL: ' + url);
+    // FIXED: Chrome blocks autoplay if user hasn't tapped yet - don't show scary URL
+    alert('Tap ▶ Preview again to play - browser blocked auto-play');
     return;
   }
   const r = (typeof getPreviewRange === 'function') ? getPreviewRange(s.preview_start) : {start:0, end:30};
@@ -135,7 +136,8 @@ async function buySong(id,price){
   const bal=Number(p?.balance_grind||0);
   if(bal<price){alert('Not enough Grinds.\nYou have '+bal.toFixed(2)+' G\nNeed '+price.toFixed(2)+' G');location.href='deposit.html';return;}
   if(!confirm('Buy for '+formatPrice(price)+'? Full song goes to Library.')) return;
-  const {error}=await window.sb.from('purchases').insert({buyer_id:user.id,user_id:user.id,song_id:id,price_grind:price,status:'approved'});
+  // FIXED: purchases table has buyer_id only, NO user_id column
+  const {error}=await window.sb.from('purchases').insert({buyer_id:user.id,song_id:id,price_grind:price,status:'approved'});
   if(error){alert('Buy failed: '+error.message);return;}
   await window.sb.from('profiles').update({balance_grind:bal-price}).eq('id',user.id);
   alert('✅ Bought! Go to Library for FULL song.'); location.href='library.html';
@@ -145,7 +147,14 @@ async function checkDeepLink(){
   const songId=params.get('song');
   if(!songId) return;
   await loadDiscover();
-  setTimeout(function(){previewSong(songId);},600);
+  // FIXED: Don't autoplay - Chrome blocks autoplay before user taps.
+  // Just tell user which song was shared and let them tap Preview.
+  setTimeout(function(){
+    const s = allSongs.find(function(x){return String(x.id)===String(songId);});
+    if(!s) return;
+    alert('🎵 ' + (s.title || 'Song') + ' by ' + (s.artist_name || '') + '\n\nTap ▶ Preview to listen to 30s');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  },600);
 }
 document.addEventListener('DOMContentLoaded',async function(){
   const params=new URLSearchParams(location.search);
