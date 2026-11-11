@@ -4,500 +4,135 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin - Marotholi Les-Pot</title>
+<link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-    * {
-    box-sizing: border-box;
-  }
-
-  body {
-    background: #0f0f0f;
-    color: #fff;
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    overflow-x: hidden;
-    padding-bottom: 110px;
-  }
-
-  header {
-    background: #ff2ea6;
-    color: #fff;
-    padding: 14px;
-    text-align: center;
-    font-weight: 900;
-    font-size: 18px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .wrap {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 14px;
-    width: 100%;
-  }
-
-  .small {
-    font-size: 13px;
-    opacity: .7;
-    line-height: 1.5;
-  }
-
-  .center {
-    text-align: center;
-  }
-
-  .card {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 18px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .stat {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 14px;
-    text-align: center;
-  }
-
-  .stat b {
-    font-size: 22px;
-    color: #d4ff3f;
-    display: block;
-  }
-
-  .stat span {
-    font-size: 12px;
-    opacity: .7;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    margin-bottom: 12px;
-    scrollbar-width: none;
-  }
-
-  .tabs button {
-    white-space: nowrap;
-    padding: 10px 14px;
-    border-radius: 99px;
-    border: 1px solid #333;
-    background: #1a1a1a;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .tabs button.on {
-    background: #d4ff3f;
-    color: #000;
-    border-color: #d4ff3f;
-  }
-
-  .item {
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 10px;
-  }
-
-  .item.pending {
-    border-color: #ffaa00;
-  }
-
-  .item b {
-    font-size: 15px;
-  }
-
-  .item .meta {
-    font-size: 12px;
-    opacity: .7;
-    line-height: 1.5;
-    margin-top: 4px;
-    word-break: break-all;
-  }
-
-  .row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .approve {
-    flex: 1;
-    background: #00ff88;
-    color: #000;
-    border: 0;
-    padding: 11px;
-    border-radius: 99px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-
-  .reject {
-    flex: 1;
-    background: #ff4444;
-    color: #fff;
-    border: 0;
-    padding: 11px;
-    border-radius: 99px;
-    font-weight: 900;
-    cursor: pointer;
-  }
-
-  .btn-dark {
-    width: 100%;
-    background: #222;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 11px;
-    border-radius: 99px;
-    font-weight: 800;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-
-  input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #333;
-    background: #111;
-    color: #fff;
-    margin: 6px 0;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .bottomnav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #111;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    z-index: 50;
-  }
-
-  .bottomnav a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    text-align: center;
-    opacity: .7;
-    padding: 6px;
-  }
-
-  .bottomnav a.active {
-    color: #d4ff3f;
-    opacity: 1;
-  }
+body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:110px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px}
+header small{display:block;font-size:12px;font-weight:700;opacity:.7}
+.wrap{max-width:700px;margin:0 auto;padding:14px}
+.card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
+.card h3{margin:0 0 8px 0}
+.small{font-size:13px;opacity:.7;line-height:1.5}
+.btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:12px;border-radius:99px;font-weight:900;font-size:14px;cursor:pointer;margin-top:10px}
+.btn2{background:#222;color:#fff;border:1px solid #444;padding:8px 14px;border-radius:99px;font-weight:800;font-size:12px;cursor:pointer}
+.btnApprove{background:#d4ff3f;color:#000;border:0;padding:9px 14px;border-radius:99px;font-weight:900;font-size:12px;cursor:pointer}
+.btnReject{background:#ff4444;color:#fff;border:0;padding:9px 14px;border-radius:99px;font-weight:900;font-size:12px;cursor:pointer}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;padding:11px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;cursor:pointer}
+.tabs button.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.item{border-bottom:1px solid #333;padding:10px 0}
+.item:last-child{border-bottom:0}
+.row{display:flex;gap:6px;margin-top:8px}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
+.bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
+.bottomnav a.active{color:#d4ff3f;opacity:1}
 </style>
 </head>
 <body>
-
-<header>🛠️ ADMIN — MAROTHOLI LES-POT</header>
-
+<header>MAROTHOLI LES-POT<small>🛡️ Admin — Approve Only</small></header>
 <div class="wrap">
-
-  <div id="notAdmin" class="card hidden">
-    <h3 style="margin:0">⛔ Not Admin</h3>
-    <p class="small">This page is for admin only. Your account is not marked as admin.<br>Go to Supabase → profiles → set YOUR row is_admin = true</p>
-    <button class="btn-dark" onclick="location.href='discover.html'">Back to Discover</button>
-  </div>
-
-  <div id="adminBody" class="hidden">
-
-    <div class="stats">
-      <div class="stat"><b id="statSongs">0</b><span>🎵 Total Songs</span></div>
-      <div class="stat"><b id="statUsers">0</b><span>👥 Users</span></div>
-      <div class="stat"><b id="statPendingDep">0</b><span>💰 Pending Deposits</span></div>
-      <div class="stat"><b id="statPendingBuy">0</b><span>🛒 Pending Buys</span></div>
-      <div class="stat"><b id="statPendingWd">0</b><span>🏧 Pending Withdrawals</span></div>
-      <div class="stat"><b id="statRevenue">0 G</b><span>💸 Total Sales (37%)</span></div>
-    </div>
-
-    <div class="card">
-      <b>🔍 Search User / Song</b>
-      <input id="adminSearch" placeholder="Search email, username, song title..." oninput="applyAdminFilter()">
-      <p class="small">Search filters all tabs below.</p>
-    </div>
-
-    <div class="tabs">
-      <button class="on" onclick="setTab('deposits', this)">💰 Deposits</button>
-      <button onclick="setTab('purchases', this)">🛒 Buys</button>
-      <button onclick="setTab('withdrawals', this)">🏧 Withdrawals</button>
-      <button onclick="setTab('songs', this)">🎵 Songs</button>
-      <button onclick="setTab('users', this)">👥 Users</button>
-    </div>
-
-    <div id="adminList">
-      <p class="small">Loading...</p>
-    </div>
-
-    <button class="btn-dark" onclick="loadAdmin()">🔄 Refresh All</button>
-
-  </div>
-
+<div class="card" id="deniedCard" style="display:none"><h3>⛔ Not Admin</h3><p class="small">This page is for Admin only. If you are the owner, make sure your profile role is 'admin' in Supabase.</p><button class="btn" onclick="location.href='index.html'">Go Home →</button></div>
+<div id="adminContent" style="display:none">
+<div class="card"><h3>📊 Quick Stats</h3><p class="small" id="stats">Loading...</p></div>
+<div class="tabs"><button id="tabDep" class="active" onclick="switchTab('deposits')">💰 Deposits</button><button id="tabWith" onclick="switchTab('withdrawals')">💸 Withdrawals</button><button id="tabSongs" onclick="switchTab('songs')">🎵 Songs</button></div>
+<div class="card"><h3 id="listTitle">Pending Deposits</h3><div id="list"><p class="small">Loading...</p></div></div>
 </div>
-
-<div class="bottomnav">
-  <a href="discover.html">🔥<br>Discover</a>
-  <a href="library.html">📚<br>Library</a>
-  <a href="upload.html">⬆️<br>Upload</a>
-  <a href="wallet.html">💰<br>Wallet</a>
-  <a href="admin.html" class="active">🛠️<br>Admin</a>
-  <a href="account.html">👤<br>Account</a>
 </div>
-
+<div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-  // -------------------------------------------------
-  // ADMIN - FULL
-  // SUPABASE: https://mmkxiniybctmgoozaecp.supabase.co
-  // KEY: sb_publishable_... (from app.js - publishable, safe)
-  // RULES:
-  // - Deposits: EcoCash 128235 + Postbank 1040278800016 ONLY
-  // - Mpesa + PayFast PAUSED - reject them
-  // - Withdrawals: LS + ZA ONLY - reject Other
-  // - Artist gets 63% on approve purchase
-  // - Approve deposit = add balance
-  // - Approve withdrawal = deduct balance AFTER you paid them
-  // -------------------------------------------------
-
-  let TAB = 'deposits';
-  let DATA = { deposits: [], purchases: [], withdrawals: [], songs: [], users: [] };
-
-  function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  function setTab(t, btn) {
-    TAB = t;
-    document.querySelectorAll('.tabs button').forEach(function (b) {
-      b.classList.remove('on');
-    });
-    if (btn) btn.classList.add('on');
-    renderTab();
-  }
-
-  function applyAdminFilter() {
-    renderTab();
-  }
-
-  function matchesSearch(text) {
-    const q = (document.getElementById('adminSearch').value || '').toLowerCase();
-    if (!q) return true;
-    return String(text || '').toLowerCase().includes(q);
-  }
-
-  async function checkAdmin() {
-    try {
-      const { user, profile } = await getMyProfile();
-      if (!user) {
-        location.href = 'auth.html';
-        return false;
-      }
-      // If is_admin column exists and is false, block
-      // If column missing / null, allow for now so you don't get locked out
-      if (profile && profile.is_admin === false) {
-        document.getElementById('notAdmin').classList.remove('hidden');
-        return false;
-      }
-      document.getElementById('adminBody').classList.remove('hidden');
-      return true;
-    } catch (e) {
-      document.getElementById('adminBody').classList.remove('hidden');
-      return true;
-    }
-  }
-
-  async function loadAdmin() {
-    const ok = await checkAdmin();
-    if (!ok) return;
-
-    const listEl = document.getElementById('adminList');
-    listEl.innerHTML = '<p class="small">Loading...</p>';
-
-    try {
-      // Use Supabase Dashboard logic - we fetch all via anon key
-      // If RLS blocks admin reads, admin should approve in Dashboard
-      // This list will show what anon can see - if empty, use Dashboard
-      const [deps, buys, wds, songs, users] = await Promise.all([
-        window.sb.from('deposits').select('*').order('created_at', { ascending: false }).limit(100),
-        window.sb.from('purchases').select('*, song:songs(title, artist_name)').order('created_at', { ascending: false }).limit(100),
-        window.sb.from('withdrawals').select('*').order('created_at', { ascending: false }).limit(100),
-        window.sb.from('songs').select('*').order('created_at', { ascending: false }).limit(100),
-        window.sb.from('profiles').select('*').order('created_at', { ascending: false }).limit(100),
-      ]);
-
-      DATA.deposits = deps.data || [];
-      DATA.purchases = buys.data || [];
-      DATA.withdrawals = wds.data || [];
-      DATA.songs = songs.data || [];
-      DATA.users = users.data || [];
-
-      // Stats
-      document.getElementById('statSongs').textContent = DATA.songs.length;
-      document.getElementById('statUsers').textContent = DATA.users.length;
-      document.getElementById('statPendingDep').textContent = DATA.deposits.filter(function (d) { return d.status === 'pending'; }).length;
-      document.getElementById('statPendingBuy').textContent = DATA.purchases.filter(function (d) { return d.status === 'pending'; }).length;
-      document.getElementById('statPendingWd').textContent = DATA.withdrawals.filter(function (d) { return d.status === 'pending'; }).length;
-
-      // Revenue = 37% of approved purchases
-      const approvedBuys = DATA.purchases.filter(function (p) { return p.status === 'approved'; });
-      const totalSales = approvedBuys.reduce(function (sum, p) { return sum + Number(p.price_grind || 0); }, 0);
-      document.getElementById('statRevenue').textContent = (totalSales * 0.37).toFixed(2) + ' G';
-
-      renderTab();
-
-    } catch (e) {
-      listEl.innerHTML = 'Error: ' + esc(e.message) + '<br><p class="small">If list is empty, approve in Supabase Dashboard > Table Editor — it bypasses RLS.</p>';
-    }
-  }
-
-  function renderTab() {
-    const el = document.getElementById('adminList');
-    const q = (document.getElementById('adminSearch').value || '').toLowerCase();
-
-    if (TAB === 'deposits') {
-      let list = DATA.deposits;
-      if (q) list = list.filter(function (d) { return (d.payment_ref + ' ' + d.payment_method + ' ' + d.user_id).toLowerCase().includes(q); });
-      if (!list.length) { el.innerHTML = '<p class="small">No deposits. If you know there are pending ones, approve in Supabase Dashboard > deposits table.</p>'; return; }
-      el.innerHTML = list.map(function (d) {
-        const isPaused = d.payment_method === 'Mpesa' || d.payment_method === 'PayFast';
-        return (
-          '<div class="item pending">' +
-            '<b>+' + Number(d.amount_grind || 0).toFixed(2) + ' G = M' + (Number(d.amount_grind || 0) * 10).toFixed(2) + '</b> • ' + esc(d.payment_method) + ' • ' + esc(d.status) +
-            (isPaused ? '<br><span style="color:#ff6666;font-weight:800">⏸️ PAUSED METHOD - REJECT THIS</span>' : '') +
-            '<div class="meta">Ref: ' + esc(d.payment_ref) + '<br>User: ' + esc(d.user_id) + '<br>' + new Date(d.created_at).toLocaleString() + '</div>' +
-            (d.status === 'pending' ?
-              '<div class="row"><button class="approve" onclick="approveDeposit(\'' + d.id + '\',\'' + d.user_id + '\',\'' + d.amount_grind + '\')">✅ APPROVE + ADD BALANCE</button><button class="reject" onclick="rejectItem(\'deposits\',\'' + d.id + '\')">❌ Reject</button></div>' : '') +
-          '</div>'
-        );
+let currentTab='deposits';
+function switchTab(t){
+  currentTab=t;
+  document.getElementById('tabDep').className=t==='deposits'?'active':'';
+  document.getElementById('tabWith').className=t==='withdrawals'?'active':'';
+  document.getElementById('tabSongs').className=t==='songs'?'active':'';
+  document.getElementById('listTitle').textContent=t==='deposits'?'Pending Deposits':t==='withdrawals'?'Pending Withdrawals':'All Songs';
+  loadList();
+}
+async function checkAdmin(){
+  const user=await getCurrentUser();
+  if(!user){document.getElementById('deniedCard').style.display='block';return false;}
+  const {data:prof}=await window.sb.from('profiles').select('*').eq('id',user.id).single();
+  // Admin check: role = admin OR is_admin = true - NO email in code
+  const isAdmin = prof && (prof.role==='admin' || prof.is_admin===true);
+  if(!isAdmin){document.getElementById('deniedCard').style.display='block';return false;}
+  document.getElementById('adminContent').style.display='block';
+  return true;
+}
+async function loadStats(){
+  const {data:deps}=await window.sb.from('deposits').select('*').eq('status','pending');
+  const {data:wds}=await window.sb.from('withdrawals').select('*').eq('status','pending');
+  const {data:songs}=await window.sb.from('songs').select('id');
+  document.getElementById('stats').innerHTML="Pending Deposits: <b style='color:#d4ff3f'>"+(deps||[]).length+"</b> • Pending Withdrawals: <b style='color:#d4ff3f'>"+(wds||[]).length+"</b> • Total Songs: <b>"+(songs||[]).length+"</b>";
+}
+async function loadList(){
+  const list=document.getElementById('list');
+  list.innerHTML="<p class='small'>Loading...</p>";
+  try{
+    if(currentTab==='deposits'){
+      const {data,error}=await window.sb.from('deposits').select('*, profiles(username)').order('created_at',{ascending:false}).limit(50);
+      if(error) throw error;
+      if(!data||!data.length){list.innerHTML="<p class='small'>No deposits.</p>";return;}
+      list.innerHTML=data.map(function(d){
+        const col=d.status==='approved'?'#d4ff3f':d.status==='rejected'?'#ff6b6b':'#ffb020';
+        return "<div class='item'><b>"+Number(d.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(d.amount_grind||0)+"</b> • "+escHtml(d.method||'')+" • <span style='color:"+col+"'>"+escHtml(d.status||'pending')+"</span><br><span class='small'>User: "+escHtml(d.profiles?.username||d.user_id||'')+" • Ref: "+escHtml(d.reference||'')+" • Sender: "+escHtml(d.sender_info||'')+" • "+new Date(d.created_at).toLocaleString()+"</span>"+(d.status==='pending'?"<div class='row'><button class='btnApprove' onclick=\"approveDeposit('"+d.id+"','"+d.user_id+"',"+Number(d.amount_grind||0)+")\">✅ Approve + Add Grinds</button><button class='btnReject' onclick=\"rejectDeposit('"+d.id+"')\">❌ Reject</button></div>":"")+"</div>";
       }).join('');
-      return;
-    }
-
-    if (TAB === 'purchases') {
-      let list = DATA.purchases;
-      if (q) list = list.filter(function (p) { return ((p.song?.title || '') + ' ' + p.payment_ref + ' ' + p.payment_method).toLowerCase().includes(q); });
-      if (!list.length) { el.innerHTML = '<p class="small">No buys yet.</p>'; return; }
-      el.innerHTML = list.map(function (p) {
-        return (
-          '<div class="item pending">' +
-            '<b>' + esc(p.song?.title || 'Song') + ' — ' + Number(p.price_grind || 0) + ' G</b> • ' + esc(p.payment_method) + ' • ' + esc(p.status) +
-            '<div class="meta">Ref: ' + esc(p.payment_ref) + '<br>Fan: ' + esc(p.fan_id) + '<br>Song ID: ' + esc(p.song_id) + '<br>' + new Date(p.created_at).toLocaleString() + '</div>' +
-            (p.status === 'pending' ?
-              '<div class="row"><button class="approve" onclick="approvePurchaseAdmin(\'' + p.id + '\',\'' + p.song_id + '\',\'' + p.fan_id + '\',\'' + p.price_grind + '\')">✅ APPROVE - Artist gets 63%</button><button class="reject" onclick="rejectItem(\'purchases\',\'' + p.id + '\')">❌ Reject</button></div>' : '') +
-          '</div>'
-        );
+    } else if(currentTab==='withdrawals'){
+      const {data,error}=await window.sb.from('withdrawals').select('*, profiles(username)').order('created_at',{ascending:false}).limit(50);
+      if(error) throw error;
+      if(!data||!data.length){list.innerHTML="<p class='small'>No withdrawals.</p>";return;}
+      list.innerHTML=data.map(function(w){
+        const col=w.status==='approved'?'#d4ff3f':w.status==='rejected'?'#ff6b6b':'#ffb020';
+        return "<div class='item'><b>"+Number(w.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(w.amount_grind||0)+"</b> • "+escHtml(w.method||'')+" • <span style='color:"+col+"'>"+escHtml(w.status||'pending')+"</span><br><span class='small'>User: "+escHtml(w.profiles?.username||w.user_id||'')+" • Account: "+escHtml(w.account||w.account_number||'')+" • Name: "+escHtml(w.full_name||'')+" • "+new Date(w.created_at).toLocaleString()+"</span>"+(w.status==='pending'?"<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('"+w.id+"','"+w.user_id+"',"+Number(w.amount_grind||0)+")\">✅ Approve + Deduct</button><button class='btnReject' onclick=\"rejectWithdraw('"+w.id+"')\">❌ Reject</button></div>":"")+"</div>";
       }).join('');
-      return;
-    }
-
-    if (TAB === 'withdrawals') {
-      let list = DATA.withdrawals;
-      if (q) list = list.filter(function (w) { return ((w.payment_details || '') + ' ' + (w.account_details || '') + ' ' + w.payment_method).toLowerCase().includes(q); });
-      if (!list.length) { el.innerHTML = '<p class="small">No withdrawals.</p>'; return; }
-      el.innerHTML = list.map(function (w) {
-        const det = w.payment_details || w.account_details || '';
-        const isOther = det.toLowerCase().includes('other') && !det.toLowerCase().includes('lesotho') && !det.toLowerCase().includes('south africa');
-        return (
-          '<div class="item pending">' +
-            '<b>-' + Number(w.amount_grind || 0).toFixed(2) + ' G = M' + (Number(w.amount_grind || 0) * 10).toFixed(2) + '</b> • ' + esc(w.payment_method) + ' • ' + esc(w.status) +
-            (isOther ? '<br><span style="color:#ff6666;font-weight:800">❌ OTHER COUNTRY - REJECT - LS + ZA ONLY</span>' : '') +
-            '<div class="meta">' + esc(det) + '<br>User: ' + esc(w.user_id) + '<br>' + new Date(w.created_at).toLocaleString() + '</div>' +
-            (w.status === 'pending' ?
-              '<div class="row"><button class="approve" onclick="approveWithdrawalAdmin(\'' + w.id + '\',\'' + w.user_id + '\',\'' + w.amount_grind + '\')">✅ I PAID - DEDUCT</button><button class="reject" onclick="rejectItem(\'withdrawals\',\'' + w.id + '\')">❌ Reject</button></div>' : '') +
-            '<p class="small" style="margin:6px 0 0">⚠️ Only click APPROVE after you actually sent the money via EcoCash / Bank.</p>' +
-          '</div>'
-        );
+    } else {
+      const {data,error}=await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
+      if(error) throw error;
+      if(!data||!data.length){list.innerHTML="<p class='small'>No songs.</p>";return;}
+      list.innerHTML=data.map(function(s){
+        return "<div class='item'><b>"+escHtml(s.title)+"</b> • "+escHtml(s.artist_name)+" • "+formatPrice(s.price_grind)+" • "+escHtml(s.status||'')+"<br><span class='small'>Preview starts "+Math.floor(Number(s.preview_start||0)/60)+":"+String(Math.floor(Number(s.preview_start||0)%60)).padStart(2,'0')+"</span><div class='row'><button class='btn2' onclick=\"deleteSong('"+s.id+"')\">🗑️ Delete Song</button></div></div>";
       }).join('');
-      return;
     }
-
-    if (TAB === 'songs') {
-      let list = DATA.songs;
-      if (q) list = list.filter(function (s) { return (s.title + ' ' + s.artist_name).toLowerCase().includes(q); });
-      if (!list.length) { el.innerHTML = '<p class="small">No songs.</p>'; return; }
-      el.innerHTML = list.map(function (s) {
-        return (
-          '<div class="item">' +
-            '<b>' + esc(s.title) + ' — ' + esc(s.artist_name) + '</b> • ' + Number(s.price_grind || 0) + ' G • ' + esc(s.status) +
-            '<div class="meta">Genre: ' + esc(s.genre) + ' • Buys: ' + Number(s.total_buys || 0) + ' • Copyright: ' + (s.copyright_confirmed ? '✅ Yes' : '⚠️ No') + '<br>ID: ' + esc(s.id) + '<br>' + new Date(s.created_at).toLocaleString() + '</div>' +
-            '<div class="row"><button class="reject" onclick="deleteSong(\'' + s.id + '\')">🗑️ Delete / Remove Fake</button><button class="btn-dark" style="flex:1;margin:0" onclick="location.href=\'discover.html\'">🔥 View</button></div>' +
-          '</div>'
-        );
-      }).join('');
-      return;
-    }
-
-    if (TAB === 'users') {
-      let list = DATA.users;
-      if (q) list = list.filter(function (u) { return ((u.username || '') + ' ' + (u.email || '')).toLowerCase().includes(q); });
-      if (!list.length) { el.innerHTML = '<p class="small">No users.</p>'; return; }
-      el.innerHTML = list.map(function (u) {
-        return (
-          '<div class="item">' +
-            '<b>' + esc(u.username || u.email) + '</b> • ' + Number(u.grind_balance || 0).toFixed(2) + ' G' + (u.is_admin ? ' • 👑 ADMIN' : '') +
-            '<div class="meta">' + esc(u.email || '') + '<br>ID: ' + esc(u.id) + '</div>' +
-          '</div>'
-        );
-      }).join('');
-      return;
-    }
-  }
-
-  // Admin approve helpers - use Dashboard if RLS blocks
-  async function approvePurchaseAdmin(id, songId, fanId, price) {
-    // Need artist_id - fetch song
-    const { data: song } = await window.sb.from('songs').select('artist_id').eq('id', songId).single();
-    await approvePurchase(id, songId, fanId, price, song?.artist_id);
-  }
-
-  async function approveWithdrawalAdmin(id, userId, amt) {
-    if (!confirm('Did you ACTUALLY send M' + (Number(amt) * 10).toFixed(2) + ' to this user? Click OK only if you paid.')) return;
-    await approveWithdrawal(id, userId, amt);
-  }
-
-  async function deleteSong(id) {
-    if (!confirm('Delete this song? This removes it from Discover.')) return;
-    const { error } = await window.sb.from('songs').delete().eq('id', id);
-    if (error) {
-      alert('Delete failed in app (RLS). Delete it in Supabase Dashboard > songs table > Delete row. Error: ' + error.message);
-      return;
-    }
-    alert('Deleted');
-    loadAdmin();
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    loadAdmin();
-  });
+  }catch(e){list.innerHTML="<p class='small'>❌ "+escHtml(e.message)+"</p>";}
+}
+async function approveDeposit(id,userId,amountG){
+  if(!confirm('Approve this deposit? This will ADD '+Number(amountG).toFixed(2)+' G to user balance.')) return;
+  const {data:prof}=await window.sb.from('profiles').select('balance_grind').eq('id',userId).single();
+  const newBal=Number(prof?.balance_grind||0)+Number(amountG);
+  await window.sb.from('profiles').update({balance_grind:newBal}).eq('id',userId);
+  await window.sb.from('deposits').update({status:'approved'}).eq('id',id);
+  alert('✅ Approved! Grinds added.'); loadStats(); loadList();
+}
+async function rejectDeposit(id){
+  if(!confirm('Reject this deposit?')) return;
+  await window.sb.from('deposits').update({status:'rejected'}).eq('id',id);
+  alert('Rejected.'); loadStats(); loadList();
+}
+async function approveWithdraw(id,userId,amountG){
+  if(!confirm('Approve withdrawal? This will DEDUCT '+Number(amountG).toFixed(2)+' G from user balance. Pay them now via '+amountG+' G = M'+grindToMaloti(amountG))) return;
+  const {data:prof}=await window.sb.from('profiles').select('balance_grind').eq('id',userId).single();
+  const newBal=Number(prof?.balance_grind||0)-Number(amountG);
+  if(newBal<0){alert('User does not have enough balance!');return;}
+  await window.sb.from('profiles').update({balance_grind:newBal}).eq('id',userId);
+  await window.sb.from('withdrawals').update({status:'approved'}).eq('id',id);
+  alert('✅ Approved! Remember to send money to user now.'); loadStats(); loadList();
+}
+async function rejectWithdraw(id){
+  if(!confirm('Reject this withdrawal?')) return;
+  await window.sb.from('withdrawals').update({status:'rejected'}).eq('id',id);
+  alert('Rejected.'); loadStats(); loadList();
+}
+async function deleteSong(id){
+  if(!confirm('Delete this song forever?')) return;
+  await window.sb.from('songs').delete().eq('id',id);
+  alert('Deleted.'); loadList();
+}
+document.addEventListener('DOMContentLoaded',async function(){
+  const ok=await checkAdmin();
+  if(ok){await loadStats();await loadList();}
+});
 </script>
 </body>
 </html>
