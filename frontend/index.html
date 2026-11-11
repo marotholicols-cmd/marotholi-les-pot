@@ -3,26 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marotholi Les-Pot — Home</title>
+<title>Marotholi Les-Pot - Lesotho Music</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="player.js"></script>
 <style>
-  .heroBtns{display:flex;gap:10px;margin-top:18px}
-  .heroBtns button{flex:1}
-  .statRow{display:flex;gap:12px;margin-top:14px}
-  .statBox{flex:1;background:#1e1e1e;border:1px solid #333;border-radius:14px;padding:14px;text-align:center}
-  .statBox b{font-size:22px;color:#d4ff3f;display:block}
-  .statBox small{color:#9a9aab;font-size:12px}
-  .songRow{display:flex;gap:14px;align-items:center}
-  .songRow img{width:64px;height:64px;border-radius:14px;object-fit:cover;background:#222;border:1px solid #333;flex-shrink:0}
-  .songRow .meta{flex:1;min-width:0}
-  .songRow .meta b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .songRow .meta small{color:#9a9aab;font-size:12px}
-  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;margin-top:10px;font-size:14px;line-height:1.8}
+  .hero{background:linear-gradient(135deg,#1a1a22 0%,#2a2a00 100%);border:1px solid #c8ff00;border-radius:18px;padding:22px;text-align:center}
+  .hero h1{font-size:32px;font-weight:900;line-height:1.1}
+  .hero h1 span{color:#c8ff00}
+  .hero p{color:#9a9aab;font-size:14px;margin-top:10px;line-height:1.6}
+  .heroBtns{display:flex;gap:10px;margin-top:16px}
+  .heroBtns button{margin-top:0}
+  .payBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
   .payBox b{color:#d4ff3f}
+  .statRow{display:flex;gap:10px;margin-top:14px}
+  .statBox{flex:1;background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:12px;text-align:center}
+  .statBox b{font-size:20px;color:#d4ff3f;display:block}
+  .statBox small{color:#9a9aab;font-size:11px}
+  .howBox{background:#0a0a10;border:1px solid #2a2a35;border-radius:12px;padding:14px;font-size:13px;line-height:2}
+  .howBox b{color:#d4ff3f}
 </style>
 </head>
 <body>
@@ -32,69 +34,69 @@
   <a class="badge" href="wallet.html" id="topBal">0 Grinds</a>
 </div>
 
-<div class="hero">
-  <h1>Lesotho Music.<br>Own The Grind.</h1>
-  <p>Stream previews free. Buy full songs with Grinds. Support local Marotholi artists directly.</p>
-  <div class="price">1 Grind = M10 • Min Top Up 1 Grind</div>
-  <div class="heroBtns">
-    <button onclick="location.href='discover.html'">🎵 Discover Music</button>
-    <button class="ghost" onclick="location.href='deposit.html'">💳 Top Up</button>
-  </div>
-</div>
-
 <div class="wrap">
 
-  <div class="statRow">
-    <div class="statBox"><b id="statBal">0</b><small>YOUR GRINDS</small></div>
-    <div class="statBox"><b id="statRand">M0</b><small>VALUE</small></div>
-    <div class="statBox"><b id="statSongs">0</b><small>SONGS</small></div>
-  </div>
-
-  <div class="card">
-    <h3>👤 My Account</h3>
-    <p id="homeUser">Loading account...</p>
-    <br>
-    <button class="ghost" onclick="location.href='auth.html'">Login / Register / Recover Account</button>
-  </div>
-
-  <div class="card">
-    <h3>💳 Top Up Wallet — Official Accounts</h3>
-    <div class="payBox">
-      <b>1. M-PESA:</b> 62674307 (Marotholi)<br>
-      <b>2. EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
-      <b>3. Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+  <!-- HERO -->
+  <div class="hero">
+    <p style="font-size:12px;letter-spacing:2px;color:#c8ff00;font-weight:800">🇱🇸 LESOTHO MUSIC • LES-POT</p>
+    <h1>MAROTHOLI<br><span>LES-POT</span></h1>
+    <p>Buy Lesotho songs with Grinds.<br>Support local artists. 1 Grind = M10.</p>
+    <div class="heroBtns">
+      <button onclick="location.href='discover.html'">🎵 Discover Music</button>
+      <button class="ghost" onclick="location.href='upload.html'">⬆️ Upload</button>
     </div>
-    <p class="small" style="margin-top:10px">Send money to any account above, then submit your Reference / OTP in Deposit page for approval.</p>
-    <br>
-    <button onclick="location.href='deposit.html'">+ Top Up Now</button>
+    <div class="statRow">
+      <div class="statBox"><b id="statSongs">0</b><small>SONGS</small></div>
+      <div class="statBox"><b id="statBal">0</b><small>YOUR GRINDS</small></div>
+      <div class="statBox"><b>M10</b><small>1 GRIND</small></div>
+    </div>
   </div>
 
+  <!-- TOP UP -->
   <div class="card">
-    <h3>🔥 Latest Drops</h3>
-    <p class="small">30 seconds preview free. Full song = Grinds.</p>
-    <div id="homeSongs" style="margin-top:14px">Loading songs...</div>
-    <br>
+    <h3>💳 Top Up — ONLY THESE 2 WORK</h3>
+    <div class="payBox" style="margin-top:10px">
+      <b>EcoCash Merchant:</b> 128235 — Marotholi Lespot MSU<br>
+      <b>Postbank Visa:</b> 1040278800016 — Marotholi Lespot
+    </div>
+    <button onclick="location.href='deposit.html'">Top Up Wallet →</button>
+    <p class="small center" style="margin-top:8px">Send money → Copy Reference → Paste in Deposit → Admin approves → Grinds added</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="card">
+    <h3>❓ How It Works</h3>
+    <div class="howBox" style="margin-top:10px">
+      <b>1.</b> Top up with EcoCash 128235 or Postbank 1040278800016<br>
+      <b>2.</b> Get Grinds — 1 Grind = M10<br>
+      <b>3.</b> Play 30s preview FREE in Discover<br>
+      <b>4.</b> Buy song with Grinds to unlock FULL song<br>
+      <b>5.</b> Artists upload + earn when fans buy
+    </div>
+  </div>
+
+  <!-- LATEST SONGS -->
+  <div class="card">
+    <h3>🔥 Latest Songs</h3>
+    <div id="latestSongs" style="margin-top:10px">Loading...</div>
     <button class="ghost" onclick="location.href='discover.html'">See All Songs →</button>
   </div>
 
-  <div class="card">
-    <h3>⬆️ Are You An Artist?</h3>
-    <p>Upload your song. Set your price in Grinds. Get paid when fans buy.</p>
-    <br>
-    <button class="ghost" onclick="location.href='upload.html'">Upload Song</button>
-  </div>
-
+  <!-- FOR ARTISTS -->
   <div class="card center">
-    <p class="small">© MAROTHOLI GRINDERS • MAROTHOLI LES-POT • Les-Pot GrindPay<br>EcoCash 128235 • Postbank 1040278800016</p>
+    <h3>🎤 Are You An Artist?</h3>
+    <p class="small" style="margin-top:8px">Upload your song, set your price in Grinds, fans buy it and you earn.</p>
+    <button onclick="location.href='upload.html'">Upload Your Song</button>
   </div>
 
 </div>
 
-<div id="miniPlayer" class="hidden">
-  <img id="pCover" src="icon.svg" style="width:48px;height:48px;border-radius:10px;object-fit:cover">
-  <div style="flex:1;min-width:0"><b id="pTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block"></b><small id="pArtist"></small></div>
-  <button class="playBtn" id="pPlayBtn" onclick="togglePlay()">⏸</button>
-  <button class="playBtn" onclick="stopSong()">⏹</button>
+<!-- MINI PLAYER -->
+<div class="miniPlayer hidden" id="miniPlayer">
+  <img id="pCover" src="icon.svg">
+  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
+  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
+  <button class="closeBtn" onclick="stopSong(true)">✕</button>
 </div>
 
 <nav class="bottomnav">
@@ -105,45 +107,64 @@
   <a href="auth.html">👤<br>Account</a>
 </nav>
 
-<script src="player.js"></script>
 <script>
-// Supabase keys - also in app.js, kept here so Home works even if app.js fails to load
 const SUPABASE_URL_FALLBACK = "https://mmkxiniybctmgoozaecp.supabase.co";
 const SUPABASE_KEY_FALLBACK = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase){
   window.sb = window.supabase.createClient(SUPABASE_URL_FALLBACK, SUPABASE_KEY_FALLBACK);
 }
 
-document.addEventListener('DOMContentLoaded', async ()=>{
-  try{
-    const {user, profile} = await getMyProfile();
-    if(profile){
-      const bal = profile.grind_balance || 0;
-      document.getElementById('topBal').textContent = bal + ' Grinds';
-      document.getElementById('statBal').textContent = bal;
-      document.getElementById('statRand').textContent = 'M' + (bal * 10);
-      document.getElementById('homeUser').textContent = (profile.full_name || profile.email || 'User') + ' • ' + bal + ' Grinds • ' + (profile.phone || '');
-    } else {
-      document.getElementById('homeUser').textContent = 'Not logged in. Login to see your balance and buy songs.';
-    }
-  }catch(e){ console.log(e); }
+function esc(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
+async function loadLatest(){
+  const box = document.getElementById('latestSongs');
   try{
-    const {data, error} = await sb.from('songs').select('*').order('created_at',{ascending:false}).limit(5);
-    const box = document.getElementById('homeSongs');
+    const {data: songs, error} = await sb.from('songs').select('*').order('created_at',{ascending:false}).limit(5);
     if(error) throw error;
-    if(!data || !data.length){ box.innerHTML = '<p class="small">No songs yet. Be the first to upload.</p>'; return; }
-    document.getElementById('statSongs').textContent = data.length;
-    box.innerHTML = data.map(s=>`
-      <div class="songRow" style="padding:10px 0;border-bottom:1px solid #222">
-        <img src="${s.cover_url || 'icon.svg'}" onerror="this.src='icon.svg'">
-        <div class="meta"><b>${s.title || 'Untitled'}</b><small>${s.artist || 'Marotholi'} • ${s.price_grinds || 1} Grind</small></div>
-        <button class="playBtn" onclick="playSong('${s.audio_url}','${(s.title||'').replace(/'/g,'')}','${(s.artist||'').replace(/'/g,'')}','${s.cover_url||''}',true)">▶ Preview</button>
-      </div>
-    `).join('');
-  }catch(e){
-    document.getElementById('homeSongs').innerHTML = '<p class="small">Could not load songs. Check data / refresh.</p>';
+    if(!songs || !songs.length){ box.innerHTML = 'No songs yet. <a href="upload.html">Be the first to upload!</a>'; return; }
+    document.getElementById('statSongs').textContent = songs.length + '+';
+
+    const {user} = await getMyProfile();
+    let purchases = [];
+    if(user) purchases = await getMyPurchases(user.id);
+
+    box.innerHTML = songs.map(s=>{
+      const owned = purchases.includes(s.id);
+      const price = s.price_grinds || 1;
+      const cover = esc(s.cover_url || 'icon.svg');
+      const title = esc(s.title || 'Untitled');
+      const artist = esc(s.artist || 'Unknown');
+      const audio = esc(s.audio_url || '');
+      return `
+      <div class="songCard">
+        <img src="${cover}" onerror="this.src='icon.svg'">
+        <div class="info"><b>${title}</b><small>${artist} • ${price} Grind${price>1?'s':''} = M${price*10}</small><br><small>${owned ? '✅ Owned — Full Song' : '🎧 30s Preview Free'}</small></div>
+        <div class="actions">
+          ${owned
+            ? `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play</button>`
+            : `<button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',true)">▶ Preview</button><button class="buyBtn" onclick="buyHome('${s.id}',${price},'${title}')">Buy ${price}G</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ box.innerHTML = 'Could not load songs: ' + e.message; }
+}
+
+async function buyHome(id, price, title){
+  const ok = await buySongById(id, price, title);
+  if(ok) loadLatest();
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  const {profile} = await getMyProfile();
+  if(profile){
+    document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
+    document.getElementById('statBal').textContent = profile.grind_balance || 0;
   }
+  loadLatest();
 });
 </script>
 </body>
