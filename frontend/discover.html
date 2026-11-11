@@ -8,78 +8,172 @@
 <meta name="theme-color" content="#c8ff00">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=99"></script>
-<script src="player.js?v=99"></script>
+<script src="app.js"></script>
+<script src="player.js"></script>
 </head>
 <body>
 <div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
+
 <div class="wrap">
-  <div class="card"><h2>🎵 Discover</h2><input id="searchBox" placeholder="Search songs, artists..." oninput="renderSongs()"></div>
-  <div class="card"><div id="songList">Loading songs...</div></div>
+  <div class="card">
+    <h2>🎵 Discover Music</h2>
+    <p class="small" style="margin-top:6px">Play 30s preview free. Buy with Grinds to unlock full song. 1 Grind = M10. Songs from 0.01G (M0.10).</p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input id="searchBox" placeholder="Search song or artist..." style="flex:1;margin-top:0" oninput="renderSongs()">
+      <button onclick="renderSongs()" style="width:auto;margin-top:0">Search</button>
+    </div>
+    <div id="genrePills" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <div id="songList">Loading songs...</div>
+  </div>
 </div>
-<div class="miniPlayer hidden" id="miniPlayer"><img id="pCover" src="icon.svg"><div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div><button id="pPlayBtn" onclick="togglePlay()">▶</button><button class="closeBtn" onclick="stopSong(true)">✕</button></div>
-<nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html" class="active">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html">⬆️<br>Upload</a><a href="auth.html">👤<br>Account</a></nav>
+
+<div class="miniPlayer hidden" id="miniPlayer">
+  <img id="pCover" src="icon.svg">
+  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
+  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
+  <button class="closeBtn" onclick="stopSong(true)">✕</button>
+</div>
+
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html" class="active">🎵<br>Discover</a>
+  <a href="wallet.html">👛<br>Wallet</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="auth.html">👤<br>Account</a>
+</nav>
+
 <script>
-const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+const U="https://mmkxiniybctmgoozaecp.supabase.co";
+const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
-let ALL=[], OWNED=new Set();
+
+let ALL = [];
+let OWNED = new Set();
+let CURRENT_GENRE = 'All';
+const GENRES = ['All','Amapiano','Hip Hop','Afrobeat','Gospel','Sesotho','R&B','House'];
+
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function renderSongs(){
-  const q=(document.getElementById('searchBox').value||'').toLowerCase();
-  const box=document.getElementById('songList');
-  const list=ALL.filter(s=> (s.title||'').toLowerCase().includes(q) || (s.artist||s.artist_name||'').toLowerCase().includes(q));
-  if(!list.length){ box.innerHTML='No songs found.'; return; }
-  box.innerHTML=list.map(s=>{
-    const title=esc(s.title||'Untitled'); const artist=esc(s.artist||s.artist_name||'Unknown'); const cover=esc(s.cover_url||'icon.svg');
-    const price=s.price_grinds||s.price_grind||1; const audio=esc(s.audio_url||s.audio_path||'');
-    const owned=OWNED.has(s.id);
-    return `<div class="songCard"><img src="${cover}" onerror="this.src='icon.svg'"><div class="info"><b>${title}</b><small>${artist} • ${s.genre||'Music'} • ${price} Grind = M${price*10}<br>${owned?'✅ Owned - Full Song':'⏱️ 30s Preview Free'}</small></div><div class="actions"><button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',${owned?'false':'true'})">${owned?'▶ Play Full':'▶ Preview'}</button>${owned?'':`<button class="buyBtn" onclick="buySong('${s.id}',${price},'${title}')">Buy ${price}G</button>`}</div></div>`;
+function getPrice(s){ const p = parseFloat(s.price_grinds ?? s.price_grind ?? 0.01); return (!p || isNaN(p) || p < 0.01) ? 0.01 : p; }
+function fmtPrice(p){ return p.toFixed(2)+' Grind = M'+(p*10).toFixed(2); }
+
+function renderPills(){
+  const box = document.getElementById('genrePills');
+  box.innerHTML = GENRES.map(g=>{
+    const active = g === CURRENT_GENRE;
+    return `<button onclick="setGenre('${g}')" style="width:auto;margin-top:0;padding:8px 14px;border-radius:999px;background:${active?'#c8ff00':'#222'};color:${active?'#000':'#fff'};font-size:13px">${g}</button>`;
   }).join('');
 }
+
+function setGenre(g){
+  CURRENT_GENRE = g;
+  renderPills();
+  renderSongs();
+}
+
+function renderSongs(){
+  const q = (document.getElementById('searchBox').value || '').toLowerCase();
+  const box = document.getElementById('songList');
+  let list = ALL.filter(s=>{
+    const matchQ = (s.title||'').toLowerCase().includes(q) || (s.artist||s.artist_name||'').toLowerCase().includes(q);
+    const matchG = CURRENT_GENRE === 'All' || (s.genre||'Music') === CURRENT_GENRE;
+    return matchQ && matchG;
+  });
+  if(!list.length){ box.innerHTML = 'No songs found.'; return; }
+  box.innerHTML = list.map(s=>{
+    const title = esc(s.title || 'Untitled');
+    const artist = esc(s.artist || s.artist_name || 'Unknown');
+    const cover = esc(s.cover_url || 'icon.svg');
+    const price = getPrice(s);
+    const audio = esc(s.audio_url || s.audio_path || '');
+    const owned = OWNED.has(s.id);
+    return `
+    <div class="songCard">
+      <img src="${cover}" onerror="this.src='icon.svg'">
+      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${fmtPrice(price)}<br>${owned ? '✅ Owned - Full Song' : '⏱️ 30s Preview Free'}</small></div>
+      <div class="actions">
+        <button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',${owned ? 'false' : 'true'})">${owned ? '▶ Play Full' : '▶ Preview'}</button>
+        ${owned ? '' : `<button class="buyBtn" onclick="buySong('${s.id}',${price},'${title}')">Buy ${price.toFixed(2)}G</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 async function buySong(id, price, title){
-  const {user, profile}=await getMyProfile();
+  price = parseFloat(price) || 0.01;
+  const {user, profile} = await getMyProfile();
   if(!user){ alert('Log in first'); location.href='auth.html'; return; }
-  const bal=profile.grind_balance ?? profile.grinds ?? 0;
-  if(bal < price){ alert('Not enough Grinds. You have '+bal+'G, need '+price+'G. Top up in Wallet.'); location.href='wallet.html'; return; }
-  if(!confirm('Buy "'+title+'" for '+price+' Grind (M'+(price*10)+')?')) return;
-  const newBal=bal-price;
-  await sb.from('profiles').update({grind_balance:newBal}).eq('id', user.id);
-  await sb.from('purchases').insert([{user_id:user.id, song_id:id, price_grinds:price}]);
-  // Give artist their share - update artist balance if possible
+  const bal = parseFloat(profile.grind_balance ?? profile.grinds ?? 0);
+  if(bal < price){
+    alert('Not enough Grinds. You have '+bal.toFixed(2)+'G, need '+price.toFixed(2)+'G (M'+(price*10).toFixed(2)+'). Top up in Wallet.');
+    location.href='wallet.html'; return;
+  }
+  if(!confirm('Buy "'+title+'" for '+price.toFixed(2)+' Grind (M'+(price*10).toFixed(2)+')?')) return;
+
+  const newBal = Math.round((bal - price)*100)/100;
+  await sb.from('profiles').update({grind_balance: newBal}).eq('id', user.id);
+
+  // FIXED: purchases uses buyer_id, NOT user_id
+  const {error: buyErr} = await sb.from('purchases').insert([{buyer_id: user.id, song_id: id, price_grinds: price}]);
+  if(buyErr){ alert('Buy failed: '+buyErr.message); return; }
+
+  // Pay artist
   try{
-    const song=ALL.find(x=>x.id===id);
+    const song = ALL.find(x=>x.id===id);
     if(song && song.artist_id){
-      const {data:ap}=await sb.from('profiles').select('*').eq('id', song.artist_id).maybeSingle();
-      if(ap){ await sb.from('profiles').update({grind_balance:(ap.grind_balance||0)+price}).eq('id', song.artist_id); }
+      const {data: ap} = await sb.from('profiles').select('*').eq('id', song.artist_id).maybeSingle();
+      if(ap){ await sb.from('profiles').update({grind_balance: Math.round((parseFloat(ap.grind_balance||0)+price)*100)/100 }).eq('id', song.artist_id); }
     }
   }catch(e){}
-  alert('✅ Bought! Full song unlocked in Library.'); OWNED.add(id); renderSongs();
+
+  alert('✅ Bought! Full song unlocked.');
+  OWNED.add(id);
+  renderSongs();
 }
-window.buySong=buySong;
+window.buySong = buySong;
+
 async function loadSongs(){
-  const box=document.getElementById('songList'); box.innerHTML='Loading songs...';
-  const {user, profile}=await getMyProfile();
-  if(profile) document.getElementById('topBal').textContent=(profile.grind_balance ?? profile.grinds ?? 0)+' Grinds';
-  if(user){ const ids=await getMyPurchases(user.id); OWNED=new Set(ids); }
-  // 1. From songs table
-  let fromTable=[];
-  try{ const {data}=await sb.from('songs').select('*').order('created_at',{ascending:false}); fromTable=data||[]; }catch(e){}
-  // 2. From bucket - any file not in table
-  let fromBucket=[];
+  renderPills();
+  const box = document.getElementById('songList');
+  box.innerHTML = 'Loading songs...';
+  const {user, profile} = await getMyProfile();
+  if(profile) document.getElementById('topBal').textContent = parseFloat(profile.grind_balance ?? profile.grinds ?? 0).toFixed(2)+' Grinds';
+
+  // FIXED: load owned songs with buyer_id
+  if(user){
+    try{
+      const {data: purch, error} = await sb.from('purchases').select('song_id').eq('buyer_id', user.id);
+      if(!error && purch) OWNED = new Set(purch.map(p=>p.song_id).filter(Boolean));
+    }catch(e){ console.log('purchases error', e); }
+  }
+
+  // From songs table
+  let fromTable = [];
   try{
-    const {data: files}=await sb.storage.from('songs').list('',{limit:100});
-    const inTable=new Set(fromTable.map(s=> (s.audio_path||'').split('/').pop()));
+    const {data} = await sb.from('songs').select('*').order('created_at',{ascending:false});
+    fromTable = data || [];
+  }catch(e){}
+
+  // From bucket - any file not in table
+  let fromBucket = [];
+  try{
+    const {data: files} = await sb.storage.from('songs').list('',{limit:100});
+    const inTable = new Set(fromTable.map(s=> (s.audio_path||'').split('/').pop()));
     (files||[]).filter(f=> f.name.endsWith('.mp3')||f.name.endsWith('.m4a')||f.name.endsWith('.wav')).forEach(f=>{
       if(!inTable.has(f.name)){
-        const {data:pub}=sb.storage.from('songs').getPublicUrl(f.name);
-        const pretty=f.name.replace(/^\d+-/,'').replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
-        fromBucket.push({id:'bucket-'+f.name, title:pretty||f.name, artist:'Unknown', artist_name:'Unknown', genre:'Music', price_grinds:1, price_grind:1, audio_url:pub.publicUrl, audio_path:f.name, cover_url:'icon.svg', created_at:new Date().toISOString()});
+        const {data: pub} = sb.storage.from('songs').getPublicUrl(f.name);
+        const pretty = f.name.replace(/^\d+-/,'').replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+        fromBucket.push({id:'bucket-'+f.name, title:pretty||f.name, artist:'Unknown', artist_name:'Unknown', genre:'Music', price_grinds:0.01, price_grind:0.01, audio_url:pub.publicUrl, audio_path:f.name, cover_url:'icon.svg', created_at:new Date().toISOString()});
       }
     });
   }catch(e){}
-  ALL=[...fromTable, ...fromBucket];
+
+  ALL = [...fromTable, ...fromBucket];
   renderSongs();
 }
+
 document.addEventListener('DOMContentLoaded', loadSongs);
 </script>
 </body>
