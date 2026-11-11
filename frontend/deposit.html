@@ -7,39 +7,80 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
-*{box-sizing:border-box}body{background:#0f0f0f;color:#fff;font-family:system-ui;margin:0}
+*{box-sizing:border-box}body{background:#0f0f0f;color:#fff;font-family:system-ui;margin:0;padding-bottom:40px}
 header{background:#d4ff3f;color:#000;padding:16px;text-align:center;font-weight:900}
 .wrap{max-width:400px;margin:0 auto;padding:20px}
-.card{background:#1e1e1e;border:1px solid #333;padding:20px;border-radius:16px}
-input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;margin-bottom:10px}
-button{width:100%;padding:13px;border:0;border-radius:10px;background:#d4ff3f;font-weight:900;cursor:pointer}
+.card{background:#1e1e1e;border:1px solid #333;padding:20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:#fff;margin-bottom:10px;font-size:15px}
+button{width:100%;padding:13px;border:0;border-radius:10px;background:#d4ff3f;font-weight:900;cursor:pointer;font-size:15px}
 .small{font-size:13px;opacity:.7;line-height:1.6}
 a{color:#d4ff3f}
+.paybox{background:#000;border:1px solid #333;border-radius:12px;padding:12px;margin:10px 0;line-height:1.6;display:none}
+.paybox.active{display:block}
+.paybox b{color:#d4ff3f;font-size:18px;word-break:break-all}
+.paytag{display:inline-block;background:#d4ff3f;color:#000;font-size:11px;font-weight:900;padding:3px 8px;border-radius:20px;margin-bottom:6px}
+.copyBtn{width:auto;padding:6px 12px;border-radius:99px;background:#333;color:#fff;font-size:12px;font-weight:700;margin-top:6px}
+.pausedBox{background:#1a1a00;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.5}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT — DEPOSIT</header>
 <div class="wrap">
+<div class="pausedBox"><b>🔒 M-Pesa & PayFast Paused</b><br><span class="small">Use EcoCash or Postbank only. Official Marotholi Les-Pot accounts below.</span></div>
 <div class="card">
-<h2>Top Up Wallet</h2>
-<p class="small">1. Send money via M-PESA to <b>62674307</b> (Marotholi)<br>2. Copy the M-PESA OTP / Reference<br>3. Paste it below + amount in Grinds<br>1 Grind = M10 • Min 1 Grind</p>
+<h2 style="margin:0">Top Up Wallet</h2>
+<p class="small">1. Pay to our official account below<br>2. Copy the OTP / Reference<br>3. Paste it below + amount in Grinds<br>1 Grind = M10 • Min 1 Grind</p>
 <label>Amount in Grinds</label>
-<input id="dAmt" type="number" placeholder="e.g. 3 = M30">
+<input id="dAmt" type="number" step="0.01" placeholder="e.g. 3 = M30" oninput="document.getElementById('dMaloti').textContent='M'+((parseFloat(this.value)||0)*10).toFixed(2)">
+<div id="dMaloti" class="small" style="color:#d4ff3f">M0.00</div>
 <label>Method</label>
-<select id="dMethod"><option>M-PESA</option><option>EcoCash</option></select>
-<label>M-PESA OTP / Reference</label>
-<input id="dRef" placeholder="e.g. MP250...">
+<select id="dMethod" onchange="showPayboxDeposit()">
+<option value="EcoCash">EcoCash</option>
+<option value="Postbank">Postbank</option>
+<option value="Mpesa" disabled>Mpesa — Paused</option>
+<option value="PayFast" disabled>PayFast — Paused</option>
+</select>
+
+<div id="pay-EcoCash" class="paybox active">
+<span class="paytag">ECOCASH</span><br>
+<span class="small">Pay merchant Marotholi Lespot MSU to:</span><br>
+<b>128235</b><br>
+<button class="copyBtn" type="button" onclick="copyDepositText('128235',this)">📋 Copy Merchant Code</button><br>
+<span class="small">Pay EXACT amount. Keep OTP / Reference.</span>
+</div>
+
+<div id="pay-Postbank" class="paybox">
+<span class="paytag">POSTBANK</span><br>
+<span class="small">Deposit to Postbank Visa:</span><br>
+<b>Acc: 1040278800016</b><br>
+<button class="copyBtn" type="button" onclick="copyDepositText('1040278800016',this)">📋 Copy Acc No.</button><br>
+<span class="small">Acc Name: Marotholi Lespot<br>Reference: Your Email / Username<br>Keep deposit slip.</span>
+</div>
+
+<label>OTP / Reference from your payment</label>
+<input id="dRef" placeholder="e.g. EcoCash OTP / Postbank slip no.">
 <button onclick="doDeposit()">Send Deposit for Approval</button>
 <p class="small" id="dMsg"></p>
 </div>
 <div class="card" style="margin-top:14px"><h3>My Deposits</h3><div id="myDeposits">Loading...</div></div>
-<a href="discover.html">← Back</a>
+<a href="discover.html">← Back</a> • <a href="wallet.html">Wallet →</a>
 </div>
 <script>
+function showPayboxDeposit(){
+  const m = document.getElementById('dMethod').value;
+  document.querySelectorAll('.paybox').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('pay-'+m);
+  if(el) el.classList.add('active');
+}
+function copyDepositText(txt, btn){
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>{ if(btn){ btn.textContent='✅ Copied!'; setTimeout(()=>btn.textContent='📋 Copy',1500); } }); }
+  else { prompt('Copy:', txt); }
+}
 async function doDeposit(){
   const amt = document.getElementById('dAmt').value;
   const method = document.getElementById('dMethod').value;
   const ref = document.getElementById('dRef').value.trim();
+  if(method === 'Mpesa' || method === 'PayFast'){ document.getElementById('dMsg').textContent='M-Pesa and PayFast are paused. Please use EcoCash or Postbank.'; return; }
   if(!amt || !ref){ document.getElementById('dMsg').textContent='Enter amount + reference'; return; }
   await submitDeposit(amt, method, ref);
 }
