@@ -1,12 +1,31 @@
 {
   "name": "Marotholi LES-POT",
   "short_name": "LES-POT",
+  "description": "Marotholi Les-Pot — Lesotho music. Stream, buy, and support local artists. 1 Grind = M10. EcoCash & Postbank.",
   "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#c8ff00",
+  "orientation": "portrait",
+  "background_color": "#0f0f0f",
+  "theme_color": "#d4ff3f",
   "icons": [
-    { "src": "icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
