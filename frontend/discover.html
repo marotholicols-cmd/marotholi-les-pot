@@ -4,177 +4,796 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Discover - Marotholi Les-Pot</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c8ff00">
-<link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="player.js"></script>
+<style>
+    * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: #0f0f0f;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: #d4ff3f;
+    color: #000;
+    padding: 12px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  header .logo {
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: .3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .bal-pill {
+    background: #000;
+    color: #d4ff3f;
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-weight: 900;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .wallet-btn {
+    background: #fff;
+    color: #000;
+    border: 0;
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-weight: 900;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 12px;
+    width: 100%;
+  }
+
+  .nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .nav a {
+    background: #222;
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .nav a.active {
+    background: #d4ff3f;
+    color: #000;
+  }
+
+  .small {
+    font-size: 13px;
+    opacity: .7;
+    line-height: 1.5;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  /* UPCOMING DROPS - THE OLD BETTER BOX */
+  .upcoming-box {
+    background: #111;
+    border-radius: 22px;
+    padding: 14px;
+    margin-bottom: 18px;
+    position: relative;
+    background: linear-gradient(#111, #111) padding-box,
+      linear-gradient(135deg, #ff2ea6, #d4ff3f, #00ff88) border-box;
+    border: 2px solid transparent;
+  }
+
+  .upcoming-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .upcoming-head h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.1;
+  }
+
+  .upcoming-head p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    opacity: .7;
+    line-height: 1.4;
+  }
+
+  .coming-badge {
+    background: #d4ff3f;
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 5px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px 0 10px;
+  }
+
+  .section-title h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .section-title span {
+    font-size: 12px;
+    opacity: .6;
+  }
+
+  /* SONG CARD - OLD STYLE */
+  .song-card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 18px;
+    padding: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .song-top {
+    display: flex;
+    gap: 12px;
+  }
+
+  .cover {
+    width: 68px;
+    height: 68px;
+    min-width: 68px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ff2ea6, #ffcc00, #d4ff3f);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    overflow: hidden;
+  }
+
+  .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .meta b {
+    font-size: 16px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .meta .sub {
+    font-size: 13px;
+    opacity: .65;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  .meta .hype-line {
+    font-size: 13px;
+    color: #d4ff3f;
+    margin-top: 3px;
+  }
+
+  /* AUDIO PILL - LIKE SCREENSHOT */
+  .audio-pill {
+    background: #fff;
+    border-radius: 99px;
+    padding: 8px 10px;
+    margin-top: 10px;
+    margin-left: 80px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .audio-pill audio {
+    width: 100%;
+    height: 32px;
+    outline: none;
+  }
+
+  .audio-pill audio::-webkit-media-controls-panel {
+    background: #fff;
+  }
+
+  .card-actions {
+    margin-left: 80px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .row2 {
+    display: flex;
+    gap: 8px;
+  }
+
+  .shareBtn {
+    flex: 1;
+    background: #fff;
+    color: #000;
+    border: 0;
+    padding: 10px;
+    border-radius: 99px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .hypeBtn {
+    flex: 1;
+    background: #333;
+    color: #fff;
+    border: 0;
+    padding: 10px;
+    border-radius: 99px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .hypeBtn.hyped {
+    background: #ff2ea6;
+    color: #fff;
+  }
+
+  .buyBtn {
+    width: 100%;
+    background: #d4ff3f;
+    color: #000;
+    border: 0;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 900;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .ownedBtn {
+    width: 100%;
+    background: #333;
+    color: #fff;
+    border: 0;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 900;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .shareSongBtn {
+    width: 100%;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 11px;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  /* SEARCH */
+  .search-box input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .search-box input:focus {
+    border-color: #d4ff3f;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin: 10px 0;
+    scrollbar-width: none;
+  }
+
+  .filters button {
+    white-space: nowrap;
+    padding: 8px 14px;
+    border-radius: 99px;
+    border: 1px solid #333;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    width: auto;
+  }
+
+  .filters button.on {
+    background: #d4ff3f;
+    color: #000;
+    border-color: #d4ff3f;
+  }
+
+  /* BUY MODAL */
+  .modal {
+    background: #1e1e1e;
+    border: 2px solid #d4ff3f;
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    margin: 6px 0;
+    font-size: 15px;
+  }
+
+  .card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 14px;
+    padding: 12px;
+  }
+</style>
 </head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
+
+<header>
+  <div class="logo">MAROTHOLI LES-POT 🔥</div>
+  <div class="header-right">
+    <span class="bal-pill" id="topBal">G 0.00</span>
+    <button class="wallet-btn" onclick="location.href='wallet.html'">Wallet</button>
+  </div>
+</header>
 
 <div class="wrap">
-  <div class="card">
-    <h2>🎵 Discover Music</h2>
-    <p class="small" style="margin-top:6px">Play 30s preview free. Buy with Grinds to unlock full song. 1 Grind = M10. Songs from 0.01G (M0.10).</p>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <input id="searchBox" placeholder="Search song or artist..." style="flex:1;margin-top:0" oninput="renderSongs()">
-      <button onclick="renderSongs()" style="width:auto;margin-top:0">Search</button>
+
+  <div class="nav">
+    <a href="discover.html" class="active">Discover</a>
+    <a href="library.html">Library</a>
+    <a href="upload.html">⬆️ Upload</a>
+    <a href="admin.html">⚙️ Admin</a>
+    <a href="auth.html">Logout</a>
+  </div>
+
+  <!-- ============ UPCOMING DROPS - OLD BETTER ============ -->
+  <div class="upcoming-box">
+    <div class="upcoming-head">
+      <div>
+        <h2>🔥 UPCOMING DROPS</h2>
+        <p>Be first. Share it. Hype it. Preview only — no download.</p>
+      </div>
+      <span class="coming-badge">COMING SOON</span>
     </div>
-    <div id="genrePills" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+    <div id="upcomingList" style="margin-top:12px">
+      <p class="small">Loading upcoming...</p>
+    </div>
   </div>
 
-  <div class="card">
-    <div id="songList">Loading songs...</div>
+  <!-- ============ ALL SONGS ============ -->
+  <div class="section-title">
+    <h2>🎵 All Songs</h2>
+    <span id="songCount"></span>
   </div>
-</div>
 
-<div class="miniPlayer hidden" id="miniPlayer">
-  <img id="pCover" src="icon.svg">
-  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
-  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
-  <button class="closeBtn" onclick="stopSong(true)">✕</button>
-</div>
+  <div class="search-box">
+    <input id="searchInput" placeholder="🔍 Search song or artist..." oninput="applyFilter()">
+  </div>
 
-<nav class="bottomnav">
-  <a href="index.html">🏠<br>Home</a>
-  <a href="discover.html" class="active">🎵<br>Discover</a>
-  <a href="wallet.html">👛<br>Wallet</a>
-  <a href="upload.html">⬆️<br>Upload</a>
-  <a href="auth.html">👤<br>Account</a>
-</nav>
+  <div class="filters" id="filters">
+    <button class="on" onclick="setGenre('All', this)">🔥 All</button>
+    <button onclick="setGenre('Hip Hop', this)">🎤 Hip Hop</button>
+    <button onclick="setGenre('Amapiano', this)">🎹 Amapiano</button>
+    <button onclick="setGenre('Afrobeat', this)">🥁 Afrobeat</button>
+    <button onclick="setGenre('Gospel', this)">🙏 Gospel</button>
+    <button onclick="setGenre('R&B', this)">🎶 R&B</button>
+    <button onclick="setGenre('House', this)">🏠 House</button>
+  </div>
+
+  <!-- BUY MODAL -->
+  <div id="buyModal" class="modal hidden">
+    <h3 id="buyTitle" style="margin:0">Buy Song</h3>
+    <p id="buyPrice" style="font-weight:900;color:#d4ff3f"></p>
+    <p class="small">Price set by artist — you pay exactly this amount. Artist gets 63%.</p>
+    <p id="myBalText" class="small"></p>
+
+    <label class="small">1. How YOU will pay:</label>
+    <select id="payMethod" onchange="updatePayInfo()">
+      <option value="Wallet">💰 Wallet Balance (Instant)</option>
+      <option value="EcoCash">EcoCash — LIVE</option>
+      <option value="Postbank">Postbank / Visa — LIVE</option>
+      <option value="Mpesa" disabled>Mpesa — PAUSED</option>
+      <option value="PayFast" disabled>PayFast — PAUSED</option>
+    </select>
+
+    <div id="walletInfo" class="card" style="background:#0a0a10">
+      <p class="small">Instant unlock. No OTP. Artist gets 63% now.</p>
+    </div>
+
+    <div id="extInfo" class="card hidden" style="background:#0a0a10">
+      <p style="color:#fff;font-weight:800;margin:0">2. Pay MAROTHOLI LESPOT:</p>
+      <div id="payDetails" style="color:#d4ff3f;font-weight:800;line-height:1.6;margin-top:6px"></div>
+      <p class="small">Pay EXACT artist price. Keep OTP / Reference.</p>
+      <label class="small">3. Paste OTP / Reference:</label>
+      <input id="payRef" placeholder="e.g. EcoCash OTP / Postbank slip no.">
+    </div>
+
+    <button class="buyBtn" onclick="submitBuy()">BUY NOW →</button>
+    <button class="shareSongBtn" style="margin-top:8px" onclick="closeBuy()">Cancel</button>
+    <p id="buyMsg" class="small center"></p>
+  </div>
+
+  <div id="discoverList">
+    <p class="small">Loading songs...</p>
+  </div>
+
+</div>
 
 <script>
-const U="https://mmkxiniybctmgoozaecp.supabase.co";
-const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
-if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
+  // -------------------------------------------------
+  // DISCOVER - OLD BETTER DESIGN RESTORED
+  // RULE: ARTIST SETS OWN PRICE - NEVER 1G fixed
+  // Price ALWAYS from song.price_grind
+  // 1G = M10 is ONLY conversion
+  // PAYMENTS: Wallet / EcoCash 128235 / Postbank 1040278800016
+  // PAUSED: Mpesa + PayFast
+  // -------------------------------------------------
 
-let ALL = [];
-let OWNED = new Set();
-let CURRENT_GENRE = 'All';
-const GENRES = ['All','Amapiano','Hip Hop','Afrobeat','Gospel','Sesotho','R&B','House'];
+  let ALL_SONGS = [];
+  let CURRENT_GENRE = 'All';
+  let CURRENT_SONG = null;
+  let MY_BAL = 0;
+  let MY_OWNED = new Set();
+  let HYPED = new Set();
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function getPrice(s){ const p = parseFloat(s.price_grinds ?? s.price_grind ?? 0.01); return (!p || isNaN(p) || p < 0.01) ? 0.01 : p; }
-function fmtPrice(p){ return p.toFixed(2)+' Grind = M'+(p*10).toFixed(2); }
-
-function renderPills(){
-  const box = document.getElementById('genrePills');
-  box.innerHTML = GENRES.map(g=>{
-    const active = g === CURRENT_GENRE;
-    return `<button onclick="setGenre('${g}')" style="width:auto;margin-top:0;padding:8px 14px;border-radius:999px;background:${active?'#c8ff00':'#222'};color:${active?'#000':'#fff'};font-size:13px">${g}</button>`;
-  }).join('');
-}
-
-function setGenre(g){
-  CURRENT_GENRE = g;
-  renderPills();
-  renderSongs();
-}
-
-function renderSongs(){
-  const q = (document.getElementById('searchBox').value || '').toLowerCase();
-  const box = document.getElementById('songList');
-  let list = ALL.filter(s=>{
-    const matchQ = (s.title||'').toLowerCase().includes(q) || (s.artist||s.artist_name||'').toLowerCase().includes(q);
-    const matchG = CURRENT_GENRE === 'All' || (s.genre||'Music') === CURRENT_GENRE;
-    return matchQ && matchG;
-  });
-  if(!list.length){ box.innerHTML = 'No songs found.'; return; }
-  box.innerHTML = list.map(s=>{
-    const title = esc(s.title || 'Untitled');
-    const artist = esc(s.artist || s.artist_name || 'Unknown');
-    const cover = esc(s.cover_url || 'icon.svg');
-    const price = getPrice(s);
-    const audio = esc(s.audio_url || s.audio_path || '');
-    const owned = OWNED.has(s.id);
-    return `
-    <div class="songCard">
-      <img src="${cover}" onerror="this.src='icon.svg'">
-      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${fmtPrice(price)}<br>${owned ? '✅ Owned - Full Song' : '⏱️ 30s Preview Free'}</small></div>
-      <div class="actions">
-        <button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',${owned ? 'false' : 'true'})">${owned ? '▶ Play Full' : '▶ Preview'}</button>
-        ${owned ? '' : `<button class="buyBtn" onclick="buySong('${s.id}',${price},'${title}')">Buy ${price.toFixed(2)}G</button>`}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function buySong(id, price, title){
-  price = parseFloat(price) || 0.01;
-  const {user, profile} = await getMyProfile();
-  if(!user){ alert('Log in first'); location.href='auth.html'; return; }
-  const bal = parseFloat(profile.grind_balance ?? profile.grinds ?? 0);
-  if(bal < price){
-    alert('Not enough Grinds. You have '+bal.toFixed(2)+'G, need '+price.toFixed(2)+'G (M'+(price*10).toFixed(2)+'). Top up in Wallet.');
-    location.href='wallet.html'; return;
-  }
-  if(!confirm('Buy "'+title+'" for '+price.toFixed(2)+' Grind (M'+(price*10).toFixed(2)+')?')) return;
-
-  const newBal = Math.round((bal - price)*100)/100;
-  await sb.from('profiles').update({grind_balance: newBal}).eq('id', user.id);
-
-  // FIXED: purchases uses buyer_id, NOT user_id
-  const {error: buyErr} = await sb.from('purchases').insert([{buyer_id: user.id, song_id: id, price_grinds: price}]);
-  if(buyErr){ alert('Buy failed: '+buyErr.message); return; }
-
-  // Pay artist
-  try{
-    const song = ALL.find(x=>x.id===id);
-    if(song && song.artist_id){
-      const {data: ap} = await sb.from('profiles').select('*').eq('id', song.artist_id).maybeSingle();
-      if(ap){ await sb.from('profiles').update({grind_balance: Math.round((parseFloat(ap.grind_balance||0)+price)*100)/100 }).eq('id', song.artist_id); }
-    }
-  }catch(e){}
-
-  alert('✅ Bought! Full song unlocked.');
-  OWNED.add(id);
-  renderSongs();
-}
-window.buySong = buySong;
-
-async function loadSongs(){
-  renderPills();
-  const box = document.getElementById('songList');
-  box.innerHTML = 'Loading songs...';
-  const {user, profile} = await getMyProfile();
-  if(profile) document.getElementById('topBal').textContent = parseFloat(profile.grind_balance ?? profile.grinds ?? 0).toFixed(2)+' Grinds';
-
-  // FIXED: load owned songs with buyer_id
-  if(user){
-    try{
-      const {data: purch, error} = await sb.from('purchases').select('song_id').eq('buyer_id', user.id);
-      if(!error && purch) OWNED = new Set(purch.map(p=>p.song_id).filter(Boolean));
-    }catch(e){ console.log('purchases error', e); }
-  }
-
-  // From songs table
-  let fromTable = [];
-  try{
-    const {data} = await sb.from('songs').select('*').order('created_at',{ascending:false});
-    fromTable = data || [];
-  }catch(e){}
-
-  // From bucket - any file not in table
-  let fromBucket = [];
-  try{
-    const {data: files} = await sb.storage.from('songs').list('',{limit:100});
-    const inTable = new Set(fromTable.map(s=> (s.audio_path||'').split('/').pop()));
-    (files||[]).filter(f=> f.name.endsWith('.mp3')||f.name.endsWith('.m4a')||f.name.endsWith('.wav')).forEach(f=>{
-      if(!inTable.has(f.name)){
-        const {data: pub} = sb.storage.from('songs').getPublicUrl(f.name);
-        const pretty = f.name.replace(/^\d+-/,'').replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
-        fromBucket.push({id:'bucket-'+f.name, title:pretty||f.name, artist:'Unknown', artist_name:'Unknown', genre:'Music', price_grinds:0.01, price_grind:0.01, audio_url:pub.publicUrl, audio_path:f.name, cover_url:'icon.svg', created_at:new Date().toISOString()});
-      }
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-  }catch(e){}
+  }
 
-  ALL = [...fromTable, ...fromBucket];
-  renderSongs();
-}
+  function setGenre(g, btn) {
+    CURRENT_GENRE = g;
+    document.querySelectorAll('#filters button').forEach(function (b) {
+      b.classList.remove('on');
+    });
+    if (btn) btn.classList.add('on');
+    applyFilter();
+  }
 
-document.addEventListener('DOMContentLoaded', loadSongs);
+  function applyFilter() {
+    const q = (document.getElementById('searchInput').value || '').toLowerCase();
+    const filtered = ALL_SONGS.filter(function (s) {
+      const matchQ = !q || (s.title || '').toLowerCase().includes(q) || (s.artist_name || '').toLowerCase().includes(q);
+      const matchG = CURRENT_GENRE === 'All' || (s.genre || 'Hip Hop') === CURRENT_GENRE;
+      return matchQ && matchG;
+    });
+    renderSongs(filtered);
+  }
+
+  function hypeCount(s) {
+    return Number(s.hype_count || s.total_hypes || 0) || Math.floor(Math.random() * 5);
+  }
+
+  function daysLeft(s) {
+    if (s.drop_date) {
+      const d = Math.ceil((new Date(s.drop_date) - new Date()) / 86400000);
+      return d > 0 ? '⏳ Drops in ' + d + ' days' : '🔥 Dropping soon';
+    }
+    return '⏳ Drops in 2 days';
+  }
+
+  function shareSong(title, artist) {
+    const text = '🔥 Listen to ' + title + ' by ' + artist + ' on Marotholi Les-Pot';
+    const url = location.origin + '/discover.html';
+    if (navigator.share) {
+      navigator.share({ title: title, text: text, url: url }).catch(function () {});
+    } else {
+      navigator.clipboard.writeText(text + ' ' + url).then(function () {
+        alert('Link copied! Share it 🔥');
+      });
+    }
+  }
+
+  function toggleHype(id, btn) {
+    if (HYPED.has(id)) {
+      HYPED.delete(id);
+      btn.classList.remove('hyped');
+      btn.textContent = '🔥 Hype';
+    } else {
+      HYPED.add(id);
+      btn.classList.add('hyped');
+      btn.textContent = '🔥 Hyped!';
+    }
+  }
+
+  // Build one card EXACTLY like screenshot
+  function buildCard(s, index, isUpcoming) {
+    const artistPrice = Number(s.price_grind || 0);
+    const maloti = (artistPrice * 10).toFixed(2);
+    const isOwned = MY_OWNED.has(s.id);
+    const rank = isUpcoming ? '#' + (index + 1) + ' ' : '';
+    const statusText = isUpcoming ? ' • DROPS SOON' : ' • ' + Number(s.total_buys || 0) + ' buys';
+    const hypeN = hypeCount(s);
+
+    const cover = s.cover_url
+      ? '<div class="cover"><img src="' + esc(s.cover_url) + '"></div>'
+      : '<div class="cover">🎵</div>';
+
+    const audioId = 'audio-' + s.id;
+
+    let bottomBtn = '';
+    if (isOwned) {
+      bottomBtn = '<button class="ownedBtn" onclick="location.href=\'library.html\'">✅ Owned - Play in Library</button>';
+    } else if (isUpcoming) {
+      bottomBtn = '<button class="buyBtn" onclick="openBuy(\'' + s.id + '\',\'' + esc(s.title) + '\',\'' + esc(s.artist_name) + '\',\'' + s.price_grind + '\',\'' + (s.artist_id || '') + '\')">Pre-Buy for ' + artistPrice + ' G</button>';
+    } else {
+      bottomBtn = '<button class="buyBtn" onclick="openBuy(\'' + s.id + '\',\'' + esc(s.title) + '\',\'' + esc(s.artist_name) + '\',\'' + s.price_grind + '\',\'' + (s.artist_id || '') + '\')">Buy for ' + artistPrice + ' G</button>';
+    }
+
+    let shareLabel = isUpcoming ? '🔗 Share Drop' : '🔗 Share This Song';
+
+    return (
+      '<div class="song-card">' +
+        '<div class="song-top">' +
+          cover +
+          '<div class="meta">' +
+            '<b>' + rank + esc(s.title) + '</b>' +
+            '<div class="sub">' + esc(s.artist_name) + ' • ' + artistPrice + ' G' + statusText + '</div>' +
+            '<div class="hype-line">' + daysLeft(s) + ' • 🔥 ' + hypeN + ' hyped</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="audio-pill">' +
+          '<audio id="' + audioId + '" controls controlsList="nodownload" preload="none" onplay="loadPreview(this, \'' + esc(s.audio_path) + '\')"></audio>' +
+        '</div>' +
+        '<div class="card-actions">' +
+          '<div class="row2">' +
+            '<button class="shareBtn" onclick="shareSong(\'' + esc(s.title) + '\',\'' + esc(s.artist_name) + '\')">' + shareLabel + '</button>' +
+            '<button class="hypeBtn" onclick="toggleHype(\'' + s.id + '\', this)">🔥 Hype</button>' +
+          '</div>' +
+          bottomBtn +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  async function loadPreview(audioEl, path) {
+    if (audioEl.dataset.loaded) return;
+    if (!path) return;
+    audioEl.dataset.loaded = '1';
+    try {
+      const { data } = await window.sb.storage.from('songs').createSignedUrl(path, 35);
+      if (data && data.signedUrl) {
+        const t = audioEl.currentTime || 0;
+        audioEl.src = data.signedUrl;
+        audioEl.currentTime = t;
+        audioEl.play().catch(function () {});
+        audioEl.addEventListener('timeupdate', function () {
+          if (audioEl.currentTime >= 30) {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+            alert('Preview ended - Buy to hear full song');
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  function renderSongs(list) {
+    const el = document.getElementById('discoverList');
+    const countEl = document.getElementById('songCount');
+    if (countEl) countEl.textContent = list.length + ' songs';
+    if (!list.length) {
+      el.innerHTML = '<p class="small">No songs found.</p>';
+      return;
+    }
+    const normal = list.filter(function (s) {
+      return !(s.status === 'upcoming' || s.is_upcoming === true);
+    });
+    if (!normal.length) {
+      el.innerHTML = '<p class="small">All songs are in Upcoming Drops above 🔥</p>';
+      return;
+    }
+    el.innerHTML = normal.map(function (s, i) {
+      return buildCard(s, i, false);
+    }).join('');
+  }
+
+  function renderUpcoming(list) {
+    const el = document.getElementById('upcomingList');
+    const up = list.filter(function (s) {
+      return s.status === 'upcoming' || s.is_upcoming === true;
+    });
+    if (!up.length) {
+      el.innerHTML = '<p class="small">No upcoming drops right now. Check back soon 🔥</p>';
+      return;
+    }
+    el.innerHTML = up.map(function (s, i) {
+      return buildCard(s, i, true);
+    }).join('');
+  }
+
+  async function loadDiscover() {
+    try {
+      const { data: songs, error } = await window.sb.from('songs').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      ALL_SONGS = songs || [];
+
+      // Load owned
+      try {
+        const { data: { user } } = await window.sb.auth.getUser();
+        if (user) {
+          const { data: buys } = await window.sb.from('purchases').select('song_id').eq('fan_id', user.id).eq('status', 'approved');
+          (buys || []).forEach(function (b) { MY_OWNED.add(b.song_id); });
+        }
+      } catch (e) {}
+
+      renderUpcoming(ALL_SONGS);
+      applyFilter();
+    } catch (e) {
+      document.getElementById('discoverList').innerHTML = 'Error: ' + esc(e.message);
+    }
+  }
+
+  async function loadTopBal() {
+    try {
+      const { user, profile } = await getMyProfile();
+      const el = document.getElementById('topBal');
+      if (!el) return;
+      if (!user) { el.textContent = 'G 0.00'; return; }
+      el.textContent = 'G ' + Number(profile?.grind_balance || 0).toFixed(2);
+    } catch (e) {}
+  }
+
+  function updatePayInfo() {
+    const m = document.getElementById('payMethod').value;
+    const isWallet = m === 'Wallet';
+    document.getElementById('walletInfo').classList.toggle('hidden', !isWallet);
+    document.getElementById('extInfo').classList.toggle('hidden', isWallet);
+    const el = document.getElementById('payDetails');
+    if (!el) return;
+    if (m === 'EcoCash') {
+      el.innerHTML = 'EcoCash MERCHANT<br>Merchant Code: 128235<br><span style="color:#fff;font-size:13px">Name: Marotholi Lespot MSU</span>';
+    }
+    if (m === 'Postbank') {
+      el.innerHTML = 'Postbank / Visa<br>Acc: 1040278800016<br><span style="color:#fff;font-size:13px">Name: Marotholi Lespot</span>';
+    }
+    if (m === 'Mpesa' || m === 'PayFast') {
+      el.innerHTML = '⏸️ PAUSED — Use EcoCash or Postbank';
+    }
+  }
+
+  async function openBuy(id, title, artist, price, artistId) {
+    CURRENT_SONG = { id: id, title: title, artist: artist, price: price, artist_id: artistId };
+    const artistPrice = Number(price);
+    const maloti = (artistPrice * 10).toFixed(2);
+    document.getElementById('buyTitle').textContent = 'Buy: ' + title + ' — ' + artist;
+    document.getElementById('buyPrice').textContent = 'Artist price: ' + artistPrice + ' G = M' + maloti + ' • Artist gets 63%';
+    document.getElementById('buyMsg').textContent = '';
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (user) {
+      const { data: p } = await window.sb.from('profiles').select('grind_balance').eq('id', user.id).single();
+      MY_BAL = Number(p?.grind_balance || 0);
+      document.getElementById('myBalText').textContent = 'Your Wallet: ' + MY_BAL.toFixed(2) + ' G';
+    } else {
+      document.getElementById('myBalText').textContent = 'Login to buy with Wallet';
+    }
+    document.getElementById('buyModal').classList.remove('hidden');
+    updatePayInfo();
+    document.getElementById('buyModal').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function closeBuy() {
+    document.getElementById('buyModal').classList.add('hidden');
+  }
+
+  async function submitBuy() {
+    const { data: { user } } = await window.sb.auth.getUser();
+    if (!user) { location.href = 'auth.html'; return; }
+    const method = document.getElementById('payMethod').value;
+    const msg = document.getElementById('buyMsg');
+    const price = Number(CURRENT_SONG.price);
+    if (method === 'Mpesa' || method === 'PayFast') {
+      msg.textContent = '⏸️ ' + method + ' is PAUSED. Use Wallet, EcoCash or Postbank.';
+      return;
+    }
+    if (method === 'Wallet') {
+      if (MY_BAL < price) {
+        msg.textContent = 'Not enough. You have ' + MY_BAL + ' G, need ' + price + ' G (artist price). Top up in Wallet.';
+        return;
+      }
+      await buySongWithWallet(CURRENT_SONG.id, price, CURRENT_SONG.artist_id);
+      return;
+    }
+    const ref = document.getElementById('payRef').value.trim();
+    if (!ref) { msg.textContent = 'Paste OTP / Reference first.'; return; }
+    msg.textContent = 'Sending...';
+    const { error } = await window.sb.from('purchases').insert({
+      song_id: CURRENT_SONG.id,
+      fan_id: user.id,
+      price_grind: price,
+      payment_method: method,
+      payment_ref: ref,
+      status: 'pending'
+    });
+    if (error) { msg.textContent = error.message; return; }
+    msg.textContent = '✅ Sent! Wait for Admin approval.';
+    closeBuy();
+    setTimeout(function () { location.href = 'library.html'; }, 800);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    loadDiscover();
+    loadTopBal();
+  });
 </script>
 </body>
 </html>
