@@ -1,25 +1,8 @@
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0a0a;color:#fff;font-family:system-ui,Arial,sans-serif;padding-bottom:90px}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#111;position:sticky;top:0;z-index:10}
-.logo{font-weight:900;letter-spacing:1px}.logo span{color:#c8ff00}
-.badge{background:#c8ff00;color:#000;padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;text-decoration:none}
-.wrap{max-width:520px;margin:0 auto;padding:12px}
-.card{background:#151515;border:1px solid #222;border-radius:16px;padding:16px;margin-bottom:12px}
-h2{font-size:20px}h3{font-size:16px;margin-bottom:6px}
-.small{color:#aaa;font-size:13px;line-height:1.5}
-input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#fff;padding:12px;border-radius:10px;margin-top:8px}
-button{background:#c8ff00;color:#000;border:0;padding:12px 16px;border-radius:10px;font-weight:800;cursor:pointer;width:100%;margin-top:8px}
-button:active{transform:scale(.98)}
-.songCard{display:flex;gap:10px;align-items:center;background:#1c1c1c;border:1px solid #262626;border-radius:12px;padding:10px;margin-top:10px}
-.songCard img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#222}
-.songCard .info{flex:1;min-width:0}.songCard .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.songCard .info small{color:#aaa}
-.songCard .actions{display:flex;flex-direction:column;gap:6px;min-width:90px}
-.playBtn{background:#c8ff00}.buyBtn{background:#fff}
-.miniPlayer{position:fixed;left:0;right:0;bottom:64px;background:#111;border-top:1px solid #222;display:flex;align-items:center;gap:10px;padding:10px 12px;z-index:50}
-.miniPlayer.hidden{display:none}
-.miniPlayer img{width:44px;height:44px;border-radius:8px;object-fit:cover}
-.miniPlayer .pInfo{flex:1;min-width:0}.miniPlayer .pInfo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.miniPlayer .pInfo small{color:#aaa}
-.miniPlayer button{width:44px;padding:10px}.closeBtn{background:#222!important;color:#fff!important}
-.bottomnav{position:fixed;left:0;right:0;bottom:0;background:#111;border-top:1px solid #222;display:flex;z-index:60}
-.bottomnav a{flex:1;text-align:center;padding:8px 2px;color:#aaa;text-decoration:none;font-size:11px;line-height:1.2}
-.bottomnav a.active{color:#c8ff00}
+/* Marotholi Les-Pot - ONE simple style */
+* { box-sizing: border-box; }
+body { background: #0f0f0f; color: #fff; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+a { color: #d4ff3f; }
+button { cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
