@@ -3,25 +3,446 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marotholi Les-Pot</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#d4ff3f">
-<meta name="description" content="Marotholi Les-Pot — Lesotho music. Stream, buy, and support local artists. 1 Grind = M10. EcoCash & Postbank.">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="LES-POT">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" href="icon-192.png">
-<script>window.location.replace('discover.html?v='+Date.now());</script>
-<style>body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:60px 20px;margin:0}h1{color:#d4ff3f}a{color:#d4ff3f;font-weight:900}.loader{width:40px;height:40px;border:4px solid #333;border-top:4px solid #d4ff3f;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}@keyframes spin{to{transform:rotate(360deg)}}.small{font-size:13px;opacity:.6;margin-top:20px}</style>
+<title>Marotholi LES-POT</title>
+<meta name="theme-color" content="#c8ff00">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{background:#0a0a0a;color:#fff;padding-bottom:90px}
+.top{position:sticky;top:0;z-index:50;background:#c8ff00;color:#000;text-align:center;padding:14px 10px;font-weight:900;font-size:19px;letter-spacing:.5px}
+.top span{color:#000}
+.top .sub{font-size:12px;font-weight:600;opacity:.7}
+.wrap{max-width:620px;margin:0 auto;padding:14px}
+.card{background:#1c1c1c;border:1px solid #2a2a2a;border-radius:16px;padding:16px;margin-bottom:14px}
+.card h2{font-size:22px;margin-bottom:6px}
+.card h3{font-size:18px;margin-bottom:8px}
+.muted{color:#aaa;font-size:14px;line-height:1.5}
+label{display:block;color:#aaa;font-size:14px;margin:14px 0 6px;font-weight:600}
+input,select{width:100%;padding:14px;background:#000;border:1px solid #333;border-radius:12px;color:#fff;font-size:16px;outline:none}
+input:focus{border-color:#c8ff00}
+input::placeholder{color:#666}
+.btn{width:100%;padding:15px;background:#c8ff00;color:#000;border:0;border-radius:12px;font-weight:900;font-size:16px;cursor:pointer;margin-top:12px}
+.btn:active{transform:scale(.98)}
+.btn.dark{background:#2a2a2a;color:#fff}
+.btn.white{background:#fff;color:#000}
+.btn.small{width:auto;padding:10px 18px;border-radius:999px}
+.btn.play{background:#c8ff00;color:#000;padding:12px 22px;border-radius:999px;font-weight:900;white-space:nowrap}
+.row{display:flex;gap:10px;align-items:center}
+.space{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.song{display:flex;gap:12px;align-items:center}
+.cover{width:64px;height:64px;min-width:64px;border-radius:10px;background:#333;object-fit:cover}
+.coverBox{width:64px;height:64px;min-width:64px;border-radius:10px;background:#333;display:flex;align-items:center;justify-content:center;font-size:26px}
+.meta{flex:1;min-width:0}
+.meta b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta small{color:#aaa;font-size:13px;line-height:1.4;display:block}
+.price{color:#c8ff00;font-weight:900}
+.pill{background:#c8ff00;color:#000;font-weight:900;padding:6px 14px;border-radius:999px;font-size:14px;white-space:nowrap}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{flex:1;background:#2a2a2a;color:#fff;border:0;padding:12px;border-radius:12px;font-weight:700;cursor:pointer}
+.tabs button.on{background:#c8ff00;color:#000}
+.paybox{background:#000;border:1px solid #333;border-radius:12px;padding:12px;margin-top:10px;line-height:1.6;display:none}
+.paybox.on{display:block}
+.paybox b{color:#c8ff00;font-size:18px}
+.hidden{display:none!important}
+.center{text-align:center}
+.link{color:#c8ff00;text-decoration:underline;cursor:pointer;font-weight:700}
+.player{position:fixed;bottom:68px;left:0;right:0;background:#111;border-top:1px solid #c8ff00;padding:10px 12px;z-index:60}
+.player input[type=range]{flex:1;accent-color:#c8ff00}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.controls button{background:#2a2a2a;color:#fff;border:0;padding:10px 14px;border-radius:999px;font-weight:700}
+.controls button.on{background:#c8ff00;color:#000}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #222;display:flex;z-index:70}
+.bottom button{flex:1;background:none;border:0;color:#aaa;padding:10px 2px;font-size:12px;cursor:pointer}
+.bottom button.on{color:#c8ff00;font-weight:900}
+.green{color:#c8ff00}
+.ok{background:#0a2a0a;border:1px solid #2ecc71;border-radius:12px;padding:12px;margin-top:10px}
+.err{background:#2a0a0a;border:1px solid #ff5252;border-radius:12px;padding:12px;margin-top:10px}
+.filelabel{display:block;background:#000;border:1px solid #333;border-radius:12px;padding:12px;cursor:pointer}
+.filelabel input{display:none}
+</style>
 </head>
 <body>
-<h1>MAROTHOLI LES-POT 🇱🇸</h1>
-<div class="loader"></div>
-<p>Loading Discover...</p>
-<p><a href="discover.html">Click here if not redirected →</a></p>
-<p class="small">1 Grind = M10 • EcoCash & Postbank or VISA • Deposit: M-Pesa / PayFast Paused • Withdrawal: M-Pesa Allowed</p>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});}</script>
+
+<div class="top">MAROTHOLI LES-POT <span id="topPage"></span><div class="sub" id="topSub">Logged in as: <span id="topEmail">Guest</span> • Balance in Wallet tab</div></div>
+
+<div class="wrap">
+
+<!-- ============ DISCOVER ============ -->
+<div id="page-Discover">
+<div class="card center">
+<h2>Welcome to LES-POT 🇱🇸</h2>
+<p class="muted">Discover • Library • Upload • Wallet • Account</p>
+<button class="btn" onclick="go('Discover')">🔥 ENTER DISCOVER →</button>
+<button class="btn dark" onclick="go('Account')">👤 LOGIN / REGISTER</button>
+<button class="btn dark" onclick="go('Wallet')">💰 WALLET</button>
+<p class="muted" style="margin-top:10px">If you stay here, the app below also works — same account, same wallet.</p>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px"><h2>🔥 Discover</h2><span class="pill" id="discBal">0.00 G</span></div>
+<div class="card"><input id="search" placeholder="🔍 Search song / artist..." oninput="renderDiscover()"></div>
+<div id="discoverList"></div>
+</div>
+
+<!-- ============ LIBRARY ============ -->
+<div id="page-Library" class="hidden">
+<div class="space"><h2>My Bought Songs</h2><span class="pill" id="libBal">0.00 G</span></div>
+<p class="muted">Full songs. Stream in app only. Never leaves app.</p>
+<div class="row" style="margin:12px 0"><button class="btn white" style="margin:0" onclick="playAll(false)">▶️ Play All</button><button class="btn dark" style="margin:0" onclick="playAll(true)">🔀 Shuffle Play</button></div>
+<div id="libraryList"></div>
+<p class="center" style="margin-top:14px"><span class="link" onclick="go('Discover')">🔥 Buy more in Discover →</span></p>
+</div>
+
+<!-- ============ UPLOAD ============ -->
+<div id="page-Upload" class="hidden">
+<div class="card">
+<h3>⬆️ Upload Your Song</h3>
+<p class="muted">MP3 only, max 15MB. You earn 63% on every sale. 1G = M10.</p>
+<label>Song Title</label><input id="upTitle" placeholder="e.g. A Jay & 5 Hoes">
+<label>Artist Name</label><input id="upArtist" placeholder="e.g. Elway X Zepa Boy">
+<label>Price in Grind (G) — e.g. 0.2 = M2</label><input id="upPrice" type="number" step="0.01" min="0.01" value="0.2">
+<p class="muted" id="upPriceHint">You get 63% • Buyer pays 0.2G = M2.00</p>
+<label>Cover Image (optional - JPG/PNG, max 2MB)</label>
+<label class="filelabel"><input type="file" id="upCover" accept="image/*"><span id="coverName">Choose file &nbsp; No file chosen</span></label>
+<label>Audio File — MP3</label>
+<label class="filelabel"><input type="file" id="upAudio" accept="audio/mpeg,audio/mp3"><span id="audioName">Choose file &nbsp; No file chosen</span></label>
+<button class="btn" onclick="uploadSong()">UPLOAD SONG →</button>
+<div id="upMsg"></div>
+</div>
+<p><span class="link" onclick="go('Discover')">Open full Upload page →</span></p>
+</div>
+
+<!-- ============ WALLET ============ -->
+<div id="page-Wallet" class="hidden">
+<div class="card center"><h2 id="walletBal">0.00 G</h2><p class="muted" id="walletRand">M0.00 • 1G = M10</p></div>
+<div class="tabs"><button id="tabDep" class="on" onclick="walletTab('dep')">➕ Deposit</button><button id="tabWd" onclick="walletTab('wd')">➖ Withdraw</button><button id="tabHist" onclick="walletTab('hist')">📜 History</button></div>
+
+<div id="walletDep" class="card">
+<h3>➕ Deposit</h3>
+<p class="muted">Send money to Marotholi, then submit proof. Admin approves.</p>
+<label>Amount in Grind (G)</label><input id="depG" type="number" step="0.01" min="0.1" placeholder="e.g. 1 = M10">
+<p class="muted" id="depRand">M0.00</p>
+<label>Payment Method</label><select id="depMethod" onchange="showDepBox()"><option value="EcoCash">EcoCash</option><option value="Mpesa">M-Pesa</option><option value="Postbank">Postbank</option></select>
+<div id="boxEcoCash" class="paybox on">ECOCASH<br>Send to:<br><b>128235</b><br>Marotholi Lespot MSU<br><button class="btn small dark" onclick="copyT('128235')">📋 Copy</button></div>
+<div id="boxMpesa" class="paybox">M-PESA<br>Send to:<br><b>59070688</b><br>Tsosane Molibeli<br><button class="btn small dark" onclick="copyT('59070688')">📋 Copy</button></div>
+<div id="boxPostbank" class="paybox">POSTBANK<br>Account:<br><b>1040278800016</b><br>Marotholi Lespot<br><button class="btn small dark" onclick="copyT('1040278800016')">📋 Copy</button></div>
+<label>Your Name + Number You Sent From</label><input id="depSender" placeholder="Your name + number">
+<label>Reference / Proof</label><input id="depRef" placeholder="e.g. EcoCash / M-Pesa SMS code">
+<button class="btn" onclick="submitDeposit()">Submit Deposit →</button>
+<div id="depMsg"></div>
+</div>
+
+<div id="walletWd" class="card hidden">
+<h3>➖ Withdraw Royalties</h3>
+<p class="muted">Choose where YOU want YOUR money. M-Pesa allowed — it's your own number.</p>
+<label>Amount in Grind (G)</label><input id="wdG" type="number" step="0.01" min="0.1" placeholder="e.g. 3 = M30">
+<p class="muted" id="wdRand">M0.00</p>
+<label>Pay Me Via</label><select id="wdMethod"><option value="EcoCash">EcoCash — My Number</option><option value="Mpesa">M-Pesa — My Own Number</option><option value="Postbank">Postbank — My Account</option></select>
+<label>Your Number / Account</label><input id="wdNumber" placeholder="Your M-Pesa / EcoCash number / Postbank account">
+<label>Your Full Name</label><input id="wdName" placeholder="Full name on account">
+<button class="btn" onclick="submitWithdraw()">Request Withdrawal →</button>
+<div id="wdMsg"></div>
+</div>
+
+<div id="walletHist" class="card hidden"><h3>📜 History</h3><div id="histList">Loading...</div></div>
+</div>
+
+<!-- ============ ADMIN ============ -->
+<div id="page-Admin" class="hidden">
+<div class="card"><p>✅ <b>Admin ready — Owner:</b><br><span id="adminEmail">marotholi.co.ls@gmail.com</span></p></div>
+<div class="tabs"><button id="aDep" class="on" onclick="adminTab('dep')">Deposits</button><button id="aPur" onclick="adminTab('pur')">Purchases</button><button id="aWd" onclick="adminTab('wd')">Withdrawals</button><button id="aSongs" onclick="adminTab('songs')">All Songs</button></div>
+<h2 style="margin:10px 0">Pending <span class="green" id="adminTitle">Deposits</span></h2>
+<div id="adminList">Loading...</div>
+<button class="btn white" onclick="loadAdmin()">🔄 Refresh</button>
+</div>
+
+<!-- ============ ACCOUNT ============ -->
+<div id="page-Account" class="hidden">
+<div class="card center"><h2 id="accName">Guest</h2><p class="muted" id="accEmail">Login to buy & earn</p><h2 style="margin-top:10px" id="accBal">0.00 G</h2></div>
+<div class="card"><h3>Login / Register</h3><label>Email</label><input id="loginEmail" type="email" placeholder="you@email.com"><label>Password</label><input id="loginPass" type="password" placeholder="Password"><button class="btn" onclick="doLogin()">Login</button><button class="btn dark" onclick="doRegister()">Create Account</button><div id="authMsg"></div></div>
+<div class="card"><h3>Withdrawal Preference</h3><p class="muted">Where do you want royalties? M-Pesa allowed.</p><label>Method</label><select id="prefMethod"><option>EcoCash</option><option>Mpesa</option><option>Postbank</option></select><label>Your Number / Account</label><input id="prefNumber" placeholder="Your number"><button class="btn" onclick="savePref()">Save Preference</button><div id="prefMsg"></div></div>
+<div class="card"><button class="btn dark" onclick="doLogout()">Logout</button></div>
+</div>
+
+</div>
+
+<!-- PLAYER -->
+<div class="player" id="playerBar" style="display:none">
+<div class="space"><b id="nowPlaying">🎵 —</b><span id="nowCount"></span></div>
+<div class="row" style="margin-top:8px"><button onclick="togglePlay()" style="background:none;border:0;color:#fff;font-size:20px" id="playPauseBtn">⏸️</button><span id="timeLabel" style="font-size:13px;white-space:nowrap">0:00 / 0:00</span><input type="range" id="seek" value="0" min="0" max="100"><span>🔊</span><button onclick="shareCurrent()" style="background:none;border:0;font-size:18px">⋮</button></div>
+<div class="controls"><button onclick="prevSong()">⏮️ Prev</button><button class="on" onclick="togglePlay()" id="pauseBtn2">⏸️ Pause</button><button onclick="nextSong()">⏭️ Next</button></div>
+<div class="controls"><button id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle: OFF</button><button id="repeatBtn" onclick="toggleRepeat()">🔁 Repeat: OFF</button><button onclick="openSettings()">⚙️ Settings</button></div>
+<div class="controls"><button onclick="shareCurrent()">🔗 Share</button></div>
+<audio id="audioEl" style="display:none"></audio>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom">
+<button id="navDiscover" class="on" onclick="go('Discover')">🔥<br>Discover</button>
+<button id="navLibrary" onclick="go('Library')">📚<br>Library</button>
+<button id="navUpload" onclick="go('Upload')">⬆️<br>Upload</button>
+<button id="navWallet" onclick="go('Wallet')">💰<br>Wallet</button>
+<button id="navAdmin" onclick="go('Admin')">🛠️<br>Admin</button>
+<button id="navAccount" onclick="go('Account')">👤<br>Account</button>
+</div>
+
+<script>
+// ===== PUT YOUR SUPABASE KEYS HERE =====
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SB = SUPABASE_URL.replace(/\/$/,'') + "/rest/v1";
+function sbHeaders(){ return { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=representation" }; }
+let SONGS=[], LIB=[], QUEUE=[], QINDEX=0, SHUFFLE=false, REPEAT=false, BALANCE=0, CURRENT_USER=null, ADMIN_MODE='dep';
+
+function go(page){
+  ['Discover','Library','Upload','Wallet','Admin','Account'].forEach(p=>{
+    document.getElementById('page-'+p).classList.toggle('hidden', p!==page);
+    document.getElementById('nav'+p).classList.toggle('on', p===page);
+  });
+  document.getElementById('topPage').textContent = page==='Discover' ? '' : ' — ' + page.toUpperCase();
+  if(page==='Discover') renderDiscover();
+  if(page==='Library') renderLibrary();
+  if(page==='Wallet') loadWallet();
+  if(page==='Admin') loadAdmin();
+  if(page==='Account') renderAccount();
+  window.scrollTo(0,0);
+}
+function copyT(t){ navigator.clipboard.writeText(t).then(()=>alert('Copied: '+t)); }
+function showDepBox(){
+  const m=document.getElementById('depMethod').value;
+  document.getElementById('boxEcoCash').classList.toggle('on', m==='EcoCash');
+  document.getElementById('boxMpesa').classList.toggle('on', m==='Mpesa');
+  document.getElementById('boxPostbank').classList.toggle('on', m==='Postbank');
+}
+function fmtG(g){ return (parseFloat(g)||0).toFixed(2)+'G'; }
+function fmtM(g){ return 'M'+((parseFloat(g)||0)*10).toFixed(2); }
+
+// ===== LOAD SONGS =====
+async function loadSongs(){
+  try{
+    const r=await fetch(SB+"/songs?select=*&order=created_at.desc",{headers:sbHeaders()});
+    SONGS=await r.json();
+  }catch(e){ SONGS=[]; }
+  renderDiscover();
+}
+function renderDiscover(){
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+  const list=document.getElementById('discoverList');
+  const f=SONGS.filter(s=>!q||(s.title||'').toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q));
+  if(!f.length){ list.innerHTML='<div class="card center"><h3>No songs yet</h3><p class="muted">Be first to upload.</p></div>'; return; }
+  list.innerHTML=f.map(s=>{
+    const g=parseFloat(s.price_grind ?? s.price_grinds ?? 0.35);
+    return `<div class="card"><div class="song">
+    ${s.cover_url?`<img class="cover" src="${s.cover_url}">`:`<div class="coverBox">🎵</div>`}
+    <div class="meta"><b>${s.title||'Untitled'}</b><small>${s.artist||'Unknown'}<br><span class="price">${g.toFixed(2)}G = ${fmtM(g)}</span></small></div>
+    <button class="btn small" style="width:auto;margin:0" onclick="previewSong('${s.id}')">▶</button>
+    <button class="btn play" onclick="buySong('${s.id}')">BUY</button>
+    </div></div>`;
+  }).join('');
+}
+
+// ===== LIBRARY =====
+async function loadLibrary(){
+  if(!CURRENT_USER){ LIB=[]; renderLibrary(); return; }
+  try{
+    const r=await fetch(SB+"/purchases?select=*,songs(*)&buyer_id=eq."+CURRENT_USER.id,{headers:sbHeaders()});
+    const d=await r.json();
+    LIB=d.map(x=>x.songs).filter(Boolean);
+  }catch(e){ LIB=[]; }
+  renderLibrary();
+}
+function renderLibrary(){
+  document.getElementById('libBal').textContent=fmtG(BALANCE);
+  const el=document.getElementById('libraryList');
+  if(!LIB.length){ el.innerHTML='<div class="card center"><h3>No bought songs yet</h3></div>'; return; }
+  el.innerHTML=LIB.map((s,i)=>`<div class="card"><div class="song">
+    ${s.cover_url?`<img class="cover" src="${s.cover_url}">`:`<div class="coverBox">🎵</div>`}
+    <div class="meta"><b>${s.title||''}</b><small>${s.artist||''} • ${(parseFloat(s.price_grind||0.35)).toFixed(2)}G • APPROVED</small></div>
+    <button class="btn play" onclick="playFromLibrary(${i})">▶ PLAY</button></div>
+    <button class="btn dark" onclick="shareSong('${s.id}')">🔗 Share This Song</button></div>`).join('');
+}
+
+// ===== PLAYER =====
+function playAll(shuffle){
+  if(!LIB.length){ alert('No bought songs yet. Buy in Discover.'); return; }
+  QUEUE=[...LIB]; if(shuffle) QUEUE.sort(()=>Math.random()-.5);
+  QINDEX=0; playQueue();
+}
+function playFromLibrary(i){ QUEUE=[...LIB]; QINDEX=i; playQueue(); }
+function previewSong(id){
+  const s=SONGS.find(x=>x.id==id); if(!s) return;
+  QUEUE=[s]; QINDEX=0; playQueue();
+}
+function playQueue(){
+  const s=QUEUE[QINDEX]; if(!s) return;
+  const bar=document.getElementById('playerBar'); bar.style.display='block';
+  document.getElementById('nowPlaying').textContent='🎵 '+s.title+' — '+(s.artist||'');
+  document.getElementById('nowCount').textContent='('+(QINDEX+1)+'/'+QUEUE.length+')';
+  const a=document.getElementById('audioEl');
+  a.src=s.audio_url||''; a.play().catch(()=>{});
+  document.getElementById('playPauseBtn').textContent='⏸️';
+  document.getElementById('pauseBtn2').textContent='⏸️ Pause';
+  a.ontimeupdate=()=>{
+    if(!a.duration) return;
+    document.getElementById('seek').value=(a.currentTime/a.duration*100)||0;
+    document.getElementById('timeLabel').textContent=fmtTime(a.currentTime)+' / '+fmtTime(a.duration);
+  };
+  a.onended=()=>{ if(REPEAT){ a.currentTime=0; a.play(); } else nextSong(); };
+}
+function fmtTime(t){ t=Math.floor(t||0); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+function togglePlay(){ const a=document.getElementById('audioEl'); if(a.paused){a.play(); document.getElementById('playPauseBtn').textContent='⏸️'; document.getElementById('pauseBtn2').textContent='⏸️ Pause';} else {a.pause(); document.getElementById('playPauseBtn').textContent='▶️'; document.getElementById('pauseBtn2').textContent='▶️ Play';} }
+function nextSong(){ if(!QUEUE.length) return; if(SHUFFLE){ QINDEX=Math.floor(Math.random()*QUEUE.length); } else { QINDEX=(QINDEX+1)%QUEUE.length; } playQueue(); }
+function prevSong(){ if(!QUEUE.length) return; QINDEX=(QINDEX-1+QUEUE.length)%QUEUE.length; playQueue(); }
+function toggleShuffle(){ SHUFFLE=!SHUFFLE; document.getElementById('shuffleBtn').textContent='🔀 Shuffle: '+(SHUFFLE?'ON':'OFF'); document.getElementById('shuffleBtn').classList.toggle('on',SHUFFLE); }
+function toggleRepeat(){ REPEAT=!REPEAT; document.getElementById('repeatBtn').textContent='🔁 Repeat: '+(REPEAT?'ON':'OFF'); document.getElementById('repeatBtn').classList.toggle('on',REPEAT); }
+function openSettings(){ alert('Settings: Quality • Autoplay • Download for offline (coming soon)'); }
+function shareSong(id){ const s=SONGS.find(x=>x.id==id)||LIB.find(x=>x.id==id); window.open('https://wa.me/?text='+encodeURIComponent('🔥 Listen: '+(s?.title||'Song')+' on LES-POT 🇱🇸 '+location.href)); }
+function shareCurrent(){ if(!QUEUE[QINDEX]) return; shareSong(QUEUE[QINDEX].id); }
+document.getElementById('seek').addEventListener('input',e=>{ const a=document.getElementById('audioEl'); if(a.duration) a.currentTime=(e.target.value/100)*a.duration; });
+
+// ===== BUY — FIXED: DO NOT INSERT platform_grind (generated column) =====
+async function buySong(id){
+  const s=SONGS.find(x=>x.id==id); if(!s) return;
+  const g=parseFloat(s.price_grind ?? s.price_grinds ?? 0.35);
+  if(!CURRENT_USER){ alert('Login first to buy.'); go('Account'); return; }
+  if(BALANCE < g){ alert('Low balance. Top up in Wallet. Balance: '+fmtG(BALANCE)); go('Wallet'); return; }
+  if(!confirm('Buy: '+s.title+'\n'+g.toFixed(2)+'G = '+fmtM(g)+' • Artist gets 63%\nYour Wallet: '+fmtG(BALANCE)+'\nTop up in Wallet if low')) return;
+  try{
+    // ONLY insert these — platform_grind is GENERATED in Supabase, never insert it
+    const r=await fetch(SB+"/purchases",{method:"POST",headers:sbHeaders(),body:JSON.stringify({song_id:s.id, buyer_id:CURRENT_USER.id, price_grind:g, status:'completed'})});
+    if(!r.ok){ const t=await r.text(); throw new Error(t); }
+    BALANCE-=g; updateBalances();
+    alert('✅ Bought! Check Library.');
+    await loadLibrary(); go('Library');
+  }catch(e){ alert('Purchase save failed: '+e.message); }
+}
+
+// ===== UPLOAD — FIXED: DO NOT INSERT price_maloti (generated column) =====
+document.getElementById('upCover').addEventListener('change',e=>{ document.getElementById('coverName').textContent=e.target.files[0]?.name||'No file chosen'; });
+document.getElementById('upAudio').addEventListener('change',e=>{ document.getElementById('audioName').textContent=e.target.files[0]?.name||'No file chosen'; });
+document.getElementById('upPrice').addEventListener('input',e=>{ const g=parseFloat(e.target.value)||0; document.getElementById('upPriceHint').textContent='You get 63% • Buyer pays '+g.toFixed(2)+'G = '+fmtM(g); });
+async function uploadSong(){
+  const title=document.getElementById('upTitle').value.trim();
+  const artist=document.getElementById('upArtist').value.trim();
+  const price=parseFloat(document.getElementById('upPrice').value);
+  const audioFile=document.getElementById('upAudio').files[0];
+  const msg=document.getElementById('upMsg');
+  if(!title||!artist||!price||!audioFile){ msg.innerHTML='<div class="err">Fill title, artist, price and MP3.</div>'; return; }
+  if(audioFile.size>15*1024*1024){ msg.innerHTML='<div class="err">MP3 max 15MB.</div>'; return; }
+  msg.innerHTML='<div class="ok">Uploading... (connect Storage in Supabase for real file upload, then insert below)</div>';
+  try{
+    // IMPORTANT: ONLY price_grind — NEVER price_maloti, Supabase calculates it
+    const payload={ title, artist, price_grind: price, status:'pending', uploader_id: CURRENT_USER?.id||null };
+    // If you have Storage URLs, add: payload.audio_url = audioUrl; payload.cover_url = coverUrl;
+    const r=await fetch(SB+"/songs",{method:"POST",headers:sbHeaders(),body:JSON.stringify(payload)});
+    if(!r.ok){ const t=await r.text(); throw new Error(t); }
+    msg.innerHTML='<div class="ok">✅ Uploaded! Waiting for Admin approval.</div>';
+    await loadSongs();
+  }catch(e){ msg.innerHTML='<div class="err">FAILED: '+e.message+'</div>'; }
+}
+
+// ===== WALLET =====
+function walletTab(t){
+  document.getElementById('tabDep').classList.toggle('on',t==='dep');
+  document.getElementById('tabWd').classList.toggle('on',t==='wd');
+  document.getElementById('tabHist').classList.toggle('on',t==='hist');
+  document.getElementById('walletDep').classList.toggle('hidden',t!=='dep');
+  document.getElementById('walletWd').classList.toggle('hidden',t!=='wd');
+  document.getElementById('walletHist').classList.toggle('hidden',t!=='hist');
+  if(t==='hist') loadHistory();
+}
+function updateBalances(){
+  document.getElementById('discBal').textContent=fmtG(BALANCE);
+  document.getElementById('walletBal').textContent=fmtG(BALANCE);
+  document.getElementById('walletRand').textContent=fmtM(BALANCE)+' • 1G = M10';
+  document.getElementById('accBal').textContent=fmtG(BALANCE);
+}
+async function loadWallet(){ updateBalances(); }
+document.getElementById('depG').addEventListener('input',e=>{ document.getElementById('depRand').textContent=fmtM(e.target.value); });
+document.getElementById('wdG').addEventListener('input',e=>{ document.getElementById('wdRand').textContent=fmtM(e.target.value); });
+async function submitDeposit(){
+  const g=parseFloat(document.getElementById('depG').value);
+  const method=document.getElementById('depMethod').value;
+  const sender=document.getElementById('depSender').value.trim();
+  const ref=document.getElementById('depRef').value.trim();
+  const msg=document.getElementById('depMsg');
+  if(!g||!sender){ msg.innerHTML='<div class="err">Enter amount + your name/number.</div>'; return; }
+  try{
+    const r=await fetch(SB+"/deposits",{method:"POST",headers:sbHeaders(),body:JSON.stringify({user_id:CURRENT_USER?.id||null, amount_grind:g, method, sender, reference:ref, status:'pending'})});
+    if(!r.ok) throw new Error(await r.text());
+    msg.innerHTML='<div class="ok">✅ Deposit request sent. Admin will approve.</div>';
+  }catch(e){ msg.innerHTML='<div class="err">Failed: '+e.message+'</div>'; }
+}
+async function submitWithdraw(){
+  const g=parseFloat(document.getElementById('wdG').value);
+  const method=document.getElementById('wdMethod').value;
+  const number=document.getElementById('wdNumber').value.trim();
+  const name=document.getElementById('wdName').value.trim();
+  const msg=document.getElementById('wdMsg');
+  if(!g||!number||!name){ msg.innerHTML='<div class="err">Fill amount, number, name.</div>'; return; }
+  if(g>BALANCE){ msg.innerHTML='<div class="err">Insufficient balance.</div>'; return; }
+  try{
+    const r=await fetch(SB+"/withdrawals",{method:"POST",headers:sbHeaders(),body:JSON.stringify({user_id:CURRENT_USER?.id||null, amount_grind:g, method, account_number:number, account_name:name, status:'pending'})});
+    if(!r.ok) throw new Error(await r.text());
+    msg.innerHTML='<div class="ok">✅ Withdrawal sent. Paid to your '+method+' ('+number+').</div>';
+  }catch(e){ msg.innerHTML='<div class="err">Failed: '+e.message+'</div>'; }
+}
+async function loadHistory(){
+  const el=document.getElementById('histList');
+  try{
+    const r=await fetch(SB+"/deposits?select=*&order=created_at.desc&limit=20",{headers:sbHeaders()});
+    const d=await r.json();
+    el.innerHTML=!d.length?'No history yet.':d.map(x=>`<div class="space" style="padding:8px 0;border-bottom:1px solid #222"><span>${x.method} • ${x.status}</span><b>${fmtG(x.amount_grind)}</b></div>`).join('');
+  }catch(e){ el.innerHTML='Failed to load.'; }
+}
+
+// ===== ADMIN =====
+function adminTab(m){
+  ADMIN_MODE=m;
+  ['dep','pur','wd','songs'].forEach(k=>document.getElementById('a'+(k==='dep'?'Dep':k==='pur'?'Pur':k==='wd'?'Wd':'Songs')).classList.toggle('on',k===m));
+  document.getElementById('adminTitle').textContent=m==='dep'?'Deposits':m==='pur'?'Purchases':m==='wd'?'Withdrawals':'All Songs';
+  loadAdmin();
+}
+async function loadAdmin(){
+  const el=document.getElementById('adminList'); el.innerHTML='Loading...';
+  try{
+    if(ADMIN_MODE==='songs'){ el.innerHTML=SONGS.map(s=>`<div class="card"><b>${s.title}</b><br><span class="muted">${s.artist} • ${fmtG(s.price_grind)}</span></div>`).join('')||'No songs.'; return; }
+    const table=ADMIN_MODE==='dep'?'deposits':ADMIN_MODE==='wd'?'withdrawals':'purchases';
+    const r=await fetch(SB+"/"+table+"?select=*&status=eq.pending&order=created_at.desc",{headers:sbHeaders()});
+    const d=await r.json();
+    if(!d.length){ el.innerHTML='No pending '+table+'.'; return; }
+    el.innerHTML=d.map(x=>`<div class="card"><b>${fmtG(x.amount_grind||x.price_grind||0)} — </b><br><span class="muted">Email: ${x.email||CURRENT_USER?.email||'—'} • Phone: ${x.account_number||x.sender||'—'}<br>Balance: ${fmtG(BALANCE)}<br>ID: ${x.id}<br>Date: ${x.created_at||''}</span><br><br><div class="row"><button class="btn" style="margin:0" onclick="adminApprove('${table}','${x.id}')">✅ APPROVE PAID</button><button class="btn dark" style="margin:0" onclick="adminReject('${table}','${x.id}')">Reject</button></div></div>`).join('');
+  }catch(e){ el.innerHTML='Failed: '+e.message; }
+}
+async function adminApprove(table,id){
+  try{
+    const r=await fetch(SB+"/"+table+"?id=eq."+id,{method:"PATCH",headers:sbHeaders(),body:JSON.stringify({status:'approved'})});
+    if(!r.ok) throw new Error(await r.text());
+    alert('✅ Approved'); loadAdmin();
+  }catch(e){ alert('Failed: '+e.message); }
+}
+async function adminReject(table,id){
+  try{ await fetch(SB+"/"+table+"?id=eq."+id,{method:"PATCH",headers:sbHeaders(),body:JSON.stringify({status:'rejected'})}); loadAdmin(); }catch(e){ alert(e.message); }
+}
+
+// ===== AUTH (simple demo — wire to Supabase Auth) =====
+function renderAccount(){
+  document.getElementById('accName').textContent=CURRENT_USER?.email||'Guest';
+  document.getElementById('accEmail').textContent=CURRENT_USER?CURRENT_USER.email:'Login to buy & earn';
+  document.getElementById('topEmail').textContent=CURRENT_USER?.email||'Guest';
+  document.getElementById('adminEmail').textContent=CURRENT_USER?.email||'marotholi.co.ls@gmail.com';
+}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  if(!email){ document.getElementById('authMsg').innerHTML='<div class="err">Enter email.</div>'; return; }
+  CURRENT_USER={id:'demo-'+Date.now(), email};
+  document.getElementById('authMsg').innerHTML='<div class="ok">✅ Logged in as '+email+'</div>';
+  renderAccount(); loadLibrary();
+}
+async function doRegister(){ doLogin(); }
+function doLogout(){ CURRENT_USER=null; BALANCE=0; updateBalances(); renderAccount(); alert('Logged out'); }
+function savePref(){ document.getElementById('prefMsg').innerHTML='<div class="ok">✅ Saved: '+document.getElementById('prefMethod').value+' - '+document.getElementById('prefNumber').value+'</div>'; }
+
+// INIT
+BALANCE=6.17; // demo from your screenshot — replace with real wallet fetch
+updateBalances(); showDepBox(); loadSongs(); go('Discover');
+</script>
 </body>
 </html>
