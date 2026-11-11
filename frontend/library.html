@@ -1,28 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Library — Marotholi Les-Pot</title><link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Library - Marotholi Les-Pot</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8ff00">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="player.js"></script>
 </head>
 <body>
-<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><span class="badge">📚 LIBRARY</span></div>
+<div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
+
 <div class="wrap">
-<div class="card"><h3>Your Bought Songs</h3><p>Full playback + download. You own these.</p><input id="libSearch" placeholder="🔍 Search your library..." oninput="filterLib()"></div>
-<div id="libList"></div>
-<div id="libEmpty" class="card center hidden"><h3>No songs yet</h3><p>Buy songs in Discover to see them here.</p><a href="discover.html"><button>Go to Discover →</button></a></div>
+  <div class="card">
+    <h2>📚 My Library</h2>
+    <p class="small" style="margin-top:6px">Songs you BOUGHT (full) + Songs you UPLOADED. All play full, no 30s limit.</p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="tabBought" onclick="showTab('bought')" style="flex:1">✅ Bought</button>
+      <button id="tabUploads" onclick="showTab('uploads')" style="flex:1;background:#222;color:#fff">⬆️ My Uploads</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="libList" style="margin-top:4px">Loading library...</div>
+  </div>
+
+  <div class="card">
+    <h3>💳 Need Grinds?</h3>
+    <p class="small">EcoCash: 128235 — Marotholi Lespot MSU<br>Postbank Visa: 1040278800016 — Marotholi Lespot</p><br>
+    <button onclick="location.href='deposit.html'">Top Up Now</button>
+  </div>
 </div>
-<div id="player"></div>
-<nav class="bottomnav"><a href="discover.html">🏠<br>Discover</a><a href="library.html" class="active">📚<br>Library</a><a href="wallet.html">💰<br>Wallet</a><a href="upload.html">📤<br>Upload</a><a href="account.html">👤<br>Account</a></nav>
-<script src="app.js"></script><script src="player.js"></script>
+
+<div class="miniPlayer hidden" id="miniPlayer">
+  <img id="pCover" src="icon.svg">
+  <div class="pInfo"><b id="pTitle">No song</b><small id="pArtist">Marotholi</small></div>
+  <button id="pPlayBtn" onclick="togglePlay()">▶</button>
+  <button class="closeBtn" onclick="stopSong(true)">✕</button>
+</div>
+
+<nav class="bottomnav">
+  <a href="index.html">🏠<br>Home</a>
+  <a href="discover.html">🎵<br>Discover</a>
+  <a href="library.html" class="active">📚<br>Library</a>
+  <a href="wallet.html">👛<br>Wallet</a>
+  <a href="upload.html">⬆️<br>Upload</a>
+  <a href="auth.html">👤<br>Account</a>
+</nav>
+
 <script>
-let LIB=[];
-async function loadLib(){const el=document.getElementById('libList');el.innerHTML='<div class="card center">Loading...</div>';try{LIB=await window.LES_POT.getLibrary()||[];renderLib(LIB);}catch(e){el.innerHTML='<div class="card center">Login to see library. <a href="auth.html">Login</a></div>';}}
-function renderLib(list){const el=document.getElementById('libList');document.getElementById('libEmpty').classList.toggle('hidden',list.length>0);if(!list.length){el.innerHTML='';return;}el.innerHTML=list.map(s=>`<div class="card"><div class="song">${s.cover_url?`<img src="${s.cover_url}">`:`<div class="coverPlaceholder">🎵</div>`}<div class="meta"><b>${escapeHtml(s.title||'')}</b><small>${escapeHtml(s.artist||'')} • Bought ${s.created_at?new Date(s.created_at).toLocaleDateString():''} • ${s.price_grinds||1}G</small><div><span class="pill">✅ Owned</span></div></div><button class="playBtn" onclick="playSong('${s.id}')">▶ Play</button></div><div class="flex" style="margin-top:12px"><button onclick="downloadSong('${s.audio_url}','${escapeHtml(s.title||'song')}')">⬇️ Download</button><button class="ghost" onclick="shareLib('${escapeHtml(s.title||'')}','${s.id}')">📤 WhatsApp</button></div><p class="small">🧾 Receipt: ${s.price_grinds||1} Grinds • M${((s.price_grinds||1)*10).toFixed(2)} • ${s.created_at?new Date(s.created_at).toLocaleString():''}</p></div>`).join('');}
-function filterLib(){const q=(document.getElementById('libSearch').value||'').toLowerCase();renderLib(LIB.filter(s=>(s.title||'').toLowerCase().includes(q)||(s.artist||'').toLowerCase().includes(q)));}
-function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function downloadSong(url,title){if(!url){alert('No audio file.');return;}const a=document.createElement('a');a.href=url;a.download=title+'.mp3';a.target='_blank';a.click();}
-function shareLib(title,id){window.open('https://wa.me/?text='+encodeURIComponent('🎵 I bought '+title+' on LES-POT 🇱🇸 '+location.origin+'/discover.html?song='+id));}
-loadLib();
+const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
+
+let BOUGHT = [];
+let UPLOADS = [];
+let CURRENT_TAB = 'bought';
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function showTab(tab){
+  CURRENT_TAB = tab;
+  document.getElementById('tabBought').style.background = tab==='bought' ? '#c8ff00' : '#222';
+  document.getElementById('tabBought').style.color = tab==='bought' ? '#000' : '#fff';
+  document.getElementById('tabUploads').style.background = tab==='uploads' ? '#c8ff00' : '#222';
+  document.getElementById('tabUploads').style.color = tab==='uploads' ? '#000' : '#fff';
+  renderLib();
+}
+
+function renderLib(){
+  const box = document.getElementById('libList');
+  const list = CURRENT_TAB === 'bought' ? BOUGHT : UPLOADS;
+  if(!list.length){
+    if(CURRENT_TAB === 'bought'){
+      box.innerHTML = 'No bought songs yet.<br><br>Go to <a href="discover.html">Discover</a> → Buy a song with Grinds → It will appear here full, forever.';
+    } else {
+      box.innerHTML = 'No uploads yet.<br><br>Go to <a href="upload.html">Upload</a> → Pick MP3 → Set YOUR price.';
+    }
+    return;
+  }
+  box.innerHTML = list.map(s=>{
+    const title = esc(s.title || 'Untitled');
+    const artist = esc(s.artist || s.artist_name || 'Unknown');
+    const cover = esc(s.cover_url || 'icon.svg');
+    const price = s.price_grinds || s.price_grind || 1;
+    // Use BOTH audio columns
+    const rawAudio = s.audio_url || s.audio_path || '';
+    const audio = esc(rawAudio);
+    const isUpload = CURRENT_TAB === 'uploads';
+    return `
+    <div class="songCard">
+      <img src="${cover}" onerror="this.src='icon.svg'">
+      <div class="info"><b>${title}</b><small>${artist} • ${s.genre || 'Music'} • ${isUpload ? 'YOUR Price: '+price+'G = M'+(price*10) : '✅ Owned - Full Song'}</small></div>
+      <div class="actions">
+        <button class="playBtn" onclick="playSong('${audio}','${title}','${artist}','${cover}',false)">▶ Play Full</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadLibrary(){
+  const box = document.getElementById('libList');
+  box.innerHTML = 'Loading library...';
+  const {user, profile} = await getMyProfile();
+  if(!user){
+    box.innerHTML = 'Log in to see your Library.<br><br><button onclick="location.href=\'auth.html\'">Log In</button>';
+    return;
+  }
+  if(profile) document.getElementById('topBal').textContent = (profile.grind_balance || 0) + ' Grinds';
+
+  // 1. MY UPLOADS - using YOUR real columns: artist_id
+  try{
+    const {data: ups} = await sb.from('songs').select('*').eq('artist_id', user.id).order('created_at',{ascending:false});
+    UPLOADS = ups || [];
+    // Fallback: also try uploader_id if artist_id returns nothing
+    if(!UPLOADS.length){
+      const {data: ups2} = await sb.from('songs').select('*').eq('uploader_id', user.id).order('created_at',{ascending:false});
+      if(ups2) UPLOADS = ups2;
+    }
+  }catch(e){ UPLOADS = []; }
+
+  // 2. MY BOUGHT SONGS - from purchases table
+  BOUGHT = [];
+  try{
+    // Try purchases with song_id
+    const {data: purch} = await sb.from('purchases').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
+    if(purch && purch.length){
+      const songIds = purch.map(p=>p.song_id).filter(Boolean);
+      if(songIds.length){
+        const {data: songs} = await sb.from('songs').select('*').in('id', songIds);
+        BOUGHT = songs || [];
+      }
+    }
+    // Fallback: if purchases uses buyer_id or different column
+    if(!BOUGHT.length){
+      const {data: purch2} = await sb.from('purchases').select('*').order('created_at',{ascending:false});
+      // Only keep if this user is in it - checked client-side for flexibility
+      if(purch2 && purch2.length){
+        const mine = purch2.filter(p=> p.user_id===user.id || p.buyer_id===user.id || p.owner_id===user.id);
+        if(mine.length){
+          const ids = mine.map(p=>p.song_id || p.songId).filter(Boolean);
+          if(ids.length){
+            const {data: s2} = await sb.from('songs').select('*').in('id', ids);
+            BOUGHT = s2 || [];
+          }
+        }
+      }
+    }
+  }catch(e){ console.log('purchases load error', e); }
+
+  // 3. If still empty bought, also check if user bought via local helper
+  if(!BOUGHT.length && typeof getMyPurchases === 'function'){
+    try{
+      const ids = await getMyPurchases(user.id);
+      if(ids && ids.length){
+        const {data: s3} = await sb.from('songs').select('*').in('id', ids);
+        if(s3) BOUGHT = s3;
+      }
+    }catch(e){}
+  }
+
+  renderLib();
+}
+
+document.addEventListener('DOMContentLoaded', loadLibrary);
 </script>
 </body>
 </html>
