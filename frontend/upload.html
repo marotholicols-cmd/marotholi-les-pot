@@ -13,39 +13,103 @@
 <body>
 <div class="topbar"><div class="logo">MAROTHOLI <span>LES-POT</span></div><a class="badge" href="wallet.html" id="topBal">0 Grinds</a></div>
 <div class="wrap">
-  <div class="card"><h2>⬆️ Upload Song</h2><p class="small" style="margin-top:6px">Paste Catbox / audio link. Fans pay Grinds to unlock full song. You earn.</p>
-    <label>Song Title *</label><input id="title" placeholder="e.g. Kea Rata">
-    <label>Artist Name *</label><input id="artist" placeholder="Your artist name">
-    <label>Genre</label><select id="genre"><option>Amapiano</option><option>Hip Hop</option><option>Afrobeat</option><option>Gospel</option><option>Sesotho Traditional</option><option>R&B</option><option>House</option><option>Other</option></select>
-    <label>Price in Grinds (1 Grind = M10) *</label><input id="price" type="number" min="1" value="1" placeholder="1">
-    <label>Audio Link (Catbox / direct mp3) *</label><input id="audio" placeholder="https://files.catbox.moe/xxxx.mp3">
-    <label>Cover Image Link (optional)</label><input id="cover" placeholder="https://...jpg">
+  <div class="card">
+    <h2>⬆️ Upload Song</h2>
+    <p class="small" style="margin-top:6px">Pick MP3 → Goes to YOUR Supabase Bucket `songs` → Fans pay YOUR price. You earn.</p>
+
+    <label>Song Title *</label>
+    <input id="title" placeholder="e.g. Kea Rata">
+
+    <label>Artist Name *</label>
+    <input id="artist" placeholder="Your artist name">
+
+    <label>Genre</label>
+    <select id="genre">
+      <option>Amapiano</option><option>Hip Hop</option><option>Afrobeat</option><option>Gospel</option><option>Sesotho Traditional</option><option>R&B</option><option>House</option><option>Other</option>
+    </select>
+
+    <label>YOUR Price in Grinds — YOU SET IT (1 Grind = M10) *</label>
+    <input id="price" type="number" min="1" value="1" placeholder="1">
+    <p class="small">1 = M10 • 2 = M20 • 5 = M50 • 10 = M100 — You choose!</p>
+
+    <label>Pick MP3 File — Uploads to YOUR Bucket *</label>
+    <input id="audioFile" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg">
+
+    <label>OR Paste Audio Link (optional)</label>
+    <input id="audio" placeholder="https://files.catbox.moe/xxxx.mp3 or https://...mp3">
+
+    <label>Cover Image Link (optional)</label>
+    <input id="cover" placeholder="https://...jpg">
+
     <button id="upBtn" onclick="doUpload()">Upload Song →</button>
     <p class="small center" style="margin-top:10px" id="upMsg"></p>
   </div>
+
   <div class="card"><h3>🎵 My Uploads</h3><div id="myUploads" style="margin-top:10px">Loading...</div></div>
+  <div class="card"><h3>📦 Files In YOUR Bucket</h3><div id="bucketFiles" style="margin-top:10px">Loading...</div></div>
 </div>
+
 <nav class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="wallet.html">👛<br>Wallet</a><a href="upload.html" class="active">⬆️<br>Upload</a><a href="auth.html">👤<br>Account</a></nav>
+
 <script>
 const U="https://mmkxiniybctmgoozaecp.supabase.co"; const K="sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 if(!window.sb && window.supabase) window.sb=window.supabase.createClient(U,K);
+
 async function doUpload(){
   const {user}=await getMyProfile();
   if(!user){ alert('Log in first'); location.href='auth.html'; return; }
-  const title=document.getElementById('title').value.trim(), artist=document.getElementById('artist').value.trim(), genre=document.getElementById('genre').value, price=parseInt(document.getElementById('price').value)||1, audio=document.getElementById('audio').value.trim(), cover=document.getElementById('cover').value.trim();
-  if(!title||!artist||!audio) return alert('Fill Title, Artist, Audio Link');
-  const btn=document.getElementById('upBtn'); btn.disabled=true; btn.textContent='Uploading...';
-  const {error}=await sb.from('songs').insert([{title,artist,genre,price_grinds:price,audio_url:audio,cover_url:cover,uploader_id:user.id}]);
-  if(error){ alert(error.message); btn.disabled=false; btn.textContent='Upload Song →'; return; }
-  alert('✅ Uploaded! Now in Discover.'); location.href='discover.html';
+
+  const title=document.getElementById('title').value.trim();
+  const artist=document.getElementById('artist').value.trim();
+  const genre=document.getElementById('genre').value;
+  const price=parseInt(document.getElementById('price').value)||1;
+  const file=document.getElementById('audioFile').files[0];
+  const link=document.getElementById('audio').value.trim();
+  const cover=document.getElementById('cover').value.trim();
+
+  if(!title){ alert('Enter Song Title'); return; }
+  if(!artist){ alert('Enter Artist Name'); return; }
+
+  const btn=document.getElementById('upBtn');
+  const msg=document.getElementById('upMsg');
+  let audioUrl = link;
+
+  // 1. If artist picked FILE -> upload to YOUR bucket 'songs'
+  if(file){
+    btn.disabled=true; btn.textContent='Uploading to YOUR bucket...'; msg.textContent='Uploading file... do not close';
+    const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.-]/g,'_');
+    const {error: upErr} = await sb.storage.from('songs').upload(fileName, file);
+    if(upErr){
+      alert('Bucket upload failed: ' + upErr.message + '\n\nCheck: Supabase → Storage → songs bucket exists + is PUBLIC');
+      btn.disabled=false; btn.textContent='Upload Song →'; msg.textContent=''; return;
+    }
+    const {data: pub} = sb.storage.from('songs').getPublicUrl(fileName);
+    audioUrl = pub.publicUrl;
+  }
+
+  if(!audioUrl){ alert('Pick an MP3 file OR paste a link.\n\nPick file = uploads to YOUR bucket'); return; }
+  if(!audioUrl.includes('http')){ alert('Audio link must start with https://'); return; }
+
+  btn.disabled=true; btn.textContent='Saving song...';
+  const {error}=await sb.from('songs').insert([{title,artist,genre,price_grinds:price,audio_url:audioUrl,cover_url:cover||'icon.svg',uploader_id:user.id}]);
+  if(error){ alert('Save failed: '+error.message); btn.disabled=false; btn.textContent='Upload Song →'; return; }
+  alert('✅ Uploaded to YOUR bucket!\nTitle: '+title+'\nArtist: '+artist+'\nYOUR Price: '+price+' Grinds = M'+(price*10));
+  location.href='discover.html';
 }
-document.addEventListener('DOMContentLoaded', async ()=>{
+
+async function loadMyUploads(){
   const {user,profile}=await getMyProfile();
   if(profile) document.getElementById('topBal').textContent=(profile.grind_balance||0)+' Grinds';
-  if(!user){ document.getElementById('myUploads').innerHTML='Log in to see uploads'; return; }
+  if(!user){ document.getElementById('myUploads').innerHTML='Log in to see uploads'; document.getElementById('bucketFiles').innerHTML='Log in'; return; }
   const {data}=await sb.from('songs').select('*').eq('uploader_id',user.id).order('created_at',{ascending:false});
-  document.getElementById('myUploads').innerHTML=!data||!data.length?'No uploads yet':data.map(s=>`<div style="border-bottom:1px solid #222;padding:10px 0;font-size:13px"><b>${s.title}</b> - ${s.artist} - ${s.price_grinds}G</div>`).join('');
-});
+  document.getElementById('myUploads').innerHTML=!data||!data.length?'No uploads yet':data.map(s=>`<div style="border-bottom:1px solid #222;padding:10px 0;font-size:13px"><b>${s.title}</b> - ${s.artist} - ${s.price_grinds}G = M${(s.price_grinds||1)*10}<br><small>${s.audio_url}</small></div>`).join('');
+
+  // Show bucket files too
+  const {data: files}=await sb.storage.from('songs').list('',{limit:100});
+  document.getElementById('bucketFiles').innerHTML=!files||!files.length?'Bucket empty - no files in Storage → songs':files.map(f=>`<div style="border-bottom:1px solid #222;padding:8px 0;font-size:12px">📦 ${f.name}</div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadMyUploads);
 </script>
 </body>
 </html>
