@@ -49,10 +49,7 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🐂 🌧️ Lesotho Music • 1G = M10 FIXED</small></header>
-
 <div class="wrap">
-
-<!-- BALANCE CARD -->
 <div class="card" id="balanceCard" style="display:none">
 <h3>💰 My Grinds</h3>
 <p class="balance"><span id="balText">Loading...</span></p>
@@ -63,22 +60,17 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <a href="withdraw.html">Withdraw</a>
 </div>
 </div>
-
-<!-- SEARCH + LATEST -->
 <div class="card">
 <h3>🎵 Latest Songs</h3>
 <input id="searchInput" placeholder="Search songs, artists..." oninput="loadHome()">
 <p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p>
 </div>
-
 <div id="songList"><p class="small">Loading songs...</p></div>
-
 <div class="card">
 <h3>📣 For Artists</h3>
 <p class="small">Upload your song. Set your own price. Min 0.2G = M2. You get 63%. Preview is 30 sec — you pick where it starts.</p>
 <button class="btn" onclick="location.href='upload.html'">⬆️ Upload Song</button>
 </div>
-
 <div class="card">
 <h3>ℹ️ How Les-Pot Works</h3>
 <p class="small">
@@ -90,10 +82,7 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 • Min withdraw: 3.5G = M35
 </p>
 </div>
-
 </div>
-
-<!-- PLAYER BAR - STAYS ON + LOCK SCREEN -->
 <div class="player" id="playerBar">
 <img id="playerCover" src="icon.svg" alt="cover">
 <div class="meta"><b id="playerTitle">No song playing</b><span id="playerArtist">Marotholi Les-Pot</span></div>
@@ -101,8 +90,6 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <button class="stop" onclick="stopPlayer()">✕</button>
 </div>
 <audio id="mainAudio" preload="none"></audio>
-
-<!-- BOTTOM NAV - SAME ON ALL PAGES -->
 <div class="bottomnav">
 <a href="index.html" class="active">🏠<br>Home</a>
 <a href="discover.html">🎵<br>Discover</a>
@@ -111,13 +98,9 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <a href="wallet.html">💰<br>Wallet</a>
 <a href="account.html">👤<br>Account</a>
 </div>
-
 <script>
-// ============================================
-// HOME - SIMPLE
-// ============================================
 let allSongs = [];
-let currentSong = null;
+// FIXED: DO NOT declare let currentSong here - player.js already declares it
 
 async function loadHome() {
   const listEl = document.getElementById('songList');
@@ -133,7 +116,7 @@ async function loadHome() {
       return;
     }
     listEl.innerHTML = songs.map(function(s) {
-      const cover = getCoverUrl(s.cover_url || s.cover_path);
+      const cover = getCoverUrl(s.cover_path || s.cover_url);
       return "<div class='song'>"
         + "<img src='" + cover + "' onerror=\"this.src='icon.svg'\">"
         + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name) + " • " + formatPrice(s.price_grind) + "</span>"
@@ -146,16 +129,56 @@ async function loadHome() {
 }
 
 async function loadBalance() {
-  const user = await getCurrentUser();
-  if (!user) return;
-  document.getElementById('balanceCard').style.display = 'block';
-  const { data } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
-  const bal = Number(data?.balance_grind || 0);
-  document.getElementById('balText').textContent = bal.toFixed(2) + " G";
-  document.getElementById('balMaloti').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
+  try{
+    const user = await getCurrentUser();
+    if (!user) return;
+    document.getElementById('balanceCard').style.display = 'block';
+    const { data } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+    const bal = Number(data?.balance_grind || 0);
+    document.getElementById('balText').textContent = bal.toFixed(2) + " G";
+    document.getElementById('balMaloti').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
+  }catch(e){}
 }
 
-// Preview 30 sec - from artist's preview_start
+// FIXED: playWithPlayer was missing - now defined here
+function playWithPlayer(url, s, start, end, isFull) {
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  const btn = document.getElementById('playerBtn');
+  document.getElementById('playerTitle').textContent = s.title || 'Unknown';
+  document.getElementById('playerArtist').textContent = (s.artist_name || '') + (isFull ? ' • FULL' : ' • PREVIEW');
+  document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
+  if(bar) bar.classList.add('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
+  audio.src = url;
+  audio.currentTime = Number(start || 0);
+  audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(){ alert('Tap ▶ again to play'); });
+  if(!isFull && end){
+    window._previewTimer = setInterval(function(){
+      if(audio.currentTime >= Number(end)){
+        audio.pause();
+        clearInterval(window._previewTimer);
+        if(btn) btn.textContent = '▶';
+        alert('Preview ended - Buy for full song');
+      }
+    }, 500);
+  }
+}
+function togglePlayer(){
+  const audio = document.getElementById('mainAudio');
+  const btn = document.getElementById('playerBtn');
+  if(!audio.src) return;
+  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
+  else { audio.pause(); if(btn) btn.textContent='▶'; }
+}
+function stopPlayer(){
+  const audio = document.getElementById('mainAudio');
+  const bar = document.getElementById('playerBar');
+  audio.pause(); audio.src='';
+  if(bar) bar.classList.remove('show');
+  if(window._previewTimer) clearInterval(window._previewTimer);
+}
+
 async function previewSong(id) {
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
   if (!s) return;
@@ -165,10 +188,12 @@ async function previewSong(id) {
   playWithPlayer(url, s, range.start, range.end, false);
 }
 
-// Buy song - deducts, creates purchase, artist gets 63%
 async function buySong(id, price) {
   const user = await requireLogin();
   if (!user) return;
+  // FIXED: block double-buy like Discover does
+  const {data:already} = await window.sb.from('purchases').select('id').eq('buyer_id', user.id).eq('song_id', id).maybeSingle();
+  if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
   const { data: p } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
   const bal = Number(p?.balance_grind || 0);
   if (bal < price) {
@@ -177,14 +202,14 @@ async function buySong(id, price) {
     return;
   }
   if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
-  const { error } = await window.sb.from('purchases').insert({ buyer_id: user.id, user_id: user.id, song_id: id, price_grind: price, status: 'approved' });
+  // FIXED: removed user_id - purchases table only has buyer_id
+  const { error } = await window.sb.from('purchases').insert({ buyer_id: user.id, song_id: id, price_grind: price, status: 'approved' });
   if (error) { alert('Buy failed: ' + error.message); return; }
   await window.sb.from('profiles').update({ balance_grind: bal - price }).eq('id', user.id);
   alert('✅ Bought! Go to Library to play FULL song.');
   location.href = 'library.html';
 }
 
-// Deep link: ?song=ID from share link - auto preview that song
 async function checkDeepLink() {
   const params = new URLSearchParams(location.search);
   const songId = params.get('song');
