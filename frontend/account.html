@@ -34,35 +34,74 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
 <script>
 async function refresh(){
-  const user=await getCurrentUser();
-  document.getElementById('loginCard').style.display=user?'none':'block';
-  document.getElementById('profileCard').style.display=user?'block':'none';
-  if(!user) return;
-  document.getElementById('pEmail').textContent=user.email||'';
-  const {data}=await window.sb.from('profiles').select('*').eq('id',user.id).single();
-  if(data){
-    document.getElementById('displayName').value=data.display_name||data.full_name||'';
-    document.getElementById('phone').value=data.phone||'';
-    const bal=Number(data.balance_grind||0);
-    document.getElementById('pBal').textContent=bal.toFixed(2)+' G';
-    document.getElementById('pBalM').textContent='= M'+grindToMaloti(bal);
+  try{
+    const user = await getCurrentUser();
+    document.getElementById('loginCard').style.display = user ? 'none' : 'block';
+    document.getElementById('profileCard').style.display = user ? 'block' : 'none';
+    if(!user) return;
+    document.getElementById('pEmail').textContent = user.email || '';
+    const {data, error} = await window.sb.from('profiles').select('*').eq('id', user.id).single();
+    if(error){
+      document.getElementById('pBal').textContent = '—';
+      return;
+    }
+    if(data){
+      document.getElementById('displayName').value = data.display_name || data.full_name || '';
+      document.getElementById('phone').value = data.phone || '';
+      const bal = Number(data.balance_grind || 0);
+      document.getElementById('pBal').textContent = bal.toFixed(2) + ' G';
+      document.getElementById('pBalM').textContent = '= M' + grindToMaloti(bal);
+    }
+  }catch(e){
+    console.log('refresh error', e.message);
   }
 }
 async function doLogin(){
-  const msg=document.getElementById('loginMsg');
-  try{const {error}=await window.sb.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value}); if(error) throw error; msg.textContent='✅ Logged in!';msg.className='msg ok'; refresh();}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  const msg = document.getElementById('loginMsg');
+  try{
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if(!email || !password){ msg.textContent = '❌ Enter email + password'; msg.className = 'msg error'; return; }
+    const {error} = await window.sb.auth.signInWithPassword({email: email, password: password});
+    if(error) throw error;
+    msg.textContent = '✅ Logged in!'; msg.className = 'msg ok';
+    await refresh();
+  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
 }
 async function doSignup(){
-  const msg=document.getElementById('loginMsg');
-  try{const {error}=await window.sb.auth.signUp({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value}); if(error) throw error; msg.textContent='✅ Check your email to confirm, then Login.';msg.className='msg ok';}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  const msg = document.getElementById('loginMsg');
+  try{
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if(!email || !password){ msg.textContent = '❌ Enter email + password'; msg.className = 'msg error'; return; }
+    if(password.length < 6){ msg.textContent = '❌ Password must be at least 6 characters'; msg.className = 'msg error'; return; }
+    const {error} = await window.sb.auth.signUp({email: email, password: password});
+    if(error) throw error;
+    msg.textContent = '✅ Account created! Now tap Login.'; msg.className = 'msg ok';
+  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
 }
 async function saveProfile(){
-  const user=await requireLogin(); if(!user) return;
-  const msg=document.getElementById('profileMsg');
-  try{const {error}=await window.sb.from('profiles').upsert({id:user.id,email:user.email,display_name:document.getElementById('displayName').value.trim(),full_name:document.getElementById('displayName').value.trim(),phone:document.getElementById('phone').value.trim()}); if(error) throw error; msg.textContent='✅ Saved!';msg.className='msg ok';}catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  const user = await requireLogin(); if(!user) return;
+  const msg = document.getElementById('profileMsg');
+  try{
+    const name = document.getElementById('displayName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    // Try full upsert first, fallback to minimal if columns differ
+    let r = await window.sb.from('profiles').upsert({id: user.id, email: user.email, display_name: name, full_name: name, phone: phone});
+    if(r.error){
+      r = await window.sb.from('profiles').upsert({id: user.id, email: user.email, display_name: name, phone: phone});
+    }
+    if(r.error) throw r.error;
+    msg.textContent = '✅ Saved!'; msg.className = 'msg ok';
+    await refresh();
+  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
 }
-async function doLogout(){await window.sb.auth.signOut(); refresh();}
-document.addEventListener('DOMContentLoaded',refresh);
+async function doLogout(){
+  await window.sb.auth.signOut();
+  await refresh();
+}
+document.addEventListener('DOMContentLoaded', refresh);
+</script>
 <script src="player.js"></script>
 </body>
 </html>
