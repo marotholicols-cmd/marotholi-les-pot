@@ -1,6 +1,7 @@
 // Marotholi Les-Pot - Persistent Player v2
 // Music resumes across pages: Discover -> Wallet -> Library
-// Preview = first 30s free, Full = after purchase
+// Preview = 30s max, Full = after purchase
+// NOTE: This is the ONLY file that declares let currentSong. Do NOT declare it in any .html file.
 
 let audioEl = null;
 let currentSong = null;
@@ -9,7 +10,6 @@ function getSaved() {
   try { return JSON.parse(localStorage.getItem('lespot_now_playing') || 'null'); }
   catch (e) { return null; }
 }
-
 function saveState() {
   if (!audioEl || !currentSong) return;
   const data = {
@@ -27,7 +27,6 @@ function saveState() {
   };
   localStorage.setItem('lespot_now_playing', JSON.stringify(data));
 }
-
 function showMiniPlayer(song) {
   let bar = document.getElementById('miniPlayer');
   if (!bar) {
@@ -44,21 +43,18 @@ function showMiniPlayer(song) {
   document.getElementById('miniTitle').textContent = song.title || 'Song';
   document.getElementById('miniSub').textContent = (song.artist_name || song.artist || '') + (song.previewOnly ? ' • PREVIEW' : ' • FULL');
 }
-
 function formatTime(s) {
   if (!s || isNaN(s)) return '0:00';
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return m + ':' + (sec < 10 ? '0' + sec : sec);
 }
-
 function updateMiniBtn() {
   const b = document.getElementById('miniPlayBtn');
   if (b && audioEl) b.textContent = audioEl.paused ? '▶️' : '⏸️';
   const t = document.getElementById('miniTime');
   if (t && audioEl) t.textContent = formatTime(audioEl.currentTime);
 }
-
 function toggleMini() {
   if (!audioEl) {
     const saved = getSaved();
@@ -70,7 +66,6 @@ function toggleMini() {
   updateMiniBtn();
   saveState();
 }
-
 function ensureAudio() {
   if (audioEl) return audioEl;
   audioEl = new Audio();
@@ -78,7 +73,6 @@ function ensureAudio() {
   audioEl.addEventListener('timeupdate', function() {
     saveState();
     updateMiniBtn();
-    // Preview limit - stop at preview_seconds
     if (currentSong && currentSong.previewOnly && currentSong.preview_seconds) {
       if (audioEl.currentTime >= Number(currentSong.preview_seconds)) {
         audioEl.pause();
@@ -97,12 +91,10 @@ function ensureAudio() {
   });
   return audioEl;
 }
-
 function startAudio(saved) {
   if (!saved || !saved.url) return;
   currentSong = saved;
   const el = ensureAudio();
-  // Only change src if different song
   if (el.src !== saved.url && !el.src.endsWith(saved.url)) {
     el.src = saved.url;
     el.currentTime = saved.time || 0;
@@ -111,20 +103,22 @@ function startAudio(saved) {
   }
   showMiniPlayer(saved);
   if (saved.playing) {
-    el.play().catch(function() {
-      // Browser blocked autoplay - user must tap play
-      updateMiniBtn();
-    });
+    el.play().catch(function() { updateMiniBtn(); });
   }
   updateMiniBtn();
 }
-
-// MAIN FUNCTION - Call this from Discover / Library / Index
-// playSong({id, title, artist_name, audio_url, preview_seconds}, true = preview, false = full)
-function playSong(song, previewOnly) {
+async function playSong(song, previewOnly) {
   if (!song) return;
-  const url = song.audio_url || song.audio || song.file_url || song.url;
+  let url = song.url || song.audio_url || song.audio || song.file_url || null;
+  // FIXED: if only audio_path exists, get signed URL from app.js helper
+  if (!url && song.audio_path && typeof getSongStreamUrl === 'function') {
+    url = await getSongStreamUrl(song.audio_path);
+  }
   if (!url) { alert('No audio file for this song'); return; }
+  let cover = song.cover_url || song.cover || '';
+  if ((!cover || !String(cover).startsWith('http')) && (song.cover_path || song.cover_url) && typeof getCoverUrl === 'function') {
+    cover = getCoverUrl(song.cover_path || song.cover_url);
+  }
   const toSave = {
     id: song.id || '',
     title: song.title || 'Song',
@@ -132,7 +126,7 @@ function playSong(song, previewOnly) {
     artist: song.artist_name || song.artist || '',
     url: url,
     audio_url: url,
-    cover_url: song.cover_url || song.cover || '',
+    cover_url: cover,
     preview_seconds: song.preview_seconds || song.preview_duration || 30,
     previewOnly: !!previewOnly,
     playing: true,
@@ -142,19 +136,14 @@ function playSong(song, previewOnly) {
   localStorage.setItem('lespot_now_playing', JSON.stringify(toSave));
   startAudio(toSave);
 }
-
-// Stop + clear
 function stopSong() {
   if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; }
   localStorage.removeItem('lespot_now_playing');
   const bar = document.getElementById('miniPlayer');
   if (bar) bar.style.display = 'none';
 }
-
-// Auto-resume on EVERY page
 document.addEventListener('DOMContentLoaded', function() {
   const saved = getSaved();
-  // Only resume if played in last 30 mins
   if (saved && saved.url && Date.now() - (saved.updated || 0) < 30 * 60 * 1000) {
     startAudio(saved);
   }
