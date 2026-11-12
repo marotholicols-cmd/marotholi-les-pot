@@ -36,30 +36,73 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 async function loadWallet(){
-  const user=await getCurrentUser();
-  if(!user){document.getElementById('bal').textContent='Login needed';document.getElementById('earnings').textContent='Login to see earnings.';return;}
-  const {data:prof}=await window.sb.from('profiles').select('balance_grind').eq('id',user.id).single();
-  const bal=Number(prof?.balance_grind||0);
-  document.getElementById('bal').textContent=bal.toFixed(2)+" G";
-  document.getElementById('balM').textContent="= M"+grindToMaloti(bal)+" • 1G = M10 FIXED";
-  // Earnings: sum purchases of my songs * 63%
-  const {data:mySongs}=await window.sb.from('songs').select('id').eq('user_id',user.id);
-  const ids=(mySongs||[]).map(function(s){return s.id;});
-  let totalSales=0, count=0;
-  if(ids.length){
-    const {data:p}=await window.sb.from('purchases').select('price_grind').in('song_id',ids);
-    (p||[]).forEach(function(x){totalSales+=Number(x.price_grind||0);count++;});
+  const user = await getCurrentUser();
+  if(!user){
+    document.getElementById('bal').textContent = 'Login needed';
+    document.getElementById('earnings').textContent = 'Login to see earnings.';
+    document.getElementById('deposits').innerHTML = "<p class='small'>Login to see deposits.</p>";
+    document.getElementById('withdrawals').innerHTML = "<p class='small'>Login to see withdrawals.</p>";
+    document.getElementById('purchases').innerHTML = "<p class='small'>Login to see purchases.</p>";
+    return;
   }
-  const myCut=totalSales*0.63;
-  document.getElementById('earnings').innerHTML="Sold: "+count+" songs • Total sales: "+totalSales.toFixed(2)+" G<br>Your 63%: <b style='color:#d4ff3f'>"+myCut.toFixed(2)+" G = M"+grindToMaloti(myCut)+"</b><br>Min withdraw: 3.5G = M35";
-  const {data:deps}=await window.sb.from('deposits').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5);
-  document.getElementById('deposits').innerHTML=!deps||!deps.length?"<p class='small'>No deposits yet.</p>":deps.map(function(d){return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>"+Number(d.amount_grind||0).toFixed(2)+" G</b> • "+escHtml(d.method||'')+" • "+escHtml(d.status||'pending')+"</div>";}).join('');
-  const {data:wds}=await window.sb.from('withdrawals').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5);
-  document.getElementById('withdrawals').innerHTML=!wds||!wds.length?"<p class='small'>No withdrawals yet.</p>":wds.map(function(w){return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>"+Number(w.amount_grind||0).toFixed(2)+" G</b> • "+escHtml(w.method||'')+" • "+escHtml(w.status||'pending')+"</div>";}).join('');
-  const {data:purs}=await window.sb.from('purchases').select('*, songs(title)').eq('buyer_id',user.id).order('created_at',{ascending:false}).limit(5);
-  document.getElementById('purchases').innerHTML=!purs||!purs.length?"<p class='small'>No purchases yet.</p>":purs.map(function(p){return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>"+escHtml(p.songs?.title||'Song')+"</b> • "+Number(p.price_grind||0).toFixed(2)+" G</div>";}).join('');
+  // 1. BALANCE - never let this block
+  try{
+    const {data:prof, error} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+    if(error) throw error;
+    const bal = Number(prof?.balance_grind || 0);
+    document.getElementById('bal').textContent = bal.toFixed(2) + " G";
+    document.getElementById('balM').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
+  }catch(e){
+    document.getElementById('bal').textContent = 'Error';
+    document.getElementById('balM').textContent = e.message;
+  }
+  // 2. EARNINGS - try user_id, then artist_id (your songs table may use either)
+  try{
+    let ids = [];
+    let r1 = await window.sb.from('songs').select('id').eq('user_id', user.id);
+    if(!r1.error && r1.data && r1.data.length) ids = r1.data.map(function(s){return s.id;});
+    else {
+      let r2 = await window.sb.from('songs').select('id').eq('artist_id', user.id);
+      if(!r2.error && r2.data) ids = r2.data.map(function(s){return s.id;});
+    }
+    let totalSales = 0, count = 0;
+    if(ids.length){
+      const {data:p, error} = await window.sb.from('purchases').select('price_grind').in('song_id', ids);
+      if(error) throw error;
+      (p||[]).forEach(function(x){ totalSales += Number(x.price_grind||0); count++; });
+    }
+    const myCut = totalSales * 0.63;
+    document.getElementById('earnings').innerHTML = "Sold: " + count + " songs • Total sales: " + totalSales.toFixed(2) + " G<br>Your 63%: <b style='color:#d4ff3f'>" + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + "</b><br>Min withdraw: 3.5G = M35";
+  }catch(e){
+    document.getElementById('earnings').textContent = "Could not load earnings: " + e.message;
+  }
+  // 3. DEPOSITS
+  try{
+    const {data:deps, error} = await window.sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(5);
+    if(error) throw error;
+    document.getElementById('deposits').innerHTML = !deps || !deps.length ? "<p class='small'>No deposits yet.</p>" : deps.map(function(d){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(d.amount_grind||d.amount||0).toFixed(2) + " G</b> • " + escHtml(d.method||'') + " • " + escHtml(d.status||'pending') + "</div>"; }).join('');
+  }catch(e){
+    document.getElementById('deposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>";
+  }
+  // 4. WITHDRAWALS
+  try{
+    const {data:wds, error} = await window.sb.from('withdrawals').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(5);
+    if(error) throw error;
+    document.getElementById('withdrawals').innerHTML = !wds || !wds.length ? "<p class='small'>No withdrawals yet.</p>" : wds.map(function(w){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(w.amount_grind||w.amount||0).toFixed(2) + " G</b> • " + escHtml(w.method||'') + " • " + escHtml(w.status||'pending') + "</div>"; }).join('');
+  }catch(e){
+    document.getElementById('withdrawals').innerHTML = "<p class='small'>Could not load withdrawals: " + escHtml(e.message) + "</p>";
+  }
+  // 5. PURCHASES
+  try{
+    const {data:purs, error} = await window.sb.from('purchases').select('*, songs(title)').eq('buyer_id', user.id).order('created_at',{ascending:false}).limit(5);
+    if(error) throw error;
+    document.getElementById('purchases').innerHTML = !purs || !purs.length ? "<p class='small'>No purchases yet.</p>" : purs.map(function(p){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + escHtml(p.songs?.title||'Song') + "</b> • " + Number(p.price_grind||0).toFixed(2) + " G</div>"; }).join('');
+  }catch(e){
+    document.getElementById('purchases').innerHTML = "<p class='small'>Could not load purchases: " + escHtml(e.message) + "</p>";
+  }
 }
-document.addEventListener('DOMContentLoaded',loadWallet);
+document.addEventListener('DOMContentLoaded', loadWallet);
+</script>
 <script src="player.js"></script>
 </body>
 </html>
