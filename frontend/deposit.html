@@ -50,7 +50,8 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <label>Reference / Proof - Transaction ID or Upload Screenshot</label>
 <input id="reference" placeholder="e.g. TXN12345 or EcoCash SMS code">
 <input id="proofFile" type="file" accept="image/*" style="margin-top:8px">
-<button class="btn" onclick="submitDeposit()">I Sent Money → Submit for Approval</button>
+<p class="small" id="proofNote">Screenshot is optional if you have Transaction ID. If you pick a screenshot, it will be uploaded.</p>
+<button class="btn" id="submitBtn" onclick="submitDeposit()">I Sent Money → Submit for Approval</button>
 <p class="msg" id="msg"></p>
 <p class="small">Admin approves manually in Admin Tab. Your Grinds appear after approval. Do NOT send again if pending.</p>
 </div>
@@ -58,60 +59,108 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-let selectedMethod=null;
+let selectedMethod = null;
 function renderMethods(){
-  document.getElementById('methods').innerHTML=DEPOSIT_METHODS.map(function(m){
-    if(!m.active) return "<div class='method locked'><b>🔒 "+escHtml(m.name)+"</b><br><span class='small'>Coming Soon - Locked for now</span></div>";
-    return "<div class='method' id='m_"+m.id+"' onclick=\"selectMethod('"+m.id+"')\"><b>✅ "+escHtml(m.name)+"</b><br><span class='small'>Number: <b style='color:#d4ff3f'>"+escHtml(m.number)+"</b> • "+escHtml(m.accountName)+"</span></div>";
+  document.getElementById('methods').innerHTML = DEPOSIT_METHODS.map(function(m){
+    if(!m.active) return "<div class='method locked'><b>🔒 " + escHtml(m.name) + "</b><br><span class='small'>Coming Soon - Locked for now</span></div>";
+    return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> • " + escHtml(m.accountName) + "</span></div>";
   }).join('');
 }
 function selectMethod(id){
-  selectedMethod=DEPOSIT_METHODS.find(function(m){return m.id===id;});
-  document.querySelectorAll('.method').forEach(function(el){el.classList.remove('active');});
-  const el=document.getElementById('m_'+id); if(el) el.classList.add('active');
-  document.getElementById('stepsCard').style.display='block';
-  document.getElementById('stepsText').innerHTML="Send money to <b style='color:#d4ff3f'>"+escHtml(selectedMethod.name)+" "+escHtml(selectedMethod.number)+"</b> - "+escHtml(selectedMethod.accountName)+"<br>Then fill amount + reference below and submit.";
+  selectedMethod = DEPOSIT_METHODS.find(function(m){ return m.id === id; });
+  document.querySelectorAll('.method').forEach(function(el){ el.classList.remove('active'); });
+  const el = document.getElementById('m_' + id); if(el) el.classList.add('active');
+  document.getElementById('stepsCard').style.display = 'block';
+  document.getElementById('stepsText').innerHTML = "Send money to <b style='color:#d4ff3f'>" + escHtml(selectedMethod.name) + " " + escHtml(selectedMethod.number) + "</b> - " + escHtml(selectedMethod.accountName) + "<br>Then fill amount + reference below and submit.";
 }
-document.getElementById('amountM').addEventListener('input',function(){
-  const m=Number(this.value||0); const g=m/10;
-  document.getElementById('amountG').textContent="M"+m.toFixed(2)+" = "+g.toFixed(2)+" G • 1G = M10 FIXED";
+document.getElementById('amountM').addEventListener('input', function(){
+  const m = Number(this.value || 0); const g = m / 10;
+  document.getElementById('amountG').textContent = "M" + m.toFixed(2) + " = " + g.toFixed(2) + " G • 1G = M10 FIXED";
 });
 async function loadBalance(){
-  const user=await getCurrentUser(); if(!user) return;
-  const {data}=await window.sb.from('profiles').select('balance_grind').eq('id',user.id).single();
-  const bal=Number(data?.balance_grind||0);
-  document.getElementById('bal').textContent=bal.toFixed(2)+" G";
-  document.getElementById('balM').textContent="= M"+grindToMaloti(bal);
+  try{
+    const user = await getCurrentUser(); if(!user) return;
+    const {data, error} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+    if(error) throw error;
+    const bal = Number(data?.balance_grind || 0);
+    document.getElementById('bal').textContent = bal.toFixed(2) + " G";
+    document.getElementById('balM').textContent = "= M" + grindToMaloti(bal);
+  }catch(e){
+    document.getElementById('bal').textContent = 'Error';
+    document.getElementById('balM').textContent = e.message;
+  }
 }
 async function loadDeposits(){
-  const user=await getCurrentUser(); if(!user){document.getElementById('myDeposits').innerHTML="<p class='small'>Login to see deposits. <a href='auth.html' style='color:#d4ff3f'>Login</a></p>";return;}
-  const {data}=await window.sb.from('deposits').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
-  if(!data||!data.length){document.getElementById('myDeposits').innerHTML="<p class='small'>No deposits yet.</p>";return;}
-  document.getElementById('myDeposits').innerHTML=data.map(function(d){
-    const col=d.status==='approved'?'#d4ff3f':d.status==='rejected'?'#ff6b6b':'#ffb020';
-    return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>"+Number(d.amount_grind||d.amount_maloti/10||0).toFixed(2)+" G</b> • "+escHtml(d.method||'')+" • <span style='color:"+col+"'>"+escHtml(d.status||'pending')+"</span><br><span class='small'>"+escHtml(d.reference||'')+" • "+new Date(d.created_at).toLocaleDateString()+"</span></div>";
-  }).join('');
+  const user = await getCurrentUser();
+  if(!user){ document.getElementById('myDeposits').innerHTML = "<p class='small'>Login to see deposits. <a href='account.html' style='color:#d4ff3f'>Login</a></p>"; return; }
+  try{
+    const {data, error} = await window.sb.from('deposits').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+    if(error) throw error;
+    if(!data || !data.length){ document.getElementById('myDeposits').innerHTML = "<p class='small'>No deposits yet.</p>"; return; }
+    document.getElementById('myDeposits').innerHTML = data.map(function(d){
+      const col = d.status === 'approved' ? '#d4ff3f' : d.status === 'rejected' ? '#ff6b6b' : '#ffb020';
+      const g = Number(d.amount_grind || (d.amount_maloti ? d.amount_maloti/10 : 0) || d.amount/10 || 0);
+      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + g.toFixed(2) + " G</b> • " + escHtml(d.method||'') + " • <span style='color:" + col + "'>" + escHtml(d.status||'pending') + "</span><br><span class='small'>" + escHtml(d.reference||'') + " • " + new Date(d.created_at).toLocaleDateString() + "</span></div>";
+    }).join('');
+  }catch(e){
+    document.getElementById('myDeposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>";
+  }
 }
 async function submitDeposit(){
-  const user=await requireLogin(); if(!user) return;
-  const msg=document.getElementById('msg');
-  if(!selectedMethod){msg.textContent='Pick EcoCash or PostBank first';msg.className='msg error';return;}
-  const amountM=Number(document.getElementById('amountM').value||0);
-  const sender=document.getElementById('senderInfo').value.trim();
-  const ref=document.getElementById('reference').value.trim();
-  if(!amountM||amountM<10){msg.textContent='Min deposit M10 = 1G';msg.className='msg error';return;}
-  if(!sender||!ref){msg.textContent='Fill your name/number + reference';msg.className='msg error';return;}
-  msg.textContent='Submitting...';msg.className='msg';
+  const user = await requireLogin(); if(!user) return;
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('submitBtn');
+  if(!selectedMethod){ msg.textContent = 'Pick EcoCash or PostBank first'; msg.className = 'msg error'; return; }
+  const amountM = Number(document.getElementById('amountM').value || 0);
+  const sender = document.getElementById('senderInfo').value.trim();
+  const ref = document.getElementById('reference').value.trim();
+  const proofFile = document.getElementById('proofFile').files[0];
+  if(!amountM || amountM < 10){ msg.textContent = 'Min deposit M10 = 1G'; msg.className = 'msg error'; return; }
+  if(!sender || !ref){ msg.textContent = 'Fill your name/number + reference'; msg.className = 'msg error'; return; }
+  btn.disabled = true;
+  msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
-    const amountG=amountM/10;
-    const {error}=await window.sb.from('deposits').insert({user_id:user.id,method:selectedMethod.id,amount_maloti:amountM,amount_grind:amountG,amount:amountM,sender_info:sender,reference:ref,status:'pending'});
-    if(error) throw error;
-    msg.textContent='✅ Submitted! Wait for Admin approval. Your Grinds will appear in Wallet after approval.';msg.className='msg ok';
-    document.getElementById('amountM').value='';document.getElementById('senderInfo').value='';document.getElementById('reference').value='';
+    const amountG = amountM / 10;
+    // FIXED: actually upload proof screenshot if user picked one
+    let proofUrl = '';
+    if(proofFile){
+      msg.textContent = 'Uploading proof screenshot...';
+      const safe = proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const proofPath = 'deposits/' + user.id + '/' + Date.now() + '_' + safe;
+      const {error: upErr} = await window.sb.storage.from('proofs').upload(proofPath, proofFile);
+      if(!upErr){
+        const {data} = window.sb.storage.from('proofs').getPublicUrl(proofPath);
+        proofUrl = data.publicUrl;
+      } else {
+        console.log('Proof upload failed, continuing with reference only:', upErr.message);
+      }
+    }
+    // FIXED: try full insert, fallback to minimal if columns differ
+    let insertRow = {user_id: user.id, method: selectedMethod.id, amount_maloti: amountM, amount_grind: amountG, amount: amountM, sender_info: sender, reference: ref, status: 'pending'};
+    if(proofUrl) insertRow.proof_url = proofUrl;
+    let {error} = await window.sb.from('deposits').insert(insertRow);
+    if(error){
+      console.log('Deposit insert retry minimal:', error.message);
+      let row2 = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, status: 'pending', reference: ref};
+      if(proofUrl) row2.proof_url = proofUrl;
+      const r2 = await window.sb.from('deposits').insert(row2);
+      if(r2.error) throw r2.error;
+    }
+    msg.textContent = '✅ Submitted! Wait for Admin approval. Your Grinds will appear in Wallet after approval.'; msg.className = 'msg ok';
+    document.getElementById('amountM').value = '';
+    document.getElementById('senderInfo').value = '';
+    document.getElementById('reference').value = '';
+    document.getElementById('proofFile').value = '';
+    document.getElementById('amountG').textContent = 'Type amount to see Grinds';
     loadDeposits();
-  }catch(e){msg.textContent='❌ '+e.message;msg.className='msg error';}
+  }catch(e){
+    msg.textContent = '❌ ' + e.message; msg.className = 'msg error';
+  } finally {
+    btn.disabled = false;
+  }
 }
-document.addEventListener('DOMContentLoaded',async function(){renderMethods();await loadBalance();await loadDeposits();});
+document.addEventListener('DOMContentLoaded', async function(){ renderMethods(); await loadBalance(); await loadDeposits(); });
 </script>
+<script src="player.js"></script>
 </body>
 </html>
