@@ -74,12 +74,12 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <div class="card">
 <h3>ℹ️ How Les-Pot Works</h3>
 <p class="small">
-• 1G = M10 — FIXED conversion<br>
-• Artist sets price, e.g. 0.35G = M3.50<br>
-• Split: 63% Artist / 23% Platform / 14% Fees<br>
-• Deposit via EcoCash Merchant 128235 or PostBank Visa 1040278800016<br>
-• Admin approves deposits manually<br>
-• Min withdraw: 3.5G = M35
+- 1G = M10 — FIXED conversion<br>
+- Artist sets price, e.g. 0.35G = M3.50<br>
+- Split: 63% Artist / 23% Platform / 14% Fees<br>
+- Deposit via EcoCash Merchant 128235 or PostBank Visa 1040278800016<br>
+- Admin approves deposits manually<br>
+- Min withdraw: 3.5G = M35
 </p>
 </div>
 </div>
@@ -140,7 +140,6 @@ async function loadBalance() {
   }catch(e){}
 }
 
-// FIXED: playWithPlayer was missing - now defined here
 function playWithPlayer(url, s, start, end, isFull) {
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
@@ -191,7 +190,6 @@ async function previewSong(id) {
 async function buySong(id, price) {
   const user = await requireLogin();
   if (!user) return;
-  // FIXED: block double-buy like Discover does
   const {data:already} = await window.sb.from('purchases').select('id').eq('buyer_id', user.id).eq('song_id', id).maybeSingle();
   if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
   const { data: p } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
@@ -202,10 +200,19 @@ async function buySong(id, price) {
     return;
   }
   if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
-  // FIXED: removed user_id - purchases table only has buyer_id
   const { error } = await window.sb.from('purchases').insert({ buyer_id: user.id, song_id: id, price_grind: price, status: 'approved' });
   if (error) { alert('Buy failed: ' + error.message); return; }
   await window.sb.from('profiles').update({ balance_grind: bal - price }).eq('id', user.id);
+  // CREDIT ARTIST 63% - was missing, artist never got paid
+  try{
+    const {data: songRow} = await window.sb.from('songs').select('user_id, artist_id').eq('id', id).single();
+    const artistId = songRow?.user_id || songRow?.artist_id;
+    if(artistId && String(artistId) !== String(user.id)){
+      const {data: artistProf} = await window.sb.from('profiles').select('balance_grind').eq('id', artistId).single();
+      const artistBal = Number(artistProf?.balance_grind || 0);
+      await window.sb.from('profiles').update({ balance_grind: artistBal + (price * 0.63) }).eq('id', artistId);
+    }
+  }catch(e){ console.log('Artist credit failed:', e.message); }
   alert('✅ Bought! Go to Library to play FULL song.');
   location.href = 'library.html';
 }
