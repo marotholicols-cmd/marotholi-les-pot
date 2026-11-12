@@ -69,7 +69,7 @@ async function loadDiscover(){
     if(g) songs=songs.filter(function(s){return s.genre===g;});
     if(!songs.length){list.innerHTML="<div class='card'>No songs found. Try another search.</div>";return;}
     list.innerHTML=songs.map(function(s){
-      const cover=getCoverUrl(s.cover_url||s.cover_path);
+      const cover=getCoverUrl(s.cover_path||s.cover_url);
       return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • "+escHtml(s.genre||'')+" • "+formatPrice(s.price_grind)+"</span><div class='row'><button class='play' onclick=\"previewSong('"+s.id+"')\">▶ Preview 30s</button><button onclick=\"buySong('"+s.id+"',"+Number(s.price_grind||0)+")\">Buy "+Number(s.price_grind||0).toFixed(2)+"G</button><button class='share' onclick=\"shareSongLink('"+s.id+"','"+escHtml(s.title)+"','"+escHtml(s.artist_name)+"')\">🔗</button></div></div></div>";
     }).join('');
   }catch(e){list.innerHTML="<div class='card'>❌ "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadDiscover()'>🔄 Try Again</button></div>";}
@@ -77,12 +77,8 @@ async function loadDiscover(){
 async function previewSong(id){
   const s=allSongs.find(function(x){return String(x.id)===String(id);});
   if(!s){ alert('Song not found'); return; }
-  let url = s.audio_url;
-  console.log('PLAYING URL:', url);
-  if(!url || !String(url).startsWith('http')){
-    alert('No audio_url for this song');
-    return;
-  }
+  let url = await getSongStreamUrl(s.audio_path || s.audio_url);
+  if(!url){ alert('No audio file for this song'); return; }
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
   const titleEl = document.getElementById('playerTitle');
@@ -91,23 +87,16 @@ async function previewSong(id){
   const btn = document.getElementById('playerBtn');
   if(titleEl) titleEl.textContent = s.title || 'Unknown';
   if(artistEl) artistEl.textContent = s.artist_name || '';
-  if(coverEl && s.cover_url) coverEl.src = s.cover_url;
+  if(coverEl) coverEl.src = getCoverUrl(s.cover_path || s.cover_url);
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
   audio.src = url;
-  audio.currentTime = 0;
-  try{
-    await audio.play();
-    if(btn) btn.textContent = '⏸';
-  }catch(e){
-    // FIXED: Chrome blocks autoplay if user hasn't tapped yet - don't show scary URL
-    alert('Tap ▶ Preview again to play - browser blocked auto-play');
-    return;
-  }
   const r = (typeof getPreviewRange === 'function') ? getPreviewRange(s.preview_start) : {start:0, end:30};
   const start = Number(r.start||0);
   const end = Number(r.end||30);
-  if(start > 0) audio.currentTime = start;
+  audio.currentTime = start;
+  try{ await audio.play(); if(btn) btn.textContent = '⏸'; }
+  catch(e){ alert('Tap ▶ Preview again to play - browser blocked auto-play'); return; }
   window._previewTimer = setInterval(function(){
     if(audio.currentTime >= end){
       audio.pause();
@@ -132,11 +121,12 @@ function stopPlayer(){
 }
 async function buySong(id,price){
   const user=await requireLogin(); if(!user) return;
+  const {data:already} = await window.sb.from('purchases').select('id').eq('buyer_id',user.id).eq('song_id',id).maybeSingle();
+  if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
   const {data:p}=await window.sb.from('profiles').select('balance_grind').eq('id',user.id).single();
   const bal=Number(p?.balance_grind||0);
   if(bal<price){alert('Not enough Grinds.\nYou have '+bal.toFixed(2)+' G\nNeed '+price.toFixed(2)+' G');location.href='deposit.html';return;}
   if(!confirm('Buy for '+formatPrice(price)+'? Full song goes to Library.')) return;
-  // FIXED: purchases table has buyer_id only, NO user_id column
   const {error}=await window.sb.from('purchases').insert({buyer_id:user.id,song_id:id,price_grind:price,status:'approved'});
   if(error){alert('Buy failed: '+error.message);return;}
   await window.sb.from('profiles').update({balance_grind:bal-price}).eq('id',user.id);
@@ -147,8 +137,6 @@ async function checkDeepLink(){
   const songId=params.get('song');
   if(!songId) return;
   await loadDiscover();
-  // FIXED: Don't autoplay - Chrome blocks autoplay before user taps.
-  // Just tell user which song was shared and let them tap Preview.
   setTimeout(function(){
     const s = allSongs.find(function(x){return String(x.id)===String(songId);});
     if(!s) return;
