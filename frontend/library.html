@@ -53,13 +53,13 @@ async function loadLibrary(){
   const user=await getCurrentUser();
   if(!user){list.innerHTML="<div class='card'>Login to see your bought songs.<br><button class='btn' style='margin-top:10px' onclick=\"location.href='auth.html'\">Login →</button></div>";return;}
   try{
-    const {data:purchases,[STRIPPED] window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
+    const {data:purchases, error} = await window.sb.from('purchases').select('*, songs(*)').eq('buyer_id',user.id).order('created_at',{ascending:false});
     if(error) throw error;
     let songs=(purchases||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
     mySongs=songs;
     if(!songs.length){list.innerHTML="<div class='card'>No bought songs yet.<br><span class='small'>Go to Discover, preview 30s, buy, it appears here FULL.</span><br><button class='btn' style='margin-top:10px' onclick=\"location.href='discover.html'\">Go to Discover →</button></div>";return;}
     list.innerHTML=songs.map(function(s){
-      const cover=getCoverUrl(s.cover_url||s.cover_path);
+      const cover=getCoverUrl(s.cover_path||s.cover_url);
       return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • Bought • FULL</span><div class='row'><button class='play' onclick=\"playFull('"+s.id+"')\">▶ Play FULL</button><button onclick=\"shareSongLink('"+s.id+"','"+escHtml(s.title)+"','"+escHtml(s.artist_name)+"')\">🔗 Share</button></div></div></div>";
     }).join('');
   }catch(e){list.innerHTML="<div class='card'>❌ "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadLibrary()'>🔄 Try Again</button></div>";}
@@ -67,30 +67,27 @@ async function loadLibrary(){
 async function playFull(id){
   const s=mySongs.find(function(x){return String(x.id)===String(id);});
   if(!s){ alert('Song not found'); return; }
-  let url = s.audio_url;
-  if(!url || !String(url).startsWith('http')){
-    alert('No audio_url for this song');
-    return;
-  }
+  let url = await getSongStreamUrl(s.audio_path || s.audio_url);
+  if(!url){ alert('No audio file for this song'); return; }
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
   const titleEl = document.getElementById('playerTitle');
   const artistEl = document.getElementById('playerArtist');
   const coverEl = document.getElementById('playerCover');
   const btn = document.getElementById('playerBtn');
+  const cover = getCoverUrl(s.cover_path || s.cover_url);
   if(titleEl) titleEl.textContent = s.title || 'Unknown';
   if(artistEl) artistEl.textContent = s.artist_name || '';
-  if(coverEl && s.cover_url) coverEl.src = s.cover_url;
+  if(coverEl) coverEl.src = cover;
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
-  // FIXED: Show real song + artist + cover on lock screen / notification
   if('mediaSession' in navigator){
     try{
       navigator.mediaSession.metadata = new MediaMetadata({
         title: s.title || 'Unknown Song',
         artist: s.artist_name || 'Marotholi Les-Pot',
         album: 'Marotholi Les-Pot',
-        artwork: s.cover_url ? [{src: s.cover_url, sizes: '512x512', type: 'image/jpeg'}] : []
+        artwork: cover ? [{src: cover, sizes: '512x512', type: 'image/jpeg'}] : []
       });
       navigator.mediaSession.setActionHandler('play', function(){ const a=document.getElementById('mainAudio'); a.play(); const b=document.getElementById('playerBtn'); if(b) b.textContent='⏸'; });
       navigator.mediaSession.setActionHandler('pause', function(){ const a=document.getElementById('mainAudio'); a.pause(); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; });
@@ -99,12 +96,8 @@ async function playFull(id){
   }
   audio.src = url;
   audio.currentTime = 0;
-  try{
-    await audio.play();
-    if(btn) btn.textContent = '⏸';
-  }catch(e){
-    alert('Play failed: ' + e.message);
-  }
+  try{ await audio.play(); if(btn) btn.textContent = '⏸'; }
+  catch(e){ alert('Play failed: ' + e.message); }
 }
 function togglePlayer(){
   const audio = document.getElementById('mainAudio');
