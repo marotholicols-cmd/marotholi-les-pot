@@ -42,97 +42,136 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-let currentTab='deposits';
+let currentTab = 'deposits';
 function switchTab(t){
-  currentTab=t;
-  document.getElementById('tabDep').className=t==='deposits'?'active':'';
-  document.getElementById('tabWith').className=t==='withdrawals'?'active':'';
-  document.getElementById('tabSongs').className=t==='songs'?'active':'';
-  document.getElementById('listTitle').textContent=t==='deposits'?'Pending Deposits':t==='withdrawals'?'Pending Withdrawals':'All Songs';
+  currentTab = t;
+  document.getElementById('tabDep').className = t==='deposits' ? 'active' : '';
+  document.getElementById('tabWith').className = t==='withdrawals' ? 'active' : '';
+  document.getElementById('tabSongs').className = t==='songs' ? 'active' : '';
+  document.getElementById('listTitle').textContent = t==='deposits' ? 'Pending Deposits' : t==='withdrawals' ? 'Pending Withdrawals' : 'All Songs';
   loadList();
 }
 async function checkAdmin(){
-  const user=await getCurrentUser();
-  if(!user){document.getElementById('deniedCard').style.display='block';return false;}
-  const {data:prof}=await window.sb.from('profiles').select('*').eq('id',user.id).single();
-  // Admin check: role = admin OR is_admin = true - NO email in code
-  const isAdmin = prof && (prof.role==='admin' || prof.is_admin===true);
-  if(!isAdmin){document.getElementById('deniedCard').style.display='block';return false;}
-  document.getElementById('adminContent').style.display='block';
+  const user = await getCurrentUser();
+  if(!user){ document.getElementById('deniedCard').style.display = 'block'; return false; }
+  const {data: prof} = await window.sb.from('profiles').select('*').eq('id', user.id).single();
+  const isAdmin = prof && (prof.role === 'admin' || prof.is_admin === true);
+  if(!isAdmin){ document.getElementById('deniedCard').style.display = 'block'; return false; }
+  document.getElementById('adminContent').style.display = 'block';
   return true;
 }
 async function loadStats(){
-  const {data:deps}=await window.sb.from('deposits').select('*').eq('status','pending');
-  const {data:wds}=await window.sb.from('withdrawals').select('*').eq('status','pending');
-  const {data:songs}=await window.sb.from('songs').select('id');
-  document.getElementById('stats').innerHTML="Pending Deposits: <b style='color:#d4ff3f'>"+(deps||[]).length+"</b> • Pending Withdrawals: <b style='color:#d4ff3f'>"+(wds||[]).length+"</b> • Total Songs: <b>"+(songs||[]).length+"</b>";
+  try{
+    const {data: deps} = await window.sb.from('deposits').select('id').eq('status', 'pending');
+    const {data: wds} = await window.sb.from('withdrawals').select('id').eq('status', 'pending');
+    const {data: songs} = await window.sb.from('songs').select('id');
+    document.getElementById('stats').innerHTML = "Pending Deposits: <b style='color:#d4ff3f'>" + (deps||[]).length + "</b> • Pending Withdrawals: <b style='color:#d4ff3f'>" + (wds||[]).length + "</b> • Total Songs: <b>" + (songs||[]).length + "</b>";
+  }catch(e){
+    document.getElementById('stats').textContent = 'Could not load stats: ' + e.message;
+  }
 }
 async function loadList(){
-  const list=document.getElementById('list');
-  list.innerHTML="<p class='small'>Loading...</p>";
+  const list = document.getElementById('list');
+  list.innerHTML = "<p class='small'>Loading...</p>";
   try{
-    if(currentTab==='deposits'){
-      const {data,error}=await window.sb.from('deposits').select('*, profiles(username)').order('created_at',{ascending:false}).limit(50);
+    if(currentTab === 'deposits'){
+      // FIXED: no profiles(username) join - profiles may not have username column, join was crashing list
+      const {data, error} = await window.sb.from('deposits').select('*').order('created_at', {ascending:false}).limit(50);
       if(error) throw error;
-      if(!data||!data.length){list.innerHTML="<p class='small'>No deposits.</p>";return;}
-      list.innerHTML=data.map(function(d){
-        const col=d.status==='approved'?'#d4ff3f':d.status==='rejected'?'#ff6b6b':'#ffb020';
-        return "<div class='item'><b>"+Number(d.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(d.amount_grind||0)+"</b> • "+escHtml(d.method||'')+" • <span style='color:"+col+"'>"+escHtml(d.status||'pending')+"</span><br><span class='small'>User: "+escHtml(d.profiles?.username||d.user_id||'')+" • Ref: "+escHtml(d.reference||'')+" • Sender: "+escHtml(d.sender_info||'')+" • "+new Date(d.created_at).toLocaleString()+"</span>"+(d.status==='pending'?"<div class='row'><button class='btnApprove' onclick=\"approveDeposit('"+d.id+"','"+d.user_id+"',"+Number(d.amount_grind||0)+")\">✅ Approve + Add Grinds</button><button class='btnReject' onclick=\"rejectDeposit('"+d.id+"')\">❌ Reject</button></div>":"")+"</div>";
+      if(!data || !data.length){ list.innerHTML = "<p class='small'>No deposits.</p>"; return; }
+      list.innerHTML = data.map(function(d){
+        const col = d.status === 'approved' ? '#d4ff3f' : d.status === 'rejected' ? '#ff6b6b' : '#ffb020';
+        const g = Number(d.amount_grind || (d.amount_maloti ? d.amount_maloti/10 : 0) || 0);
+        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(d.method||'') + " • <span style='color:" + col + "'>" + escHtml(d.status||'pending') + "</span><br><span class='small'>User: " + escHtml(d.user_id||'') + " • Ref: " + escHtml(d.reference||'') + " • Sender: " + escHtml(d.sender_info||'') + " • " + new Date(d.created_at).toLocaleString() + (d.proof_url ? " • <a href='" + d.proof_url + "' target='_blank' style='color:#d4ff3f'>View Proof 📸</a>" : "") + "</span>" + (d.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveDeposit('" + d.id + "','" + d.user_id + "'," + g + ")\">✅ Approve + Add Grinds</button><button class='btnReject' onclick=\"rejectDeposit('" + d.id + "')\">❌ Reject</button></div>" : "") + "</div>";
       }).join('');
-    } else if(currentTab==='withdrawals'){
-      const {data,error}=await window.sb.from('withdrawals').select('*, profiles(username)').order('created_at',{ascending:false}).limit(50);
+    } else if(currentTab === 'withdrawals'){
+      const {data, error} = await window.sb.from('withdrawals').select('*').order('created_at', {ascending:false}).limit(50);
       if(error) throw error;
-      if(!data||!data.length){list.innerHTML="<p class='small'>No withdrawals.</p>";return;}
-      list.innerHTML=data.map(function(w){
-        const col=w.status==='approved'?'#d4ff3f':w.status==='rejected'?'#ff6b6b':'#ffb020';
-        return "<div class='item'><b>"+Number(w.amount_grind||0).toFixed(2)+" G = M"+grindToMaloti(w.amount_grind||0)+"</b> • "+escHtml(w.method||'')+" • <span style='color:"+col+"'>"+escHtml(w.status||'pending')+"</span><br><span class='small'>User: "+escHtml(w.profiles?.username||w.user_id||'')+" • Account: "+escHtml(w.account||w.account_number||'')+" • Name: "+escHtml(w.full_name||'')+" • "+new Date(w.created_at).toLocaleString()+"</span>"+(w.status==='pending'?"<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('"+w.id+"','"+w.user_id+"',"+Number(w.amount_grind||0)+")\">✅ Approve + Deduct</button><button class='btnReject' onclick=\"rejectWithdraw('"+w.id+"')\">❌ Reject</button></div>":"")+"</div>";
+      if(!data || !data.length){ list.innerHTML = "<p class='small'>No withdrawals.</p>"; return; }
+      list.innerHTML = data.map(function(w){
+        const col = w.status === 'approved' ? '#d4ff3f' : w.status === 'rejected' ? '#ff6b6b' : '#ffb020';
+        const g = Number(w.amount_grind || (w.amount_maloti ? w.amount_maloti/10 : 0) || 0);
+        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>User: " + escHtml(w.user_id||'') + " • Account: " + escHtml(w.account || w.account_number || '') + " • Name: " + escHtml(w.full_name||'') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + new Date(w.created_at).toLocaleString() + "</span>" + (w.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('" + w.id + "','" + w.user_id + "'," + g + ")\">✅ Approve - Pay User (Already Deducted)</button><button class='btnReject' onclick=\"rejectWithdraw('" + w.id + "','" + w.user_id + "'," + g + ")\">❌ Reject + Refund</button></div>" : "") + "</div>";
       }).join('');
     } else {
-      const {data,error}=await window.sb.from('songs').select('*').order('created_at',{ascending:false}).limit(50);
+      const {data, error} = await window.sb.from('songs').select('*').order('created_at', {ascending:false}).limit(50);
       if(error) throw error;
-      if(!data||!data.length){list.innerHTML="<p class='small'>No songs.</p>";return;}
-      list.innerHTML=data.map(function(s){
-        return "<div class='item'><b>"+escHtml(s.title)+"</b> • "+escHtml(s.artist_name)+" • "+formatPrice(s.price_grind)+" • "+escHtml(s.status||'')+"<br><span class='small'>Preview starts "+Math.floor(Number(s.preview_start||0)/60)+":"+String(Math.floor(Number(s.preview_start||0)%60)).padStart(2,'0')+"</span><div class='row'><button class='btn2' onclick=\"deleteSong('"+s.id+"')\">🗑️ Delete Song</button></div></div>";
+      if(!data || !data.length){ list.innerHTML = "<p class='small'>No songs.</p>"; return; }
+      list.innerHTML = data.map(function(s){
+        return "<div class='item'><b>" + escHtml(s.title) + "</b> • " + escHtml(s.artist_name) + " • " + formatPrice(s.price_grind) + " • " + escHtml(s.status||'') + "<br><span class='small'>Preview starts " + Math.floor(Number(s.preview_start||0)/60) + ":" + String(Math.floor(Number(s.preview_start||0)%60)).padStart(2,'0') + "</span><div class='row'><button class='btn2' onclick=\"deleteSong('" + s.id + "')\">🗑️ Delete Song</button></div></div>";
       }).join('');
     }
-  }catch(e){list.innerHTML="<p class='small'>❌ "+escHtml(e.message)+"</p>";}
+  }catch(e){ list.innerHTML = "<p class='small'>❌ " + escHtml(e.message) + "</p>"; }
 }
-async function approveDeposit(id,userId,amountG){
-  if(!confirm('Approve this deposit? This will ADD '+Number(amountG).toFixed(2)+' G to user balance.')) return;
-  const {data:prof}=await window.sb.from('profiles').select('balance_grind').eq('id',userId).single();
-  const newBal=Number(prof?.balance_grind||0)+Number(amountG);
-  await window.sb.from('profiles').update({balance_grind:newBal}).eq('id',userId);
-  await window.sb.from('deposits').update({status:'approved'}).eq('id',id);
-  alert('✅ Approved! Grinds added.'); loadStats(); loadList();
+async function approveDeposit(id, userId, amountG){
+  if(!confirm('Approve this deposit? This will ADD ' + Number(amountG).toFixed(2) + ' G to user balance.')) return;
+  try{
+    // FIXED: guard - re-check status, stops double-approve = double Grinds
+    const {data: fresh} = await window.sb.from('deposits').select('status').eq('id', id).single();
+    if(!fresh || fresh.status !== 'pending'){ alert('This deposit is already ' + (fresh?.status || 'processed') + ' - not adding Grinds again.'); loadStats(); loadList(); return; }
+    const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', userId).single();
+    const newBal = Number(prof?.balance_grind || 0) + Number(amountG);
+    const {error: balErr} = await window.sb.from('profiles').update({balance_grind: newBal}).eq('id', userId);
+    if(balErr) throw balErr;
+    const {error: upErr} = await window.sb.from('deposits').update({status: 'approved'}).eq('id', id).eq('status', 'pending');
+    if(upErr) throw upErr;
+    alert('✅ Approved! Grinds added.');
+  }catch(e){ alert('❌ Approve failed: ' + e.message); }
+  loadStats(); loadList();
 }
 async function rejectDeposit(id){
-  if(!confirm('Reject this deposit?')) return;
-  await window.sb.from('deposits').update({status:'rejected'}).eq('id',id);
-  alert('Rejected.'); loadStats(); loadList();
+  if(!confirm('Reject this deposit? User will NOT get Grinds.')) return;
+  try{
+    const {data: fresh} = await window.sb.from('deposits').select('status').eq('id', id).single();
+    if(!fresh || fresh.status !== 'pending'){ alert('Already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
+    await window.sb.from('deposits').update({status: 'rejected'}).eq('id', id).eq('status', 'pending');
+    alert('Rejected.');
+  }catch(e){ alert('❌ Reject failed: ' + e.message); }
+  loadStats(); loadList();
 }
-async function approveWithdraw(id,userId,amountG){
-  if(!confirm('Approve withdrawal? This will DEDUCT '+Number(amountG).toFixed(2)+' G from user balance. Pay them now via '+amountG+' G = M'+grindToMaloti(amountG))) return;
-  const {data:prof}=await window.sb.from('profiles').select('balance_grind').eq('id',userId).single();
-  const newBal=Number(prof?.balance_grind||0)-Number(amountG);
-  if(newBal<0){alert('User does not have enough balance!');return;}
-  await window.sb.from('profiles').update({balance_grind:newBal}).eq('id',userId);
-  await window.sb.from('withdrawals').update({status:'approved'}).eq('id',id);
-  alert('✅ Approved! Remember to send money to user now.'); loadStats(); loadList();
+async function approveWithdraw(id, userId, amountG){
+  // FIXED: NO DEDUCT HERE - withdraw.html already deducted on request
+  if(!confirm('Approve withdrawal ' + Number(amountG).toFixed(2) + ' G = M' + grindToMaloti(amountG) + '?\n\nBalance was ALREADY deducted when user requested.\n\nClick OK AFTER you have sent the money to the user.')) return;
+  try{
+    const {data: fresh} = await window.sb.from('withdrawals').select('status').eq('id', id).single();
+    if(!fresh || fresh.status !== 'pending'){ alert('This withdrawal is already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
+    await window.sb.from('withdrawals').update({status: 'approved'}).eq('id', id).eq('status', 'pending');
+    alert('✅ Approved! Remember: you must have sent the money to the user.');
+  }catch(e){ alert('❌ Approve failed: ' + e.message); }
+  loadStats(); loadList();
 }
-async function rejectWithdraw(id){
-  if(!confirm('Reject this withdrawal?')) return;
-  await window.sb.from('withdrawals').update({status:'rejected'}).eq('id',id);
-  alert('Rejected.'); loadStats(); loadList();
+async function rejectWithdraw(id, userId, amountG){
+  // FIXED: REFUND - user already lost Grinds on request, give them back
+  if(!confirm('Reject this withdrawal? This will REFUND ' + Number(amountG).toFixed(2) + ' G back to user balance.')) return;
+  try{
+    const {data: fresh} = await window.sb.from('withdrawals').select('status').eq('id', id).single();
+    if(!fresh || fresh.status !== 'pending'){ alert('Already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
+    const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', userId).single();
+    const newBal = Number(prof?.balance_grind || 0) + Number(amountG);
+    const {error: balErr} = await window.sb.from('profiles').update({balance_grind: newBal}).eq('id', userId);
+    if(balErr) throw balErr;
+    await window.sb.from('withdrawals').update({status: 'rejected'}).eq('id', id).eq('status', 'pending');
+    alert('✅ Rejected + Refunded ' + Number(amountG).toFixed(2) + ' G to user.');
+  }catch(e){ alert('❌ Reject failed: ' + e.message); }
+  loadStats(); loadList();
 }
 async function deleteSong(id){
   if(!confirm('Delete this song forever?')) return;
-  await window.sb.from('songs').delete().eq('id',id);
-  alert('Deleted.'); loadList();
+  try{
+    // Try to delete audio file too, but don't fail if it doesn't exist
+    const {data: song} = await window.sb.from('songs').select('audio_path, cover_path').eq('id', id).single();
+    if(song?.audio_path) await window.sb.storage.from('songs').remove([song.audio_path]);
+    if(song?.cover_path) await window.sb.storage.from('covers').remove([song.cover_path]);
+    await window.sb.from('songs').delete().eq('id', id);
+    alert('Deleted.');
+  }catch(e){ alert('❌ Delete failed: ' + e.message); }
+  loadList();
 }
-document.addEventListener('DOMContentLoaded',async function(){
-  const ok=await checkAdmin();
-  if(ok){await loadStats();await loadList();}
+document.addEventListener('DOMContentLoaded', async function(){
+  const ok = await checkAdmin();
+  if(ok){ await loadStats(); await loadList(); }
 });
 </script>
+<script src="player.js"></script>
 </body>
 </html>
