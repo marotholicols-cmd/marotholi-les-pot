@@ -18,6 +18,7 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
 .btn:disabled{opacity:.5}
+.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
 .method{border:1px solid #333;border-radius:14px;padding:12px;margin-top:8px;cursor:pointer}
@@ -38,6 +39,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <label style="margin-top:14px">Amount in Grinds (G) — Min 3.5G</label>
 <input id="amountG" type="number" step="0.01" min="3.5" placeholder="e.g. 3.5">
 <p class="small" id="amountM">3.5 G = M35.00</p>
+<button class="btn2" onclick="withdrawAll()">Withdraw All (My Full Balance)</button>
 <label id="accountLabel">Your EcoCash Number</label>
 <input id="account" placeholder="e.g. 6288...">
 <label>Your Full Name (must match account / card)</label>
@@ -75,6 +77,11 @@ function selectMethod(id){
   document.getElementById('accountLabel').textContent = m.label;
   document.getElementById('account').placeholder = m.placeholder;
   document.getElementById('account').value = '';
+}
+function withdrawAll(){
+  if(myBal < 3.5){ alert('You need at least 3.5G to withdraw. You have ' + myBal.toFixed(2) + ' G'); return; }
+  document.getElementById('amountG').value = myBal.toFixed(2);
+  document.getElementById('amountG').dispatchEvent(new Event('input'));
 }
 document.getElementById('amountG').addEventListener('input', function(){
   const g = Number(this.value || 0);
@@ -119,17 +126,21 @@ async function submitWithdraw(){
   const bankName = document.getElementById('bankName').value.trim();
   if(!amountG || amountG < 3.5){ msg.textContent = 'Min withdraw is 3.5G = M35'; msg.className = 'msg error'; return; }
   if(amountG > myBal){ msg.textContent = 'Not enough balance. You have ' + myBal.toFixed(2) + ' G'; msg.className = 'msg error'; return; }
-  if(!account || !fullName){ msg.textContent = 'Fill account/card number + full name'; msg.className = 'msg error'; return; }
+  if(!account || account.length < 5 || !fullName){ msg.textContent = 'Fill account/card number (5+ digits) + full name'; msg.className = 'msg error'; return; }
   if(selectedMethod === 'bank' && !bankName){ msg.textContent = 'For BANK, please fill Bank Name (Standard / FNB / Nedbank / PostBank)'; msg.className = 'msg error'; return; }
   if(!confirm('Request withdraw ' + amountG.toFixed(2) + ' G = M' + grindToMaloti(amountG) + ' via ' + selectedMethod.toUpperCase() + ' to ' + account + '?\n\nBalance will be deducted now. If Admin rejects, it will be refunded.')) return;
   btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
+    // FIXED: Block if you already have a PENDING withdrawal - stops double-withdraw / triple-pay bug
+    const {data: pending} = await window.sb.from('withdrawals').select('id, amount_grind').eq('user_id', user.id).eq('status', 'pending').maybeSingle();
+    if(pending){
+      throw new Error('You already have a PENDING withdrawal of ' + Number(pending.amount_grind||0).toFixed(2) + ' G. Wait for Admin to approve / reject it before requesting another.');
+    }
     // FIXED: re-read fresh balance to stop double-spend in 2 tabs
     const {data: fresh} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
     const freshBal = Number(fresh?.balance_grind || 0);
     if(amountG > freshBal){ msg.textContent = 'Balance changed. You now have ' + freshBal.toFixed(2) + ' G'; msg.className = 'msg error'; btn.disabled = false; return; }
-    // FIXED: try full insert, fallback to minimal if columns differ
     let {error, data: inserted} = await window.sb.from('withdrawals').insert({user_id: user.id, amount_grind: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'}).select('id').single();
     if(error){
       console.log('Withdraw insert retry minimal:', error.message);
@@ -137,10 +148,8 @@ async function submitWithdraw(){
       if(r2.error) throw r2.error;
       inserted = r2.data;
     }
-    // FIXED: DEDUCT BALANCE IMMEDIATELY - stops double-withdraw
     const {error: balErr} = await window.sb.from('profiles').update({balance_grind: freshBal - amountG}).eq('id', user.id);
     if(balErr){
-      // Rollback: delete the withdrawal we just created so user isn't stuck
       if(inserted && inserted.id) await window.sb.from('withdrawals').delete().eq('id', inserted.id);
       throw new Error('Could not deduct balance: ' + balErr.message + ' - Withdraw cancelled, try again.');
     }
