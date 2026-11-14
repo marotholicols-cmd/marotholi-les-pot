@@ -16,9 +16,12 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .card h3{margin:0 0 8px 0}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:12px;border-radius:99px;font-weight:900;font-size:14px;cursor:pointer;margin-top:10px}
+.btn:disabled{opacity:.5}
 .btn2{background:#222;color:#fff;border:1px solid #444;padding:8px 14px;border-radius:99px;font-weight:800;font-size:12px;cursor:pointer}
 .btnApprove{background:#d4ff3f;color:#000;border:0;padding:9px 14px;border-radius:99px;font-weight:900;font-size:12px;cursor:pointer}
+.btnApprove:disabled{opacity:.5}
 .btnReject{background:#ff4444;color:#fff;border:0;padding:9px 14px;border-radius:99px;font-weight:900;font-size:12px;cursor:pointer}
+.btnReject:disabled{opacity:.5}
 .tabs{display:flex;gap:8px;margin-bottom:12px}
 .tabs button{flex:1;padding:11px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;cursor:pointer}
 .tabs button.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
@@ -28,6 +31,7 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
+.proofimg{max-width:100%;border-radius:12px;margin-top:8px;border:1px solid #333}
 </style>
 </head>
 <body>
@@ -35,7 +39,7 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 <div class="wrap">
 <div class="card" id="deniedCard" style="display:none"><h3>⛔ Not Admin</h3><p class="small">This page is for Admin only. If you are the owner, make sure your profile role is 'admin' in Supabase.</p><button class="btn" onclick="location.href='index.html'">Go Home →</button></div>
 <div id="adminContent" style="display:none">
-<div class="card"><h3>📊 Quick Stats</h3><p class="small" id="stats">Loading...</p></div>
+<div class="card"><h3>📊 Quick Stats</h3><p class="small" id="stats">Loading...</p><button class="btn2" onclick="refreshAll()">🔄 Refresh</button></div>
 <div class="tabs"><button id="tabDep" class="active" onclick="switchTab('deposits')">💰 Deposits</button><button id="tabWith" onclick="switchTab('withdrawals')">💸 Withdrawals</button><button id="tabSongs" onclick="switchTab('songs')">🎵 Songs</button></div>
 <div class="card"><h3 id="listTitle">Pending Deposits</h3><div id="list"><p class="small">Loading...</p></div></div>
 </div>
@@ -51,6 +55,7 @@ function switchTab(t){
   document.getElementById('listTitle').textContent = t==='deposits' ? 'Pending Deposits' : t==='withdrawals' ? 'Pending Withdrawals' : 'All Songs';
   loadList();
 }
+function refreshAll(){ loadStats(); loadList(); }
 async function checkAdmin(){
   const user = await getCurrentUser();
   if(!user){ document.getElementById('deniedCard').style.display = 'block'; return false; }
@@ -70,19 +75,35 @@ async function loadStats(){
     document.getElementById('stats').textContent = 'Could not load stats: ' + e.message;
   }
 }
+async function viewProof(proofPath, proofUrl, btn){
+  // FIXED: proofs bucket is PRIVATE - use Signed URL, not public URL
+  let url = '';
+  const path = (proofPath || '').trim();
+  if(path && !path.startsWith('http')){
+    try{
+      const {data, error} = await window.sb.storage.from('proofs').createSignedUrl(path, 3600);
+      if(!error && data?.signedUrl) url = data.signedUrl;
+    }catch(e){}
+  }
+  if(!url && proofUrl && proofUrl.startsWith('http')) url = proofUrl;
+  if(!url){ alert('No proof screenshot for this deposit - check Reference / Transaction ID.'); return; }
+  window.open(url, '_blank');
+}
 async function loadList(){
   const list = document.getElementById('list');
   list.innerHTML = "<p class='small'>Loading...</p>";
   try{
     if(currentTab === 'deposits'){
-      // FIXED: no profiles(username) join - profiles may not have username column, join was crashing list
       const {data, error} = await window.sb.from('deposits').select('*').order('created_at', {ascending:false}).limit(50);
       if(error) throw error;
       if(!data || !data.length){ list.innerHTML = "<p class='small'>No deposits.</p>"; return; }
       list.innerHTML = data.map(function(d){
         const col = d.status === 'approved' ? '#d4ff3f' : d.status === 'rejected' ? '#ff6b6b' : '#ffb020';
         const g = Number(d.amount_grind || (d.amount_maloti ? d.amount_maloti/10 : 0) || 0);
-        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(d.method||'') + " • <span style='color:" + col + "'>" + escHtml(d.status||'pending') + "</span><br><span class='small'>User: " + escHtml(d.user_id||'') + " • Ref: " + escHtml(d.reference||'') + " • Sender: " + escHtml(d.sender_info||'') + " • " + new Date(d.created_at).toLocaleString() + (d.proof_url ? " • <a href='" + d.proof_url + "' target='_blank' style='color:#d4ff3f'>View Proof 📸</a>" : "") + "</span>" + (d.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveDeposit('" + d.id + "','" + d.user_id + "'," + g + ")\">✅ Approve + Add Grinds</button><button class='btnReject' onclick=\"rejectDeposit('" + d.id + "')\">❌ Reject</button></div>" : "") + "</div>";
+        const proofPath = (d.proof_path || '').replace(/'/g, '');
+        const proofUrl = (d.proof_url || '').replace(/'/g, '');
+        const proofBtn = (proofPath || proofUrl) ? "<button class='btn2' onclick=\"viewProof('" + proofPath + "','" + proofUrl + "', this)\">📸 View Proof</button>" : "<span class='small'>No proof image - check Ref</span>";
+        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(d.method||'') + " • <span style='color:" + col + "'>" + escHtml(d.status||'pending') + "</span><br><span class='small'>User: " + escHtml(d.user_id||'') + " • Ref: " + escHtml(d.reference||'') + " • Sender: " + escHtml(d.sender_info||'') + " • " + new Date(d.created_at).toLocaleString() + "</span><div class='row'>" + proofBtn + "</div>" + (d.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveDeposit('" + d.id + "','" + d.user_id + "'," + g + ", this)\">✅ Approve + Add Grinds</button><button class='btnReject' onclick=\"rejectDeposit('" + d.id + "', this)\">❌ Reject</button></div>" : "") + "</div>";
       }).join('');
     } else if(currentTab === 'withdrawals'){
       const {data, error} = await window.sb.from('withdrawals').select('*').order('created_at', {ascending:false}).limit(50);
@@ -91,7 +112,7 @@ async function loadList(){
       list.innerHTML = data.map(function(w){
         const col = w.status === 'approved' ? '#d4ff3f' : w.status === 'rejected' ? '#ff6b6b' : '#ffb020';
         const g = Number(w.amount_grind || (w.amount_maloti ? w.amount_maloti/10 : 0) || 0);
-        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>User: " + escHtml(w.user_id||'') + " • Account: " + escHtml(w.account || w.account_number || '') + " • Name: " + escHtml(w.full_name||'') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + new Date(w.created_at).toLocaleString() + "</span>" + (w.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('" + w.id + "','" + w.user_id + "'," + g + ")\">✅ Approve - Pay User (Already Deducted)</button><button class='btnReject' onclick=\"rejectWithdraw('" + w.id + "','" + w.user_id + "'," + g + ")\">❌ Reject + Refund</button></div>" : "") + "</div>";
+        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>User: " + escHtml(w.user_id||'') + " • Account: " + escHtml(w.account || w.account_number || '') + " • Name: " + escHtml(w.full_name||'') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + new Date(w.created_at).toLocaleString() + "</span>" + (w.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">✅ Approve - Pay User (Already Deducted)</button><button class='btnReject' onclick=\"rejectWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">❌ Reject + Refund</button></div>" : "") + "</div>";
       }).join('');
     } else {
       const {data, error} = await window.sb.from('songs').select('*').order('created_at', {ascending:false}).limit(50);
@@ -103,54 +124,53 @@ async function loadList(){
     }
   }catch(e){ list.innerHTML = "<p class='small'>❌ " + escHtml(e.message) + "</p>"; }
 }
-async function approveDeposit(id, userId, amountG){
+async function approveDeposit(id, userId, amountG, btn){
   if(!confirm('Approve this deposit? This will ADD ' + Number(amountG).toFixed(2) + ' G to user balance.')) return;
+  if(btn) btn.disabled = true;
   try{
-    // FIXED: guard - re-check status, stops double-approve = double Grinds
-    const {data: fresh} = await window.sb.from('deposits').select('status').eq('id', id).single();
-    if(!fresh || fresh.status !== 'pending'){ alert('This deposit is already ' + (fresh?.status || 'processed') + ' - not adding Grinds again.'); loadStats(); loadList(); return; }
+    // FIXED: LOCK FIRST - mark approved with eq(status,pending), if 0 rows returned someone already approved it
+    const {data: locked, error: lockErr} = await window.sb.from('deposits').update({status: 'approved'}).eq('id', id).eq('status', 'pending').select('id');
+    if(lockErr) throw lockErr;
+    if(!locked || !locked.length){ alert('Already processed by someone else - NOT adding Grinds again.'); loadStats(); loadList(); return; }
     const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', userId).single();
     const newBal = Number(prof?.balance_grind || 0) + Number(amountG);
     const {error: balErr} = await window.sb.from('profiles').update({balance_grind: newBal}).eq('id', userId);
     if(balErr) throw balErr;
-    const {error: upErr} = await window.sb.from('deposits').update({status: 'approved'}).eq('id', id).eq('status', 'pending');
-    if(upErr) throw upErr;
     alert('✅ Approved! Grinds added.');
   }catch(e){ alert('❌ Approve failed: ' + e.message); }
   loadStats(); loadList();
 }
-async function rejectDeposit(id){
+async function rejectDeposit(id, btn){
   if(!confirm('Reject this deposit? User will NOT get Grinds.')) return;
+  if(btn) btn.disabled = true;
   try{
-    const {data: fresh} = await window.sb.from('deposits').select('status').eq('id', id).single();
-    if(!fresh || fresh.status !== 'pending'){ alert('Already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
-    await window.sb.from('deposits').update({status: 'rejected'}).eq('id', id).eq('status', 'pending');
+    const {data: locked} = await window.sb.from('deposits').update({status: 'rejected'}).eq('id', id).eq('status', 'pending').select('id');
+    if(!locked || !locked.length){ alert('Already processed.'); loadStats(); loadList(); return; }
     alert('Rejected.');
   }catch(e){ alert('❌ Reject failed: ' + e.message); }
   loadStats(); loadList();
 }
-async function approveWithdraw(id, userId, amountG){
-  // FIXED: NO DEDUCT HERE - withdraw.html already deducted on request
+async function approveWithdraw(id, userId, amountG, btn){
   if(!confirm('Approve withdrawal ' + Number(amountG).toFixed(2) + ' G = M' + grindToMaloti(amountG) + '?\n\nBalance was ALREADY deducted when user requested.\n\nClick OK AFTER you have sent the money to the user.')) return;
+  if(btn) btn.disabled = true;
   try{
-    const {data: fresh} = await window.sb.from('withdrawals').select('status').eq('id', id).single();
-    if(!fresh || fresh.status !== 'pending'){ alert('This withdrawal is already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
-    await window.sb.from('withdrawals').update({status: 'approved'}).eq('id', id).eq('status', 'pending');
+    const {data: locked, error} = await window.sb.from('withdrawals').update({status: 'approved'}).eq('id', id).eq('status', 'pending').select('id');
+    if(error) throw error;
+    if(!locked || !locked.length){ alert('Already processed.'); loadStats(); loadList(); return; }
     alert('✅ Approved! Remember: you must have sent the money to the user.');
   }catch(e){ alert('❌ Approve failed: ' + e.message); }
   loadStats(); loadList();
 }
-async function rejectWithdraw(id, userId, amountG){
-  // FIXED: REFUND - user already lost Grinds on request, give them back
+async function rejectWithdraw(id, userId, amountG, btn){
   if(!confirm('Reject this withdrawal? This will REFUND ' + Number(amountG).toFixed(2) + ' G back to user balance.')) return;
+  if(btn) btn.disabled = true;
   try{
-    const {data: fresh} = await window.sb.from('withdrawals').select('status').eq('id', id).single();
-    if(!fresh || fresh.status !== 'pending'){ alert('Already ' + (fresh?.status || 'processed')); loadStats(); loadList(); return; }
+    const {data: locked} = await window.sb.from('withdrawals').update({status: 'rejected'}).eq('id', id).eq('status', 'pending').select('id');
+    if(!locked || !locked.length){ alert('Already processed - NOT refunding again.'); loadStats(); loadList(); return; }
     const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', userId).single();
     const newBal = Number(prof?.balance_grind || 0) + Number(amountG);
     const {error: balErr} = await window.sb.from('profiles').update({balance_grind: newBal}).eq('id', userId);
     if(balErr) throw balErr;
-    await window.sb.from('withdrawals').update({status: 'rejected'}).eq('id', id).eq('status', 'pending');
     alert('✅ Rejected + Refunded ' + Number(amountG).toFixed(2) + ' G to user.');
   }catch(e){ alert('❌ Reject failed: ' + e.message); }
   loadStats(); loadList();
@@ -158,7 +178,6 @@ async function rejectWithdraw(id, userId, amountG){
 async function deleteSong(id){
   if(!confirm('Delete this song forever?')) return;
   try{
-    // Try to delete audio file too, but don't fail if it doesn't exist
     const {data: song} = await window.sb.from('songs').select('audio_path, cover_path').eq('id', id).single();
     if(song?.audio_path) await window.sb.storage.from('songs').remove([song.audio_path]);
     if(song?.cover_path) await window.sb.storage.from('covers').remove([song.cover_path]);
