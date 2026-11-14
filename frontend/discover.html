@@ -7,7 +7,6 @@
 <link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="player.js"></script>
 <link rel="stylesheet" href="style.css">
 <style>
 body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:180px}
@@ -83,6 +82,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 let allSongs = [];
 let ownedIds = [];
 // FIXED: DO NOT declare let currentSong here - player.js already declares it
+// FIXED: DO NOT re-define playWithPlayer / togglePlayer / stopPlayer here - player.js owns them now
 
 async function loadDiscover() {
   const listEl = document.getElementById('songList');
@@ -90,7 +90,6 @@ async function loadDiscover() {
   const genre = document.getElementById('genreFilter').value;
   const sort = document.getElementById('sortFilter').value;
   try {
-    // Load owned songs for current user so Buy button shows Owned
     try{
       const u = await getCurrentUser();
       if(u){
@@ -119,7 +118,7 @@ async function loadDiscover() {
       return "<div class='song'>"
         + "<img src='" + cover + "' onerror=\"this.src='icon.svg'\">"
         + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name) + " • " + escHtml(s.genre||'') + " • " + formatPrice(s.price_grind) + "</span>"
-        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button>" + buyBtn + "<button class='share' onclick=\"shareSongLink('" + s.id + "', '" + escHtml(s.title) + "', '" + escHtml(s.artist_name) + "')\">🔗</button></div>"
+        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button>" + buyBtn + "<button class='share' onclick=\"shareById('" + s.id + "')\">🔗</button></div>"
         + "</div></div>";
     }).join('');
   } catch (e) {
@@ -127,51 +126,17 @@ async function loadDiscover() {
   }
 }
 
-function playWithPlayer(url, s, start, end, isFull) {
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
-  const btn = document.getElementById('playerBtn');
-  document.getElementById('playerTitle').textContent = s.title || 'Unknown';
-  document.getElementById('playerArtist').textContent = (s.artist_name || '') + (isFull ? ' • FULL' : ' • PREVIEW');
-  document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
-  if(bar) bar.classList.add('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
-  audio.src = url;
-  audio.currentTime = Number(start || 0);
-  audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(){ alert('Tap ▶ again to play'); });
-  if(!isFull && end){
-    window._previewTimer = setInterval(function(){
-      if(audio.currentTime >= Number(end)){
-        audio.pause();
-        clearInterval(window._previewTimer);
-        if(btn) btn.textContent = '▶';
-        alert('Preview ended - Buy for full song');
-      }
-    }, 500);
-  }
-}
-function togglePlayer(){
-  const audio = document.getElementById('mainAudio');
-  const btn = document.getElementById('playerBtn');
-  if(!audio.src) return;
-  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
-  else { audio.pause(); if(btn) btn.textContent='▶'; }
-}
-function stopPlayer(){
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
-  audio.pause(); audio.src='';
-  if(bar) bar.classList.remove('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
+function shareById(id){
+  const s = allSongs.find(function(x){ return String(x.id) === String(id); });
+  if(!s) return;
+  shareSongLink(s.id, s.title, s.artist_name);
 }
 
 async function previewSong(id) {
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
   if (!s) return;
-  const url = await getSongStreamUrl(s.audio_path || s.audio_url, 3600);
-  if (!url) { alert('No audio file for this song'); return; }
-  const range = getPreviewRange(s.preview_start);
-  playWithPlayer(url, s, range.start, range.end, false);
+  // Use player.js playSong - it handles Signed URL + preview_start + saving state
+  await playSong(s, true);
 }
 
 async function buySong(id, price) {
@@ -213,5 +178,6 @@ document.addEventListener('DOMContentLoaded', async function(){
   }
 });
 </script>
+<script src="player.js"></script>
 </body>
 </html>
