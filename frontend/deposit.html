@@ -25,9 +25,12 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .method.active{border-color:#d4ff3f;background:#222}
 .method.locked{opacity:.5;cursor:not-allowed}
 .big{font-size:22px;font-weight:900}
+.quick{display:flex;gap:8px;margin-top:8px}
+.quick button{flex:1;padding:10px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;cursor:pointer}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
+.copybtn{background:#d4ff3f;color:#000;border:0;padding:6px 12px;border-radius:99px;font-weight:900;font-size:12px;cursor:pointer;margin-left:6px}
 </style>
 </head>
 <body>
@@ -44,6 +47,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <p class="small" id="stepsText"></p>
 <label>Amount in Maloti (M) — e.g. 35 = 3.5G</label>
 <input id="amountM" type="number" min="10" step="1" placeholder="e.g. 35">
+<div class="quick"><button onclick="setAmount(10)">M10 = 1G</button><button onclick="setAmount(35)">M35 = 3.5G</button><button onclick="setAmount(50)">M50 = 5G</button><button onclick="setAmount(100)">M100 = 10G</button></div>
 <p class="small" id="amountG">Type amount to see Grinds</p>
 <label>Your EcoCash / PostBank Name + Number</label>
 <input id="senderInfo" placeholder="e.g. Thabo M - 6288...">
@@ -63,8 +67,16 @@ let selectedMethod = null;
 function renderMethods(){
   document.getElementById('methods').innerHTML = DEPOSIT_METHODS.map(function(m){
     if(!m.active) return "<div class='method locked'><b>🔒 " + escHtml(m.name) + "</b><br><span class='small'>Coming Soon - Locked for now</span></div>";
-    return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> • " + escHtml(m.accountName) + "</span></div>";
+    return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> <button class='copybtn' onclick=\"event.stopPropagation(); copyNumber('" + escHtml(m.number) + "')\">📋 Copy</button> • " + escHtml(m.accountName) + "</span></div>";
   }).join('');
+}
+function copyNumber(num){
+  if(navigator.clipboard) navigator.clipboard.writeText(num).then(function(){ alert('Copied: ' + num); }).catch(function(){ prompt('Copy this number:', num); });
+  else prompt('Copy this number:', num);
+}
+function setAmount(m){
+  document.getElementById('amountM').value = m;
+  document.getElementById('amountM').dispatchEvent(new Event('input'));
 }
 function selectMethod(id){
   selectedMethod = DEPOSIT_METHODS.find(function(m){ return m.id === id; });
@@ -120,29 +132,30 @@ async function submitDeposit(){
   btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
+    // FIXED: Block duplicate reference - was causing double submits
+    const {data: dup} = await window.sb.from('deposits').select('id').eq('user_id', user.id).eq('reference', ref).maybeSingle();
+    if(dup){ throw new Error('You already submitted this reference: ' + ref + '. Check My Deposits below - do not submit again.'); }
     const amountG = amountM / 10;
-    // FIXED: actually upload proof screenshot if user picked one
+    // FIXED: Store proof_path (private bucket), NOT public URL. Admin uses Signed URL to view.
+    let proofPath = '';
     let proofUrl = '';
     if(proofFile){
       msg.textContent = 'Uploading proof screenshot...';
       const safe = proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const proofPath = 'deposits/' + user.id + '/' + Date.now() + '_' + safe;
+      proofPath = user.id + '/' + Date.now() + '_' + safe;
       const {error: upErr} = await window.sb.storage.from('proofs').upload(proofPath, proofFile);
-      if(!upErr){
-        const {data} = window.sb.storage.from('proofs').getPublicUrl(proofPath);
-        proofUrl = data.publicUrl;
-      } else {
+      if(upErr){
         console.log('Proof upload failed, continuing with reference only:', upErr.message);
+        proofPath = '';
       }
     }
-    // FIXED: try full insert, fallback to minimal if columns differ
-    let insertRow = {user_id: user.id, method: selectedMethod.id, amount_maloti: amountM, amount_grind: amountG, amount: amountM, sender_info: sender, reference: ref, status: 'pending'};
+    let insertRow = {user_id: user.id, method: selectedMethod.id, amount_maloti: amountM, amount_grind: amountG, amount: amountM, sender_info: sender, reference: ref, status: 'pending', proof_path: proofPath};
     if(proofUrl) insertRow.proof_url = proofUrl;
+    if(proofPath) insertRow.proof_url = proofPath;
     let {error} = await window.sb.from('deposits').insert(insertRow);
     if(error){
       console.log('Deposit insert retry minimal:', error.message);
-      let row2 = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, status: 'pending', reference: ref};
-      if(proofUrl) row2.proof_url = proofUrl;
+      let row2 = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, status: 'pending', reference: ref, proof_path: proofPath};
       const r2 = await window.sb.from('deposits').insert(row2);
       if(r2.error) throw r2.error;
     }
@@ -153,6 +166,7 @@ async function submitDeposit(){
     document.getElementById('proofFile').value = '';
     document.getElementById('amountG').textContent = 'Type amount to see Grinds';
     loadDeposits();
+    loadBalance();
   }catch(e){
     msg.textContent = '❌ ' + e.message; msg.className = 'msg error';
   } finally {
