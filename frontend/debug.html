@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEBUG LesPot</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{background:#000;color:#fff;font-family:system-ui;padding:20px} .box{background:#222;padding:15px;border-radius:12px;white-space:pre-wrap} .ok{color:#2ecc71} .err{color:#ff5252}</style>
+</head><body>
+<h2>LesPot DEBUG</h2>
+<div id="out" class="box">Testing...</div>
+<script>
+async function run(){
+  const out = document.getElementById('out');
+  try{
+    if(typeof window.supabase === 'undefined'){ out.innerHTML='<span class=err>FAIL: supabase-js CDN did NOT load. Check internet / script tag.</span>'; return; }
+    const sb = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co", "sb_publishable_wWhjXCZ4JWfGLCIG95kzPg_WXqzfVDP");
+    out.textContent = 'Supabase client created... testing profiles table...';
+    const {data, error} = await sb.from('profiles').select('id').limit(1);
+    if(error){ out.innerHTML='<span class=err>CONNECTED BUT TABLE ERROR:\n'+error.message+'\n\nCode: '+error.code+'</span>'; }
+    else{ out.innerHTML='<span class=ok>✅ SUPABASE IS WORKING!\nGot profiles table OK.\n\nSo crash is NOT Supabase, it is your app.js / index.html</span>'; }
+  }catch(e){ out.innerHTML='<span class=err>JS CRASH: '+e.message+'</span>'; }
+}
+run();
+</script></body></html>
