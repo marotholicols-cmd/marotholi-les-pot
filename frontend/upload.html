@@ -18,6 +18,7 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 input[type=range]{padding:0}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn2{display:block;text-align:center;background:#333;color:#fff;padding:12px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:10px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
@@ -43,19 +44,24 @@ input[type=range]{padding:0}
 <p class="small" id="priceM">0.50 G = M5.00 • You earn 63%: 0.32 G = M3.15</p>
 <label>Audio File (MP3) *</label>
 <input id="audioFile" type="file" accept="audio/*">
+<p class="small" id="durationInfo" style="display:none"></p>
 <label>Cover Image (optional)</label>
 <input id="coverFile" type="file" accept="image/*">
 <label>🎧 Preview START — Where should the 30s free preview start? (seconds)</label>
 <input id="previewStart" type="range" min="0" max="60" step="5" value="0">
 <p class="small" id="previewLabel"><b style="color:#d4ff3f;font-size:16px">Preview: 0s - 30s</b> — Fans hear 30s free from here, then must BUY to hear full song.</p>
 <p class="small">Tip: 0s = start of song. 30s = chorus / hook. Pick your best 30s.</p>
-<button class="btn" onclick="uploadSong()">⬆️ Upload Song →</button>
+<button class="btn" id="testPreviewBtn" onclick="testPreview()" style="background:#222;color:#fff;margin-top:8px">▶ Hear My Preview (30s)</button>
+<button class="btn" id="uploadBtn" onclick="uploadSong()">⬆️ Upload Song →</button>
 <p class="msg" id="msg"></p>
 </div>
 <div class="card"><h3>🎵 My Uploaded Songs</h3><div id="mySongs"><p class="small">Loading...</p></div></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html" class="active">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
+let _audioDuration = 0;
+let _testAudio = null;
+
 document.getElementById('priceG').addEventListener('input', function(){
   const g = Number(this.value || 0);
   const earn = g * 0.63;
@@ -65,9 +71,46 @@ document.getElementById('previewStart').addEventListener('input', function(){
   const s = Number(this.value || 0);
   document.getElementById('previewLabel').innerHTML = "<b style='color:#d4ff3f;font-size:16px'>Preview: " + s + "s - " + (s+30) + "s</b> — Fans hear 30s free from here, then must BUY to hear full song.";
 });
+// FIXED: When artist picks MP3, read real duration, set slider max = duration - 30
+document.getElementById('audioFile').addEventListener('change', function(){
+  const f = this.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  const a = new Audio();
+  a.preload = 'metadata';
+  a.onloadedmetadata = function(){
+    _audioDuration = Math.floor(a.duration || 0);
+    const slider = document.getElementById('previewStart');
+    const maxStart = Math.max(0, _audioDuration - 30);
+    slider.max = maxStart;
+    if(Number(slider.value) > maxStart) slider.value = 0;
+    slider.dispatchEvent(new Event('input'));
+    const info = document.getElementById('durationInfo');
+    info.style.display = 'block';
+    info.textContent = '🎵 Song length: ' + _audioDuration + 's • Preview can start 0s - ' + maxStart + 's';
+    if(_audioDuration < 30){
+      info.textContent += ' ⚠️ Song is shorter than 30s - preview will be whole song';
+    }
+    URL.revokeObjectURL(url);
+  };
+  a.src = url;
+});
+function testPreview(){
+  const f = document.getElementById('audioFile').files[0];
+  if(!f){ alert('Pick an MP3 first'); return; }
+  const start = Number(document.getElementById('previewStart').value || 0);
+  if(_testAudio) _testAudio.pause();
+  _testAudio = new Audio(URL.createObjectURL(f));
+  _testAudio.currentTime = start;
+  _testAudio.play().catch(function(){});
+  _testAudio.ontimeupdate = function(){
+    if(_testAudio.currentTime >= start + 30){ _testAudio.pause(); }
+  };
+}
 async function uploadSong(){
   const user = await requireLogin(); if(!user) return;
   const msg = document.getElementById('msg');
+  const btn = document.getElementById('uploadBtn');
   const title = document.getElementById('title').value.trim();
   const artistName = document.getElementById('artistName').value.trim();
   const genre = document.getElementById('genre').value;
@@ -78,26 +121,29 @@ async function uploadSong(){
   if(!title || !artistName){ msg.textContent = 'Fill Title + Artist Name'; msg.className = 'msg error'; return; }
   if(!priceG || priceG < 0.2){ msg.textContent = 'Price min 0.2G = M2'; msg.className = 'msg error'; return; }
   if(!audioFile){ msg.textContent = 'Choose MP3 file'; msg.className = 'msg error'; return; }
+  // FIXED: Never allow preview_start past end of song - was causing silence
+  if(_audioDuration > 0 && previewStart + 30 > _audioDuration + 1){
+    msg.textContent = '⚠️ Preview start too late - song is only ' + _audioDuration + 's. Pick 0-' + Math.max(0,_audioDuration-30) + 's'; msg.className = 'msg error'; return;
+  }
+  if(_testAudio) _testAudio.pause();
+  btn.disabled = true;
   msg.textContent = 'Uploading... do not close'; msg.className = 'msg';
   try{
-    // FIXED: store audio_path (not just public URL) so signed URL works
+    // FIXED: Consistent path - userId/timestamp_name - NO 'audio/' prefix, matches app.js cleanStoragePath
     const safeAudio = audioFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const audioPath = 'audio/' + user.id + '/' + Date.now() + '_' + safeAudio;
+    const audioPath = user.id + '/' + Date.now() + '_' + safeAudio;
     const {error: upErr} = await window.sb.storage.from('songs').upload(audioPath, audioFile);
     if(upErr) throw upErr;
-    // FIXED: cover goes to 'covers' bucket, store cover_path
     let coverPath = '';
     if(coverFile){
       const safeCover = coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       coverPath = user.id + '/' + Date.now() + '_' + safeCover;
       const {error: cErr} = await window.sb.storage.from('covers').upload(coverPath, coverFile);
       if(cErr){
-        // If covers bucket fails, don't kill whole upload - continue without cover
         console.log('Cover upload failed:', cErr.message);
         coverPath = '';
       }
     }
-    // FIXED: status='published' so it shows in Discover, preview_start + 30s fixed
     const row = {
       user_id: user.id,
       artist_id: user.id,
@@ -107,13 +153,13 @@ async function uploadSong(){
       price_grind: priceG,
       preview_start: previewStart,
       preview_seconds: 30,
+      duration_seconds: _audioDuration || null,
       audio_path: audioPath,
       cover_path: coverPath,
       status: 'published'
     };
     let {error: dbErr} = await window.sb.from('songs').insert(row);
     if(dbErr){
-      // Fallback: try without cover_path / preview_start if columns don't exist yet
       console.log('Insert retry without new columns:', dbErr.message);
       const row2 = {
         user_id: user.id,
@@ -133,8 +179,11 @@ async function uploadSong(){
     document.getElementById('title').value = '';
     document.getElementById('audioFile').value = '';
     document.getElementById('coverFile').value = '';
+    _audioDuration = 0;
+    document.getElementById('durationInfo').style.display = 'none';
     loadMySongs();
   }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
+  finally{ btn.disabled = false; }
 }
 async function loadMySongs(){
   const user = await getCurrentUser();
