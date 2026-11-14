@@ -8,7 +8,6 @@
 <link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="player.js"></script>
 <link rel="stylesheet" href="style.css">
 <style>
 body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:180px}
@@ -100,13 +99,18 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 </div>
 <script>
 let allSongs = [];
-// FIXED: DO NOT declare let currentSong here - player.js already declares it
+function getSB(){ return window.sb || null; }
 
 async function loadHome() {
   const listEl = document.getElementById('songList');
   const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  const sb = getSB();
+  if (!sb) {
+    listEl.innerHTML = "<div class='card'>⏳ Connecting to Supabase...<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
+    return;
+  }
   try {
-    const { data, error } = await window.sb.from('songs').select('*').eq('status', 'published').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('songs').select('*').eq('status', 'published').order('created_at', { ascending: false });
     if (error) throw error;
     allSongs = data || [];
     let songs = allSongs;
@@ -117,10 +121,12 @@ async function loadHome() {
     }
     listEl.innerHTML = songs.map(function(s) {
       const cover = getCoverUrl(s.cover_path || s.cover_url);
+      const safeTitle = String(s.title || '').replace(/'/g, "");
+      const safeArtist = String(s.artist_name || '').replace(/'/g, "");
       return "<div class='song'>"
         + "<img src='" + cover + "' onerror=\"this.src='icon.svg'\">"
         + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name) + " • " + formatPrice(s.price_grind) + "</span>"
-        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button><button onclick=\"buySong('" + s.id + "', " + Number(s.price_grind || 0) + ")\">Buy " + Number(s.price_grind || 0).toFixed(2) + "G</button><button class='share' onclick=\"shareSongLink('" + s.id + "', '" + escHtml(s.title) + "', '" + escHtml(s.artist_name) + "')\">🔗</button></div>"
+        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button><button onclick=\"buySong('" + s.id + "', " + Number(s.price_grind || 0) + ")\">Buy " + Number(s.price_grind || 0).toFixed(2) + "G</button><button class='share' onclick=\"shareSongLink('" + s.id + "', '" + safeTitle + "', '" + safeArtist + "')\">🔗</button></div>"
         + "</div></div>";
     }).join('');
   } catch (e) {
@@ -130,10 +136,12 @@ async function loadHome() {
 
 async function loadBalance() {
   try{
+    const sb = getSB();
+    if (!sb) return;
     const user = await getCurrentUser();
     if (!user) return;
     document.getElementById('balanceCard').style.display = 'block';
-    const { data } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+    const { data } = await sb.from('profiles').select('balance_grind').eq('id', user.id).single();
     const bal = Number(data?.balance_grind || 0);
     document.getElementById('balText').textContent = bal.toFixed(2) + " G";
     document.getElementById('balMaloti').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
@@ -188,11 +196,13 @@ async function previewSong(id) {
 }
 
 async function buySong(id, price) {
+  const sb = getSB();
+  if (!sb) { alert('Still connecting... reload and try again'); return; }
   const user = await requireLogin();
   if (!user) return;
-  const {data:already} = await window.sb.from('purchases').select('id').eq('buyer_id', user.id).eq('song_id', id).maybeSingle();
+  const {data:already} = await sb.from('purchases').select('id').eq('buyer_id', user.id).eq('song_id', id).maybeSingle();
   if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
-  const { data: p } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+  const { data: p } = await sb.from('profiles').select('balance_grind').eq('id', user.id).single();
   const bal = Number(p?.balance_grind || 0);
   if (bal < price) {
     alert('Not enough Grinds.\nYou have ' + bal.toFixed(2) + ' G\nNeed ' + price.toFixed(2) + ' G\n\nGo to Deposit to top up.');
@@ -200,17 +210,16 @@ async function buySong(id, price) {
     return;
   }
   if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
-  const { error } = await window.sb.from('purchases').insert({ buyer_id: user.id, song_id: id, price_grind: price, status: 'approved' });
+  const { error } = await sb.from('purchases').insert({ buyer_id: user.id, song_id: id, price_grind: price, status: 'approved' });
   if (error) { alert('Buy failed: ' + error.message); return; }
-  await window.sb.from('profiles').update({ balance_grind: bal - price }).eq('id', user.id);
-  // CREDIT ARTIST 63% - was missing, artist never got paid
+  await sb.from('profiles').update({ balance_grind: bal - price }).eq('id', user.id);
   try{
-    const {data: songRow} = await window.sb.from('songs').select('user_id, artist_id').eq('id', id).single();
+    const {data: songRow} = await sb.from('songs').select('user_id, artist_id').eq('id', id).single();
     const artistId = songRow?.user_id || songRow?.artist_id;
     if(artistId && String(artistId) !== String(user.id)){
-      const {data: artistProf} = await window.sb.from('profiles').select('balance_grind').eq('id', artistId).single();
+      const {data: artistProf} = await sb.from('profiles').select('balance_grind').eq('id', artistId).single();
       const artistBal = Number(artistProf?.balance_grind || 0);
-      await window.sb.from('profiles').update({ balance_grind: artistBal + (price * 0.63) }).eq('id', artistId);
+      await sb.from('profiles').update({ balance_grind: artistBal + (price * 0.63) }).eq('id', artistId);
     }
   }catch(e){ console.log('Artist credit failed:', e.message); }
   alert('✅ Bought! Go to Library to play FULL song.');
