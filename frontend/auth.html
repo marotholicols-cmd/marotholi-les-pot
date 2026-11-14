@@ -16,8 +16,9 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:16px;margin-bottom:12px}
 .card h3{margin:0 0 8px 0;font-size:18px}
 label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
-input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
+input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .tabs{display:flex;gap:8px;margin-bottom:4px}
@@ -31,6 +32,9 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 .center{text-align:center}
 .big{font-size:42px}
+.passwrap{position:relative}
+.passwrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:#222;color:#fff;border:1px solid #444;border-radius:99px;padding:6px 10px;font-size:12px;cursor:pointer}
+.linkbtn{background:none;border:0;color:#d4ff3f;font-weight:800;font-size:13px;cursor:pointer;padding:0;margin-top:8px}
 </style>
 </head>
 <body>
@@ -38,7 +42,6 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 
 <div class="wrap">
 
-<!-- BOX 1: LOGIN / SIGNUP - Shown ONLY when NOT logged in -->
 <div class="card" id="loginBox">
 <h3>Welcome to Les-Pot</h3>
 <p class="small">Login to buy songs, upload, deposit Grinds. 1G = M10 FIXED.</p>
@@ -48,36 +51,34 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <button id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
 </div>
 
-<!-- LOGIN FORM -->
 <div id="loginForm">
 <label>Email</label>
 <input id="loginEmail" type="email" placeholder="you@gmail.com" autocomplete="email">
 <label>Password</label>
-<input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password">
-<button class="btn" onclick="doLogin()">Login →</button>
+<div class="passwrap"><input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password"><button type="button" onclick="togglePass('loginPassword', this)">Show</button></div>
+<button class="btn" id="loginBtn" onclick="doLogin()">Login →</button>
+<button class="linkbtn" onclick="forgotPassword()">Forgot password? Send reset email →</button>
 <p class="msg" id="loginMsg"></p>
 </div>
 
-<!-- SIGNUP FORM -->
 <div id="signupForm" style="display:none">
 <label>Stage Name / Username</label>
 <input id="signupName" type="text" placeholder="e.g. SHUTTER" autocomplete="username">
 <label>Email</label>
 <input id="signupEmail" type="email" placeholder="you@gmail.com" autocomplete="email">
 <label>Password</label>
-<input id="signupPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+<div class="passwrap"><input id="signupPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password"><button type="button" onclick="togglePass('signupPassword', this)">Show</button></div>
 <label>Are you an Artist?</label>
-<select id="signupRole" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px">
+<select id="signupRole">
 <option value="fan">Fan - I listen & buy</option>
 <option value="artist">Artist - I upload & sell</option>
 </select>
-<button class="btn" onclick="doSignup()">Create Account →</button>
+<button class="btn" id="signupBtn" onclick="doSignup()">Create Account →</button>
 <p class="small" style="margin-top:10px">By signing up you agree: No download, stream only. Preview 30 sec. Artist gets 63%.</p>
 <p class="msg" id="signupMsg"></p>
 </div>
 </div>
 
-<!-- BOX 2: LOGGED IN - Shown ONLY when logged in -->
 <div class="card center" id="loggedInBox" style="display:none">
 <div class="big">✅</div>
 <h3>You are logged in</h3>
@@ -90,7 +91,7 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 
 <div class="card">
 <h3>ℹ️ Need help?</h3>
-<p class="small">Forgot password? Use your email to login, then go to Account to change it. If you are stuck, go to Home and try again.</p>
+<p class="small">Forgot password? Tap "Forgot password" above, check your email (and Spam). If you are stuck, go to Home and try again.</p>
 </div>
 
 </div>
@@ -114,17 +115,44 @@ function switchTab(tab) {
   document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
 }
-
+function togglePass(id, btn){
+  const el = document.getElementById(id);
+  if(el.type === 'password'){ el.type = 'text'; btn.textContent = 'Hide'; }
+  else { el.type = 'password'; btn.textContent = 'Show'; }
+}
+function friendlyAuthError(msg){
+  msg = String(msg || '');
+  if(msg.includes('Email not confirmed')) return '📧 Check your email + Spam - tap the confirm link, then login again.';
+  if(msg.includes('Invalid login')) return '❌ Wrong email or password. Try again or tap Forgot password.';
+  if(msg.includes('User already registered')) return '❌ That email is already registered - tap Login instead.';
+  if(msg.includes('Password should be')) return '❌ Password must be 6+ characters.';
+  return '❌ ' + msg;
+}
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMsg');
+  const btn = document.getElementById('loginBtn');
   if (!email || !password) { msg.textContent = 'Fill email + password'; msg.className = 'msg error'; return; }
+  btn.disabled = true;
   msg.textContent = 'Logging in...'; msg.className = 'msg';
-  const { data, error } = await window.sb.auth.signInWithPassword({ email: email, password: password });
-  if (error) { msg.textContent = '❌ ' + error.message; msg.className = 'msg error'; return; }
-  msg.textContent = '✅ Logged in!'; msg.className = 'msg ok';
-  setTimeout(function() { location.href = 'index.html'; }, 800);
+  try{
+    const { data, error } = await window.sb.auth.signInWithPassword({ email: email, password: password });
+    if (error) throw error;
+    // FIXED: If user logged in but has NO profile (old signup bug), create it now so Wallet/Upload work
+    if(data.user){
+      const {data: prof} = await window.sb.from('profiles').select('id').eq('id', data.user.id).maybeSingle();
+      if(!prof){
+        const fallbackName = email.split('@')[0];
+        await window.sb.from('profiles').insert({ id: data.user.id, username: fallbackName, display_name: fallbackName, artist_name: fallbackName, role: 'fan', balance_grind: 0 });
+      }
+    }
+    msg.textContent = '✅ Logged in!'; msg.className = 'msg ok';
+    setTimeout(function() { location.href = 'index.html'; }, 800);
+  }catch(e){
+    msg.textContent = friendlyAuthError(e.message); msg.className = 'msg error';
+    btn.disabled = false;
+  }
 }
 
 async function doSignup() {
@@ -133,18 +161,47 @@ async function doSignup() {
   const password = document.getElementById('signupPassword').value;
   const role = document.getElementById('signupRole').value;
   const msg = document.getElementById('signupMsg');
+  const btn = document.getElementById('signupBtn');
   if (!name || !email || !password) { msg.textContent = 'Fill name + email + password'; msg.className = 'msg error'; return; }
   if (password.length < 6) { msg.textContent = 'Password must be 6+ characters'; msg.className = 'msg error'; return; }
+  btn.disabled = true;
   msg.textContent = 'Creating account...'; msg.className = 'msg';
-  const { data, error } = await window.sb.auth.signUp({ email: email, password: password });
-  if (error) { msg.textContent = '❌ ' + error.message; msg.className = 'msg error'; return; }
-  const user = data.user;
-  if (user) {
-    // Create profile: username, role, starting balance 0
-    await window.sb.from('profiles').insert({ id: user.id, username: name, display_name: name, artist_name: name, role: role, balance_grind: 0 });
+  try{
+    const { data, error } = await window.sb.auth.signUp({ email: email, password: password });
+    if (error) throw error;
+    const user = data.user;
+    if (user) {
+      // FIXED: Check profile insert error - was silent before
+      const { error: pErr } = await window.sb.from('profiles').insert({ id: user.id, username: name, display_name: name, artist_name: name, role: role, balance_grind: 0 });
+      if(pErr){
+        console.log('Profile insert failed:', pErr.message);
+        // Try upsert as fallback - if profile already exists from trigger
+        await window.sb.from('profiles').upsert({ id: user.id, username: name, display_name: name, artist_name: name, role: role, balance_grind: 0 }, {onConflict: 'id'});
+      }
+    }
+    // If Supabase needs email confirm, user will be null / no session
+    if(!data.session){
+      msg.textContent = '✅ Account created! 📧 Check your email + Spam, tap confirm link, then Login.'; msg.className = 'msg ok';
+    } else {
+      msg.textContent = '✅ Account created! Logging you in...'; msg.className = 'msg ok';
+      setTimeout(function(){ location.href = 'index.html'; }, 800);
+      return;
+    }
+    setTimeout(function() { switchTab('login'); document.getElementById('loginEmail').value = email; btn.disabled = false; }, 1200);
+  }catch(e){
+    msg.textContent = friendlyAuthError(e.message); msg.className = 'msg error';
+    btn.disabled = false;
   }
-  msg.textContent = '✅ Account created! Check your email, then login.'; msg.className = 'msg ok';
-  setTimeout(function() { switchTab('login'); document.getElementById('loginEmail').value = email; }, 1200);
+}
+
+async function forgotPassword(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const msg = document.getElementById('loginMsg');
+  if(!email){ msg.textContent = 'Type your email first, then tap Forgot password.'; msg.className = 'msg error'; return; }
+  msg.textContent = 'Sending reset email...'; msg.className = 'msg';
+  const { error } = await window.sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/auth.html' });
+  if(error){ msg.textContent = friendlyAuthError(error.message); msg.className = 'msg error'; return; }
+  msg.textContent = '✅ Reset email sent! Check inbox + Spam.'; msg.className = 'msg ok';
 }
 
 async function doLogout() {
@@ -152,7 +209,6 @@ async function doLogout() {
   location.reload();
 }
 
-// On load: show ONLY ONE box
 async function checkAuth() {
   const user = await getCurrentUser();
   const loginBox = document.getElementById('loginBox');
@@ -163,6 +219,7 @@ async function checkAuth() {
     document.getElementById('loggedInEmail').textContent = user.email;
     const { data } = await window.sb.from('profiles').select('balance_grind, username').eq('id', user.id).single();
     if (data) document.getElementById('loggedInBalance').textContent = 'Hi ' + (data.username || '') + ' • Balance: ' + Number(data.balance_grind || 0).toFixed(2) + ' G = M' + grindToMaloti(data.balance_grind || 0);
+    else document.getElementById('loggedInBalance').textContent = 'Hi • Balance: 0.00 G';
   } else {
     loginBox.style.display = 'block';
     loggedBox.style.display = 'none';
