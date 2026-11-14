@@ -15,7 +15,7 @@
 
 const SUPA_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
 // >>> PASTE THE KEY THAT WORKED IN debug.html HERE - COPY FROM debug.html, DON'T TYPE <<<
-const SUPA_KEY = "PASTE_YOUR_NEW_PUBLISHABLE_KEY_FROM_DEBUG_HTML_HERE";
+const SUPA_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const GRIND_TO_MALOTI = 10;
 const ARTIST_CUT = 0.63;
 const PLATFORM_CUT = 0.23;
