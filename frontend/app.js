@@ -105,11 +105,29 @@ async function getSongStreamUrl(audioPath, seconds) {
   const client = initSB();
   if (!audioPath) return null;
   const raw = String(audioPath).trim();
-  // Already a direct http link - return as-is, don't break it
-  if (raw.startsWith("http")) {
-    // If it's a Supabase public URL, it already works
+  // FIXED: If it's a Supabase Storage URL, extract path and make a SIGNED URL - fixes private bucket = no sound
+  if (raw.includes('/storage/v1/object/')) {
+    const clean = cleanStoragePath(raw);
+    if (client && clean) {
+      try {
+        const { data, error } = await client.storage.from("songs").createSignedUrl(clean, seconds || 3600);
+        if (!error && data && data.signedUrl) {
+          console.log('Using SIGNED URL for:', clean);
+          return data.signedUrl;
+        }
+        console.log('Signed failed:', error ? error.message : 'no url');
+      } catch(e) { console.log('Signed exception:', e.message); }
+      // Fallback: try public URL
+      try {
+        const { data } = client.storage.from("songs").getPublicUrl(clean);
+        if (data && data.publicUrl) return data.publicUrl;
+      } catch(e) {}
+    }
+    // Last fallback: return raw as-is
     return raw;
   }
+  // Already a direct http link (not Supabase) - return as-is
+  if (raw.startsWith("http")) return raw;
   if (!client) return null;
   const clean = cleanStoragePath(raw);
   if (!clean) return null;
