@@ -19,6 +19,10 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 .big{font-size:32px;font-weight:900;margin:4px 0}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:10px}
 .btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:900}
+.badge.pending{background:#332a00;color:#ffcc00}
+.badge.approved{background:#1a2e1a;color:#d4ff3f}
+.badge.rejected{background:#331111;color:#ff6b6b}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
@@ -27,7 +31,7 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 <body>
 <header>MAROTHOLI LES-POT<small>💰 Wallet • 1G = M10</small></header>
 <div class="wrap">
-<div class="card"><h3>💰 My Grinds</h3><p class="big" id="bal">Loading...</p><p class="small" id="balM"></p><button class="btn" onclick="location.href='deposit.html'">＋ Deposit Grinds</button><button class="btn2" onclick="location.href='withdraw.html'">Withdraw Royalties (Min 3.5G)</button></div>
+<div class="card"><h3>💰 My Grinds</h3><p class="big" id="bal">Loading...</p><p class="small" id="balM"></p><p class="small" id="pendingInfo"></p><button class="btn" onclick="location.href='deposit.html'">＋ Deposit Grinds</button><button class="btn2" onclick="location.href='withdraw.html'">Withdraw Royalties (Min 3.5G)</button><button class="btn2" onclick="loadWallet()">🔄 Refresh</button></div>
 <div class="card"><h3>🎤 My Artist Earnings (63%)</h3><p class="small" id="earnings">Loading...</p><p class="small">You get 63% of every sale. Platform 23%. Fees 14%.</p></div>
 <div class="card"><h3>📋 Recent Deposits</h3><div id="deposits"><p class="small">Loading...</p></div></div>
 <div class="card"><h3>📋 Recent Withdrawals</h3><div id="withdrawals"><p class="small">Loading...</p></div></div>
@@ -35,6 +39,14 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
+function statusBadge(status){
+  const s = String(status || 'pending').toLowerCase();
+  const cls = s === 'approved' ? 'approved' : (s === 'rejected' || s === 'declined' ? 'rejected' : 'pending');
+  return "<span class='badge " + cls + "'>" + escHtml(s.toUpperCase()) + "</span>";
+}
+function fmtDate(d){
+  try{ return new Date(d).toLocaleDateString('en-LS', {day:'numeric', month:'short'}); }catch(e){ return ''; }
+}
 async function loadWallet(){
   const user = await getCurrentUser();
   if(!user){
@@ -51,12 +63,12 @@ async function loadWallet(){
     if(error) throw error;
     const bal = Number(prof?.balance_grind || 0);
     document.getElementById('bal').textContent = bal.toFixed(2) + " G";
-    document.getElementById('balM').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
+    document.getElementById('balM').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED • Available to spend / withdraw NOW";
   }catch(e){
     document.getElementById('bal').textContent = 'Error';
     document.getElementById('balM').textContent = e.message;
   }
-  // 2. EARNINGS - try user_id, then artist_id (your songs table may use either)
+  // 2. EARNINGS - try user_id, then artist_id
   try{
     let ids = [];
     let r1 = await window.sb.from('songs').select('id').eq('user_id', user.id);
@@ -72,7 +84,7 @@ async function loadWallet(){
       (p||[]).forEach(function(x){ totalSales += Number(x.price_grind||0); count++; });
     }
     const myCut = totalSales * 0.63;
-    document.getElementById('earnings').innerHTML = "Sold: " + count + " songs • Total sales: " + totalSales.toFixed(2) + " G<br>Your 63%: <b style='color:#d4ff3f'>" + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + "</b><br>Min withdraw: 3.5G = M35";
+    document.getElementById('earnings').innerHTML = "Sold: " + count + " songs • Total sales: " + totalSales.toFixed(2) + " G<br>Your 63% ALL-TIME: <b style='color:#d4ff3f'>" + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + "</b><br><span style='opacity:.7'>⚠️ This is total ever earned - it is ALREADY in your Balance above. Do NOT add them together.</span><br>Min withdraw: 3.5G = M35";
   }catch(e){
     document.getElementById('earnings').textContent = "Could not load earnings: " + e.message;
   }
@@ -80,7 +92,9 @@ async function loadWallet(){
   try{
     const {data:deps, error} = await window.sb.from('deposits').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(5);
     if(error) throw error;
-    document.getElementById('deposits').innerHTML = !deps || !deps.length ? "<p class='small'>No deposits yet.</p>" : deps.map(function(d){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(d.amount_grind||d.amount||0).toFixed(2) + " G</b> • " + escHtml(d.method||'') + " • " + escHtml(d.status||'pending') + "</div>"; }).join('');
+    const pending = (deps||[]).filter(function(d){ return String(d.status||'').toLowerCase() === 'pending'; }).reduce(function(sum,d){ return sum + Number(d.amount_grind||d.amount||0); }, 0);
+    document.getElementById('pendingInfo').textContent = pending > 0 ? "⏳ Pending deposits: " + pending.toFixed(2) + " G - will appear in Balance after Admin approves." : "";
+    document.getElementById('deposits').innerHTML = !deps || !deps.length ? "<p class='small'>No deposits yet.</p>" : deps.map(function(d){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(d.amount_grind||d.amount||0).toFixed(2) + " G</b> • " + escHtml(d.method||'') + " • " + statusBadge(d.status) + " <span class='small'>" + fmtDate(d.created_at) + "</span></div>"; }).join('');
   }catch(e){
     document.getElementById('deposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>";
   }
@@ -88,7 +102,7 @@ async function loadWallet(){
   try{
     const {data:wds, error} = await window.sb.from('withdrawals').select('*').eq('user_id', user.id).order('created_at',{ascending:false}).limit(5);
     if(error) throw error;
-    document.getElementById('withdrawals').innerHTML = !wds || !wds.length ? "<p class='small'>No withdrawals yet.</p>" : wds.map(function(w){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(w.amount_grind||w.amount||0).toFixed(2) + " G</b> • " + escHtml(w.method||'') + " • " + escHtml(w.status||'pending') + "</div>"; }).join('');
+    document.getElementById('withdrawals').innerHTML = !wds || !wds.length ? "<p class='small'>No withdrawals yet.</p>" : wds.map(function(w){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + Number(w.amount_grind||w.amount||0).toFixed(2) + " G</b> • " + escHtml(w.method||'') + " • " + statusBadge(w.status) + " <span class='small'>" + fmtDate(w.created_at) + "</span></div>"; }).join('');
   }catch(e){
     document.getElementById('withdrawals').innerHTML = "<p class='small'>Could not load withdrawals: " + escHtml(e.message) + "</p>";
   }
@@ -96,7 +110,7 @@ async function loadWallet(){
   try{
     const {data:purs, error} = await window.sb.from('purchases').select('*, songs(title)').eq('buyer_id', user.id).order('created_at',{ascending:false}).limit(5);
     if(error) throw error;
-    document.getElementById('purchases').innerHTML = !purs || !purs.length ? "<p class='small'>No purchases yet.</p>" : purs.map(function(p){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + escHtml(p.songs?.title||'Song') + "</b> • " + Number(p.price_grind||0).toFixed(2) + " G</div>"; }).join('');
+    document.getElementById('purchases').innerHTML = !purs || !purs.length ? "<p class='small'>No purchases yet.</p>" : purs.map(function(p){ return "<div style='border-bottom:1px solid #333;padding:6px 0'><b>" + escHtml(p.songs?.title||p.song_title||'Song') + "</b> • " + Number(p.price_grind||0).toFixed(2) + " G <span class='small'>" + fmtDate(p.created_at) + "</span></div>"; }).join('');
   }catch(e){
     document.getElementById('purchases').innerHTML = "<p class='small'>Could not load purchases: " + escHtml(e.message) + "</p>";
   }
