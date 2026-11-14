@@ -16,6 +16,7 @@ header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:
 label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
+.btn:disabled{opacity:.5}
 .btn2{display:block;text-align:center;background:#333;color:#fff;padding:12px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:10px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.ok{color:#d4ff3f}.msg.error{color:#ff6b6b}
@@ -27,8 +28,8 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <body>
 <header>MAROTHOLI LES-POT<small>👤 My Account</small></header>
 <div class="wrap">
-<div class="card" id="loginCard"><h3>Login / Sign Up</h3><label>Email</label><input id="email" type="email" placeholder="you@gmail.com"><label>Password</label><input id="password" type="password" placeholder="••••••••"><button class="btn" onclick="doLogin()">Login</button><button class="btn" onclick="doSignup()" style="background:#333;color:#fff">Sign Up</button><p class="msg" id="loginMsg"></p></div>
-<div class="card" id="profileCard" style="display:none"><h3>👤 My Profile</h3><p><b id="pEmail"></b></p><p class="small">Balance: <b id="pBal" style="color:#d4ff3f">0.00 G</b> <span id="pBalM"></span></p><label>Display Name</label><input id="displayName" placeholder="e.g. Thabo Mokoena"><label>Phone (for EcoCash / M-Pesa)</label><input id="phone" placeholder="e.g. 6288..."><button class="btn" onclick="saveProfile()">Save Profile</button><p class="msg" id="profileMsg"></p><a class="btn2" href="artist-dashboard.html" style="background:#d4ff3f;color:#000">🎤 My Artist Dashboard - See Sales →</a><a class="btn2" href="wallet.html">💰 My Wallet →</a><a class="btn2" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a><a class="btn2" href="upload.html">⬆️ Upload Music →</a><button class="btn" onclick="doLogout()" style="background:#ff4444;color:#fff">Logout</button></div>
+<div class="card" id="loginCard"><h3>Login / Sign Up</h3><p class="small">Use the full Login page for Sign Up + Forgot Password.</p><button class="btn" onclick="location.href='auth.html'">Go to Login / Sign Up →</button><p class="msg" id="loginMsg"></p></div>
+<div class="card" id="profileCard" style="display:none"><h3>👤 My Profile</h3><p><b id="pEmail"></b></p><p class="small">Balance: <b id="pBal" style="color:#d4ff3f">0.00 G</b> <span id="pBalM"></span></p><label>Display Name</label><input id="displayName" placeholder="e.g. Thabo Mokoena"><label>Phone (for EcoCash / M-Pesa)</label><input id="phone" placeholder="e.g. 6288..."><button class="btn" onclick="saveProfile()">Save Profile</button><button class="btn2" onclick="changePassword()">🔑 Change Password (Email Link)</button><p class="msg" id="profileMsg"></p><a class="btn2" href="artist-dashboard.html" style="background:#d4ff3f;color:#000">🎤 My Artist Dashboard - See Sales →</a><a class="btn2" href="wallet.html">💰 My Wallet →</a><a class="btn2" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a><a class="btn2" href="upload.html">⬆️ Upload Music →</a><button class="btn" onclick="doLogout()" style="background:#ff4444;color:#fff">Logout</button></div>
 <div class="card"><h3>ℹ️ About</h3><p class="small">Marotholi Les-Pot — Lesotho Music. 1G = M10. Preview 30s free, Buy full song. Deposit: EcoCash + PostBank only. Withdraw: BANK • VISA • MPESA • ECOCASH • PostBank — any method OK.</p></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
@@ -46,7 +47,7 @@ async function refresh(){
       return;
     }
     if(data){
-      document.getElementById('displayName').value = data.display_name || data.full_name || '';
+      document.getElementById('displayName').value = data.display_name || data.full_name || data.username || '';
       document.getElementById('phone').value = data.phone || '';
       const bal = Number(data.balance_grind || 0);
       document.getElementById('pBal').textContent = bal.toFixed(2) + ' G';
@@ -56,29 +57,13 @@ async function refresh(){
     console.log('refresh error', e.message);
   }
 }
-async function doLogin(){
-  const msg = document.getElementById('loginMsg');
-  try{
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    if(!email || !password){ msg.textContent = '❌ Enter email + password'; msg.className = 'msg error'; return; }
-    const {error} = await window.sb.auth.signInWithPassword({email: email, password: password});
-    if(error) throw error;
-    msg.textContent = '✅ Logged in!'; msg.className = 'msg ok';
-    await refresh();
-  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
-}
-async function doSignup(){
-  const msg = document.getElementById('loginMsg');
-  try{
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    if(!email || !password){ msg.textContent = '❌ Enter email + password'; msg.className = 'msg error'; return; }
-    if(password.length < 6){ msg.textContent = '❌ Password must be at least 6 characters'; msg.className = 'msg error'; return; }
-    const {error} = await window.sb.auth.signUp({email: email, password: password});
-    if(error) throw error;
-    msg.textContent = '✅ Account created! Now tap Login.'; msg.className = 'msg ok';
-  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
+async function changePassword(){
+  const user = await requireLogin(); if(!user) return;
+  const msg = document.getElementById('profileMsg');
+  msg.textContent = 'Sending reset email...'; msg.className = 'msg';
+  const { error } = await window.sb.auth.resetPasswordForEmail(user.email, { redirectTo: window.location.origin + '/auth.html' });
+  if(error){ msg.textContent = '❌ ' + error.message; msg.className = 'msg error'; return; }
+  msg.textContent = '✅ Reset email sent! Check inbox + Spam.'; msg.className = 'msg ok';
 }
 async function saveProfile(){
   const user = await requireLogin(); if(!user) return;
@@ -86,13 +71,17 @@ async function saveProfile(){
   try{
     const name = document.getElementById('displayName').value.trim();
     const phone = document.getElementById('phone').value.trim();
-    // Try full upsert first, fallback to minimal if columns differ
-    let r = await window.sb.from('profiles').upsert({id: user.id, email: user.email, display_name: name, full_name: name, phone: phone});
-    if(r.error){
-      r = await window.sb.from('profiles').upsert({id: user.id, email: user.email, display_name: name, phone: phone});
+    // FIXED: Use UPDATE, never UPSERT - upsert could reset balance_grind to 0
+    const {data: existing} = await window.sb.from('profiles').select('id').eq('id', user.id).maybeSingle();
+    let r;
+    if(existing){
+      r = await window.sb.from('profiles').update({ display_name: name, full_name: name, phone: phone }).eq('id', user.id);
+    } else {
+      // No profile yet - create it safely with 0 balance
+      r = await window.sb.from('profiles').insert({ id: user.id, email: user.email, username: name || user.email.split('@')[0], display_name: name, full_name: name, phone: phone, role: 'fan', balance_grind: 0 });
     }
     if(r.error) throw r.error;
-    msg.textContent = '✅ Saved!'; msg.className = 'msg ok';
+    msg.textContent = '✅ Saved! Balance untouched.'; msg.className = 'msg ok';
     await refresh();
   }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; }
 }
