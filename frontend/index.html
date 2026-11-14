@@ -88,7 +88,7 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <button id="playerBtn" onclick="togglePlayer()">▶</button>
 <button class="stop" onclick="stopPlayer()">✕</button>
 </div>
-<audio id="mainAudio" preload="none"></audio>
+<audio id="mainAudio" preload="none" playsinline></audio>
 <div class="bottomnav">
 <a href="index.html" class="active">🏠<br>Home</a>
 <a href="discover.html">🎵<br>Discover</a>
@@ -148,49 +148,75 @@ async function loadBalance() {
   }catch(e){}
 }
 
+// --- FIXED PLAYER - NO MORE FAKE POPUPS ---
 function playWithPlayer(url, s, start, end, isFull) {
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
   const btn = document.getElementById('playerBtn');
   document.getElementById('playerTitle').textContent = s.title || 'Unknown';
-  document.getElementById('playerArtist').textContent = (s.artist_name || '') + (isFull ? ' • FULL' : ' • PREVIEW');
+  document.getElementById('playerArtist').textContent = (s.artist_name || '') + (isFull ? ' • FULL' : ' • PREVIEW 30s');
   document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
+  // Reset handlers so old errors don't fire
+  audio.onerror = null;
+  audio.onloadedmetadata = null;
+  audio.pause();
   audio.src = url;
-  audio.currentTime = Number(start || 0);
-  audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(){ alert('Tap ▶ again to play'); });
+  audio.load();
+  audio.onerror = function() {
+    console.log('Audio load failed:', url);
+    alert('❌ Audio file not found.\n\nCheck in Supabase > Storage > songs bucket — is the file there?\nCheck songs table — audio_path = ' + (s.audio_path || s.audio_url || 'EMPTY'));
+    if(btn) btn.textContent = '▶';
+  };
+  audio.onloadedmetadata = function() {
+    try {
+      const st = Number(start || 0);
+      if (st > 0 && st < audio.duration) audio.currentTime = st;
+    } catch(e) {}
+    audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(e){
+      console.log('Play blocked:', e.message);
+      if(btn) btn.textContent = '▶';
+      // No annoying alert - user just taps ▶ in player bar
+    });
+  };
   if(!isFull && end){
     window._previewTimer = setInterval(function(){
-      if(audio.currentTime >= Number(end)){
+      if(!audio.paused && audio.currentTime >= Number(end)){
         audio.pause();
         clearInterval(window._previewTimer);
         if(btn) btn.textContent = '▶';
-        alert('Preview ended - Buy for full song');
+        document.getElementById('playerArtist').textContent = (s.artist_name || '') + ' • PREVIEW ENDED - Buy for full';
       }
-    }, 500);
+    }, 300);
   }
 }
 function togglePlayer(){
   const audio = document.getElementById('mainAudio');
   const btn = document.getElementById('playerBtn');
   if(!audio.src) return;
-  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
+  if(audio.paused){ audio.play().then(function(){ if(btn) btn.textContent='⏸'; }).catch(function(){}); }
   else { audio.pause(); if(btn) btn.textContent='▶'; }
 }
 function stopPlayer(){
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
-  audio.pause(); audio.src='';
+  audio.pause(); audio.removeAttribute('src'); audio.load();
   if(bar) bar.classList.remove('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
+  const btn = document.getElementById('playerBtn');
+  if(btn) btn.textContent='▶';
 }
 
 async function previewSong(id) {
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
-  if (!s) return;
-  const url = await getSongStreamUrl(s.audio_path || s.audio_url, 3600);
-  if (!url) { alert('No audio file for this song'); return; }
+  if (!s) { alert('Song not found - reload page'); return; }
+  console.log('Preview song:', s);
+  const rawPath = s.audio_path || s.audio_url || '';
+  if (!rawPath) { alert('❌ This song has NO audio file.\n\nUpload it again in upload.html.\nTitle: ' + s.title); return; }
+  const url = await getSongStreamUrl(rawPath, 3600);
+  console.log('Stream URL:', url);
+  if (!url) { alert('❌ Could not get stream URL.\n\nCheck Supabase > Storage > songs bucket.\nIs the file named: ' + rawPath + ' ?'); return; }
   const range = getPreviewRange(s.preview_start);
   playWithPlayer(url, s, range.start, range.end, false);
 }
