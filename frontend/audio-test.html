@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><body style="background:#111;color:#fff;font-family:sans-serif;padding:20px">
+<h3>Audio Test</h3><div id="out">Loading...</div>
+<audio id="a" controls style="width:100%;margin-top:20px"></audio>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+async function t(){
+  const out=document.getElementById('out');
+  const {data,error}=await window.sb.from('songs').select('*').eq('status','published').limit(3);
+  if(error){ out.textContent='DB Error: '+error.message; return; }
+  out.innerHTML = data.map(s=>'<p><b>'+s.title+'</b><br>audio_path: '+(s.audio_path||'EMPTY')+'<br>preview_start: '+(s.preview_start||0)+'<br>duration: '+(s.duration_seconds||s.duration||'?')+'</p>').join('<hr>');
+  if(!data.length) return;
+  const s=data[0];
+  const url=await getSongStreamUrl(s.audio_path,3600);
+  out.innerHTML+='<p><b>Stream URL:</b><br>'+url+'</p>';
+  const a=document.getElementById('a');
+  a.src=url;
+  a.onloadedmetadata=function(){ out.innerHTML+='<p>✅ File loaded! Duration: '+a.duration.toFixed(1)+'s - Tap play on player above</p>'; };
+  a.onerror=function(){ out.innerHTML+='<p>❌ FILE FAILED TO LOAD - File missing or empty in Storage</p>'; };
+}
+t();
+</script></body></html>
