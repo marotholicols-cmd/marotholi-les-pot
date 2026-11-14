@@ -11,7 +11,7 @@ async function run(){
   const out = document.getElementById('out');
   try{
     if(typeof window.supabase === 'undefined'){ out.innerHTML='<span class=err>FAIL: supabase-js CDN did NOT load. Check internet / script tag.</span>'; return; }
-    const sb = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co", "sb_publishable_wWhjXCZ4JWfGLCIG95kzPg_WXqzfVDP");
+    const sb = window.supabase.createClient("https://mmkxiniybctmgoozaecp.supabase.co", "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP");
     out.textContent = 'Supabase client created... testing profiles table...';
     const {data, error} = await sb.from('profiles').select('id').limit(1);
     if(error){ out.innerHTML='<span class=err>CONNECTED BUT TABLE ERROR:\n'+error.message+'\n\nCode: '+error.code+'</span>'; }
