@@ -7,7 +7,6 @@
 <link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="player.js"></script>
 <link rel="stylesheet" href="style.css">
 <style>
 body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:180px}
@@ -48,6 +47,9 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html" class="active">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 let mySongs=[];
+// FIXED: DO NOT re-define togglePlayer / stopPlayer here - player.js owns them
+// FIXED: DO NOT set audio.src directly here - use playSong(s, false) for FULL
+
 async function loadLibrary(){
   const list=document.getElementById('list');
   const user=await getCurrentUser();
@@ -60,60 +62,38 @@ async function loadLibrary(){
     if(!songs.length){list.innerHTML="<div class='card'>No bought songs yet.<br><span class='small'>Go to Discover, preview 30s, buy, it appears here FULL.</span><br><button class='btn' style='margin-top:10px' onclick=\"location.href='discover.html'\">Go to Discover →</button></div>";return;}
     list.innerHTML=songs.map(function(s){
       const cover=getCoverUrl(s.cover_path||s.cover_url);
-      return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • Bought • FULL</span><div class='row'><button class='play' onclick=\"playFull('"+s.id+"')\">▶ Play FULL</button><button onclick=\"shareSongLink('"+s.id+"','"+escHtml(s.title)+"','"+escHtml(s.artist_name)+"')\">🔗 Share</button></div></div></div>";
+      return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • Bought • FULL</span><div class='row'><button class='play' onclick=\"playFull('"+s.id+"')\">▶ Play FULL</button><button onclick=\"shareById('"+s.id+"')\">🔗 Share</button></div></div></div>";
     }).join('');
   }catch(e){list.innerHTML="<div class='card'>❌ "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadLibrary()'>🔄 Try Again</button></div>";}
+}
+function shareById(id){
+  const s=mySongs.find(function(x){return String(x.id)===String(id);});
+  if(!s) return;
+  shareSongLink(s.id, s.title, s.artist_name);
 }
 async function playFull(id){
   const s=mySongs.find(function(x){return String(x.id)===String(id);});
   if(!s){ alert('Song not found'); return; }
-  let url = await getSongStreamUrl(s.audio_path || s.audio_url);
-  if(!url){ alert('No audio file for this song'); return; }
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
-  const titleEl = document.getElementById('playerTitle');
-  const artistEl = document.getElementById('playerArtist');
-  const coverEl = document.getElementById('playerCover');
-  const btn = document.getElementById('playerBtn');
+  // FIXED: player.js handles Signed URL + saves previewOnly=false, so it WON'T cut at 30s
+  await playSong(s, false);
+  // Lock-screen controls - kept from your version, now works with player.js audio
   const cover = getCoverUrl(s.cover_path || s.cover_url);
-  if(titleEl) titleEl.textContent = s.title || 'Unknown';
-  if(artistEl) artistEl.textContent = s.artist_name || '';
-  if(coverEl) coverEl.src = cover;
-  if(bar) bar.classList.add('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
   if('mediaSession' in navigator){
     try{
       navigator.mediaSession.metadata = new MediaMetadata({
         title: s.title || 'Unknown Song',
         artist: s.artist_name || 'Marotholi Les-Pot',
         album: 'Marotholi Les-Pot',
-        artwork: cover ? [{src: cover, sizes: '512x512', type: 'image/jpeg'}] : []
+        artwork: cover && cover !== 'icon.svg' ? [{src: cover, sizes: '512x512', type: 'image/jpeg'}] : []
       });
-      navigator.mediaSession.setActionHandler('play', function(){ const a=document.getElementById('mainAudio'); a.play(); const b=document.getElementById('playerBtn'); if(b) b.textContent='⏸'; });
-      navigator.mediaSession.setActionHandler('pause', function(){ const a=document.getElementById('mainAudio'); a.pause(); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; });
+      navigator.mediaSession.setActionHandler('play', function(){ togglePlayer(); });
+      navigator.mediaSession.setActionHandler('pause', function(){ togglePlayer(); });
       navigator.mediaSession.setActionHandler('stop', function(){ stopPlayer(); });
     }catch(e){}
   }
-  audio.src = url;
-  audio.currentTime = 0;
-  try{ await audio.play(); if(btn) btn.textContent = '⏸'; }
-  catch(e){ alert('Play failed: ' + e.message); }
-}
-function togglePlayer(){
-  const audio = document.getElementById('mainAudio');
-  const btn = document.getElementById('playerBtn');
-  if(audio.paused){ audio.play(); if(btn) btn.textContent='⏸'; }
-  else { audio.pause(); if(btn) btn.textContent='▶'; }
-}
-function stopPlayer(){
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
-  audio.pause(); audio.src='';
-  if(bar) bar.classList.remove('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
-  if('mediaSession' in navigator){ try{ navigator.mediaSession.metadata = null; }catch(e){} }
 }
 document.addEventListener('DOMContentLoaded',loadLibrary);
 </script>
+<script src="player.js"></script>
 </body>
 </html>
