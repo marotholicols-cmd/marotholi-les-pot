@@ -16,10 +16,12 @@ header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:
 .big{font-size:26px;font-weight:900;color:#d4ff3f}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .btn{display:block;text-align:center;background:#d4ff3f;color:#000;padding:12px;border-radius:99px;font-weight:900;text-decoration:none;margin-top:10px}
+.btn2{display:block;text-align:center;background:#222;color:#fff;border:1px solid #444;padding:11px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:8px}
 .song{border-bottom:1px solid #333;padding:10px 0;display:flex;justify-content:space-between;gap:10px}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
+.sharebtn{background:#222;color:#fff;border:1px solid #444;padding:6px 12px;border-radius:99px;font-weight:800;font-size:12px;cursor:pointer;margin-top:6px}
 </style>
 </head>
 <body>
@@ -28,14 +30,19 @@ header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:
 <div class="row">
 <div class="card"><div class="big" id="totalSongs">-</div><div class="small">Your Songs</div></div>
 <div class="card"><div class="big" id="totalBought">-</div><div class="small">Songs Bought</div></div>
-<div class="card"><div class="big" id="totalEarned">-</div><div class="small">Your 63% (G)</div></div>
+<div class="card"><div class="big" id="totalEarned">-</div><div class="small">Your 63% ALL-TIME (G)</div></div>
 </div>
-<div class="card"><h3 style="margin:0 0 8px">💰 Earnings</h3><p class="small" id="earnM"></p><p class="small">Split: 63% Artist / 23% Platform / 14% Fees. 1G = M10.<br>Your 63% is credited to your Balance when someone buys. Withdraw when Balance ≥ 3.5G.</p><a class="btn" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a></div>
+<div class="card"><h3 style="margin:0 0 8px">💰 Earnings</h3><p class="small" id="earnM"></p><p class="small" id="balInfo"></p><p class="small">Split: 63% Artist / 23% Platform / 14% Fees. 1G = M10.<br>⚠️ Your 63% ALL-TIME is already in your Balance. Do NOT add them together.<br>Your 63% is credited to your Balance when someone buys. Withdraw when Balance ≥ 3.5G.</p><a class="btn" href="withdraw.html">💸 Withdraw → Min 3.5G = M35</a><button class="btn2" onclick="loadDashboard()">🔄 Refresh Sales</button></div>
 <div class="card"><h3 style="margin:0 0 8px">🎵 Per Song — How Many Times Bought</h3><div id="songList"><p class="small">Loading...</p></div></div>
 <div class="card"><h3 style="margin:0 0 8px">🛒 Recent Purchases</h3><div id="buyList"><p class="small">Loading...</p></div></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
 <script>
+function copyShareLink(songId, songTitle){
+  const url = window.location.origin + '/index.html?song=' + songId;
+  if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ alert('Share link copied for: ' + songTitle + '\n' + url); }).catch(function(){ prompt('Copy share link:', url); });
+  else prompt('Copy share link:', url);
+}
 async function loadDashboard(){
   try{
     const user = await getCurrentUser();
@@ -47,6 +54,12 @@ async function loadDashboard(){
       document.getElementById('totalEarned').textContent = "-";
       return;
     }
+    // Balance NOW - what you can actually withdraw
+    try{
+      const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+      const bal = Number(prof?.balance_grind || 0);
+      document.getElementById('balInfo').innerHTML = "💰 Your Balance NOW: <b style='color:#d4ff3f'>" + bal.toFixed(2) + " G = M" + grindToMaloti(bal) + "</b> — This is what you can withdraw.";
+    }catch(e){}
     // 1. Get my songs - try user_id then artist_id
     let {data: songs, error: sErr} = await window.sb.from('songs').select('id,title,artist_name,price_grind').eq('user_id', user.id).order('created_at', {ascending:false});
     if(sErr) throw sErr;
@@ -69,7 +82,6 @@ async function loadDashboard(){
     const {data: purchases, error: pErr} = await window.sb.from('purchases').select('*').in('song_id', ids).order('created_at', {ascending:false});
     if(pErr) throw pErr;
     const buys = purchases || [];
-    // FIXED: 63% math - was 100% before
     let gross = 0;
     let myCut = 0;
     const html = mySongs.map(function(s){
@@ -79,12 +91,12 @@ async function loadDashboard(){
       const songCut = songGross * 0.63;
       gross += songGross;
       myCut += songCut;
-      return "<div class='song'><div><b>" + escHtml(s.title||'Untitled') + "</b><br><span class='small'>Price: " + Number(s.price_grind||0).toFixed(2) + " G • Gross: " + songGross.toFixed(2) + " G • Your 63%: " + songCut.toFixed(2) + " G</span></div><div style='text-align:right'><b style='color:#d4ff3f;font-size:20px'>" + count + " bought</b><br><span class='small'>" + (count===0 ? 'No sales yet' : '🔥 Selling!') + "</span></div></div>";
+      return "<div class='song'><div><b>" + escHtml(s.title||'Untitled') + "</b><br><span class='small'>Price: " + Number(s.price_grind||0).toFixed(2) + " G • Gross: " + songGross.toFixed(2) + " G • Your 63%: " + songCut.toFixed(2) + " G</span><br><button class='sharebtn' onclick=\"copyShareLink('" + s.id + "','" + escHtml(s.title||'Song').replace(/'/g,'') + "')\">🔗 Copy Share Link</button></div><div style='text-align:right'><b style='color:#d4ff3f;font-size:20px'>" + count + " bought</b><br><span class='small'>" + (count===0 ? 'No sales yet' : '🔥 Selling!') + "</span></div></div>";
     }).join('');
     document.getElementById('songList').innerHTML = html;
     document.getElementById('totalBought').textContent = buys.length;
     document.getElementById('totalEarned').textContent = myCut.toFixed(2) + " G";
-    document.getElementById('earnM').textContent = "Gross sales: " + gross.toFixed(2) + " G = M" + grindToMaloti(gross) + " • Your 63%: " + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + " from " + buys.length + " purchases";
+    document.getElementById('earnM').textContent = "Gross sales ALL-TIME: " + gross.toFixed(2) + " G = M" + grindToMaloti(gross) + " • Your 63% ALL-TIME: " + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + " from " + buys.length + " purchases";
     if(!buys.length){
       document.getElementById('buyList').innerHTML = "<p class='small'>No one has bought yet. Share your link!</p>";
     } else {
