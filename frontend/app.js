@@ -14,7 +14,6 @@
 // ============================================
 
 const SUPA_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
-// >>> PASTE THE KEY THAT WORKED IN debug.html HERE - COPY FROM debug.html, DON'T TYPE <<<
 const SUPA_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
 const GRIND_TO_MALOTI = 10;
 const ARTIST_CUT = 0.63;
@@ -35,18 +34,24 @@ const DEPOSIT_METHODS = [
 
 const APP_URL = "https://marotholi-les-pot-frontend.vercel.app/";
 
-// --- FIXED: Don't crash if Supabase CDN hasn't loaded yet ---
+// --- Don't crash if Supabase CDN hasn't loaded yet ---
 let sb = null;
-if (typeof window !== "undefined" && window.supabase && window.supabase.createClient) {
-  try {
-    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-  } catch (e) {
-    console.log("Supabase create failed:", e.message);
+function initSB() {
+  if (sb) return sb;
+  if (typeof window !== "undefined" && window.supabase && window.supabase.createClient) {
+    try {
+      sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+      window.sb = sb;
+    } catch (e) {
+      console.log("Supabase create failed:", e.message);
+    }
   }
-} else {
-  console.log("Supabase CDN not loaded yet - app.js waiting. Check index.html loads supabase-js BEFORE app.js");
+  return sb;
 }
+initSB();
 window.sb = sb;
+// Retry once if CDN was slow - fixes white screen on slow phones
+setTimeout(initSB, 500);
 
 function grindToMaloti(g) {
   return (Number(g || 0) * GRIND_TO_MALOTI).toFixed(2);
@@ -64,14 +69,16 @@ function escHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 async function getCurrentUser() {
-  if (!sb) return null;
-  const { data } = await sb.auth.getUser();
+  const client = initSB();
+  if (!client) return null;
+  const { data } = await client.auth.getUser();
   return data ? data.user : null;
 }
 async function getMyProfile() {
   const user = await getCurrentUser();
   if (!user) return { user: null, profile: null };
-  const { data: profile } = await sb.from("profiles").select("*").eq("id", user.id).single();
+  const client = initSB();
+  const { data: profile } = await client.from("profiles").select("*").eq("id", user.id).single();
   return { user: user, profile: profile };
 }
 async function requireLogin() {
@@ -79,17 +86,53 @@ async function requireLogin() {
   if (!user) { location.href = "auth.html"; return null; }
   return user;
 }
+// --- FIXED: Handles all audio_path formats ---
+function cleanStoragePath(p) {
+  if (!p) return "";
+  let path = String(p).trim();
+  // If it's a full Supabase storage URL, extract the file path after /songs/
+  const marker = "/songs/";
+  if (path.includes(marker)) {
+    path = path.split(marker).pop().split("?")[0];
+  }
+  // Strip leading songs/ or / or bucket name
+  path = path.replace(/^\/+/, "").replace(/^songs\//, "");
+  // Decode %20 etc
+  try { path = decodeURIComponent(path); } catch(e) {}
+  return path;
+}
 async function getSongStreamUrl(audioPath, seconds) {
-  if (!audioPath || !sb) return null;
-  if (audioPath.startsWith("http")) return audioPath;
-  const { data, error } = await sb.storage.from("songs").createSignedUrl(audioPath, seconds || 3600);
-  if (error) { console.log("Stream error:", error.message); return null; }
-  return data.signedUrl;
+  const client = initSB();
+  if (!audioPath) return null;
+  const raw = String(audioPath).trim();
+  // Already a direct http link - return as-is, don't break it
+  if (raw.startsWith("http")) {
+    // If it's a Supabase public URL, it already works
+    return raw;
+  }
+  if (!client) return null;
+  const clean = cleanStoragePath(raw);
+  if (!clean) return null;
+  // Try signed URL first (works for private bucket)
+  try {
+    const { data, error } = await client.storage.from("songs").createSignedUrl(clean, seconds || 3600);
+    if (!error && data && data.signedUrl) return data.signedUrl;
+    console.log("Signed URL failed, trying public URL:", error ? error.message : "no url");
+  } catch(e) { console.log("Signed URL exception:", e.message); }
+  // Fallback: public URL (works if bucket is public)
+  try {
+    const { data } = client.storage.from("songs").getPublicUrl(clean);
+    if (data && data.publicUrl) return data.publicUrl;
+  } catch(e) {}
+  return null;
 }
 function getCoverUrl(coverPath) {
   if (!coverPath) return "icon.svg";
-  if (coverPath.startsWith("http")) return coverPath;
-  return SUPA_URL + "/storage/v1/object/public/covers/" + coverPath;
+  const raw = String(coverPath).trim();
+  if (raw.startsWith("http")) return raw;
+  const clean = cleanStoragePath(raw);
+  if (!clean) return "icon.svg";
+  return SUPA_URL + "/storage/v1/object/public/covers/" + encodeURIComponent(clean).replace(/%2F/g, "/");
 }
 function shareSongLink(songId, title, artistName) {
   const link = APP_URL + "discover.html?song=" + songId;
