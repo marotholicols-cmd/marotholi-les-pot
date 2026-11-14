@@ -264,7 +264,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   await loadBalance();
   const params = new URLSearchParams(location.search);
   if (params.get('song')) { await checkDeepLink(); } else { await loadHome(); }
-});
-</script>
+});<script src="player.js"></script>
 </body>
 </html>
