@@ -14,7 +14,8 @@
 // ============================================
 
 const SUPA_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
-const SUPA_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+// >>> PASTE THE KEY THAT WORKED IN debug.html HERE - COPY FROM debug.html, DON'T TYPE <<<
+const SUPA_KEY = "PASTE_YOUR_NEW_PUBLISHABLE_KEY_FROM_DEBUG_HTML_HERE";
 const GRIND_TO_MALOTI = 10;
 const ARTIST_CUT = 0.63;
 const PLATFORM_CUT = 0.23;
@@ -34,7 +35,17 @@ const DEPOSIT_METHODS = [
 
 const APP_URL = "https://marotholi-les-pot-frontend.vercel.app/";
 
-const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+// --- FIXED: Don't crash if Supabase CDN hasn't loaded yet ---
+let sb = null;
+if (typeof window !== "undefined" && window.supabase && window.supabase.createClient) {
+  try {
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  } catch (e) {
+    console.log("Supabase create failed:", e.message);
+  }
+} else {
+  console.log("Supabase CDN not loaded yet - app.js waiting. Check index.html loads supabase-js BEFORE app.js");
+}
 window.sb = sb;
 
 function grindToMaloti(g) {
@@ -53,6 +64,7 @@ function escHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 async function getCurrentUser() {
+  if (!sb) return null;
   const { data } = await sb.auth.getUser();
   return data ? data.user : null;
 }
@@ -68,7 +80,7 @@ async function requireLogin() {
   return user;
 }
 async function getSongStreamUrl(audioPath, seconds) {
-  if (!audioPath) return null;
+  if (!audioPath || !sb) return null;
   if (audioPath.startsWith("http")) return audioPath;
   const { data, error } = await sb.storage.from("songs").createSignedUrl(audioPath, seconds || 3600);
   if (error) { console.log("Stream error:", error.message); return null; }
