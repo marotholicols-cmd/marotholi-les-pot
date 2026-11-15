@@ -27,17 +27,18 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .tabs button.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
 .item{border-bottom:1px solid #333;padding:10px 0}
 .item:last-child{border-bottom:0}
-.row{display:flex;gap:6px;margin-top:8px}
+.row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 .proofimg{max-width:100%;border-radius:12px;margin-top:8px;border:1px solid #333}
+.paybox{background:#222;border:1px solid #d4ff3f;border-radius:12px;padding:10px;margin-top:8px;font-size:14px;font-weight:800;color:#d4ff3f}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🛡️ Admin — Approve Only</small></header>
 <div class="wrap">
-<div class="card" id="deniedCard" style="display:none"><h3>⛔ Not Admin</h3><p class="small">This page is for Admin only. If you are the owner, make sure your profile role is 'admin' in Supabase.</p><button class="btn" onclick="location.href='index.html'">Go Home →</button></div>
+<div class="card" id="deniedCard" style="display:none"><h3>⛔ Not Admin</h3><p class="small">This page is for Admin only. If you are the owner, make sure your profile role is 'admin' in Supabase.<br><br>Go to Supabase > Table Editor > profiles > find your row > set role = admin</p><button class="btn" onclick="location.href='index.html'">Go Home →</button></div>
 <div id="adminContent" style="display:none">
 <div class="card"><h3>📊 Quick Stats</h3><p class="small" id="stats">Loading...</p><button class="btn2" onclick="refreshAll()">🔄 Refresh</button></div>
 <div class="tabs"><button id="tabDep" class="active" onclick="switchTab('deposits')">💰 Deposits</button><button id="tabWith" onclick="switchTab('withdrawals')">💸 Withdrawals</button><button id="tabSongs" onclick="switchTab('songs')">🎵 Songs</button></div>
@@ -76,7 +77,6 @@ async function loadStats(){
   }
 }
 async function viewProof(proofPath, proofUrl, btn){
-  // FIXED: proofs bucket is PRIVATE - use Signed URL, not public URL
   let url = '';
   const path = (proofPath || '').trim();
   if(path && !path.startsWith('http')){
@@ -111,8 +111,10 @@ async function loadList(){
       if(!data || !data.length){ list.innerHTML = "<p class='small'>No withdrawals.</p>"; return; }
       list.innerHTML = data.map(function(w){
         const col = w.status === 'approved' ? '#d4ff3f' : w.status === 'rejected' ? '#ff6b6b' : '#ffb020';
-        const g = Number(w.amount_grind || (w.amount_maloti ? w.amount_maloti/10 : 0) || 0);
-        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>User: " + escHtml(w.user_id||'') + " • Account: " + escHtml(w.account || w.account_number || '') + " • Name: " + escHtml(w.full_name||'') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + new Date(w.created_at).toLocaleString() + "</span>" + (w.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">✅ Approve - Pay User (Already Deducted)</button><button class='btnReject' onclick=\"rejectWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">❌ Reject + Refund</button></div>" : "") + "</div>";
+        const g = Number(w.amount_grind || w.grinds || (w.amount_maloti ? w.amount_maloti/10 : 0) || w.amount/10 || 0);
+        // FIXED: Show receive_details - this is where the real pay-to info lives
+        const payTo = w.receive_details || w.details || w.account_details || w.payment_details || (w.method + ' - ' + (w.account||w.account_number||'') + ' - ' + (w.full_name||''));
+        return "<div class='item'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||w.receive_method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>User: " + escHtml(w.user_id||'') + " • Account: " + escHtml(w.account || w.account_number || '') + " • Name: " + escHtml(w.full_name||'') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + new Date(w.created_at).toLocaleString() + "</span><div class='paybox'>💸 PAY TO: " + escHtml(payTo) + "</div>" + (w.status === 'pending' ? "<div class='row'><button class='btnApprove' onclick=\"approveWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">✅ Approve - Pay User (Already Deducted)</button><button class='btnReject' onclick=\"rejectWithdraw('" + w.id + "','" + w.user_id + "'," + g + ", this)\">❌ Reject + Refund</button></div>" : "") + "</div>";
       }).join('');
     } else {
       const {data, error} = await window.sb.from('songs').select('*').order('created_at', {ascending:false}).limit(50);
@@ -128,7 +130,6 @@ async function approveDeposit(id, userId, amountG, btn){
   if(!confirm('Approve this deposit? This will ADD ' + Number(amountG).toFixed(2) + ' G to user balance.')) return;
   if(btn) btn.disabled = true;
   try{
-    // FIXED: LOCK FIRST - mark approved with eq(status,pending), if 0 rows returned someone already approved it
     const {data: locked, error: lockErr} = await window.sb.from('deposits').update({status: 'approved'}).eq('id', id).eq('status', 'pending').select('id');
     if(lockErr) throw lockErr;
     if(!locked || !locked.length){ alert('Already processed by someone else - NOT adding Grinds again.'); loadStats(); loadList(); return; }
