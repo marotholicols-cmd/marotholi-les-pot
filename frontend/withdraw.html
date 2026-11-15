@@ -132,19 +132,18 @@ async function submitWithdraw(){
   btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
-    // FIXED: Block if you already have a PENDING withdrawal - stops double-withdraw / triple-pay bug
     const {data: pending} = await window.sb.from('withdrawals').select('id, amount_grind').eq('user_id', user.id).eq('status', 'pending').maybeSingle();
     if(pending){
       throw new Error('You already have a PENDING withdrawal of ' + Number(pending.amount_grind||0).toFixed(2) + ' G. Wait for Admin to approve / reject it before requesting another.');
     }
-    // FIXED: re-read fresh balance to stop double-spend in 2 tabs
     const {data: fresh} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
     const freshBal = Number(fresh?.balance_grind || 0);
     if(amountG > freshBal){ msg.textContent = 'Balance changed. You now have ' + freshBal.toFixed(2) + ' G'; msg.className = 'msg error'; btn.disabled = false; return; }
-    let {error, data: inserted} = await window.sb.from('withdrawals').insert({user_id: user.id, amount_grind: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'}).select('id').single();
+    // FIXED: artist_id is required by Supabase - in this app artist_id = user.id
+    let {error, data: inserted} = await window.sb.from('withdrawals').insert({user_id: user.id, artist_id: user.id, amount_grind: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'}).select('id').single();
     if(error){
       console.log('Withdraw insert retry minimal:', error.message);
-      const r2 = await window.sb.from('withdrawals').insert({user_id: user.id, amount_grind: amountG, method: selectedMethod, account: account, full_name: fullName, status: 'pending'}).select('id').single();
+      const r2 = await window.sb.from('withdrawals').insert({user_id: user.id, artist_id: user.id, amount_grind: amountG, method: selectedMethod, account: account, full_name: fullName, status: 'pending'}).select('id').single();
       if(r2.error) throw r2.error;
       inserted = r2.data;
     }
