@@ -109,8 +109,9 @@ async function loadList(){
     if(!data || !data.length){ document.getElementById('list').innerHTML = "<p class='small'>No withdrawals yet.</p>"; return; }
     document.getElementById('list').innerHTML = data.map(function(w){
       const col = w.status === 'approved' ? '#d4ff3f' : w.status === 'rejected' ? '#ff6b6b' : '#ffb020';
-      const g = Number(w.amount_grind || (w.amount_maloti ? w.amount_maloti/10 : 0) || w.amount/10 || 0);
-      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(w.method||w.receive_method||'') + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>" + escHtml(w.account || w.account_number || '') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + escHtml(w.full_name||'') + " • " + new Date(w.created_at).toLocaleDateString() + "</span></div>";
+      const g = Number(w.amount_grind || w.grinds || (w.amount_maloti ? w.amount_maloti/10 : 0) || w.amount/10 || 0);
+      const meth = w.receive_details || w.method || w.receive_method || '';
+      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(meth) + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>" + escHtml(w.account || w.account_number || '') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + escHtml(w.full_name||'') + " • " + new Date(w.created_at).toLocaleDateString() + "</span></div>";
     }).join('');
   }catch(e){
     document.getElementById('list').innerHTML = "<p class='small'>Could not load withdrawals: " + escHtml(e.message) + "</p>";
@@ -139,11 +140,14 @@ async function submitWithdraw(){
     const {data: fresh} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
     const freshBal = Number(fresh?.balance_grind || 0);
     if(amountG > freshBal){ msg.textContent = 'Balance changed. You now have ' + freshBal.toFixed(2) + ' G'; msg.className = 'msg error'; btn.disabled = false; return; }
-    // FIXED: artist_id + receive_method are required by Supabase
-    let {error, data: inserted} = await window.sb.from('withdrawals').insert({user_id: user.id, artist_id: user.id, amount_grind: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, receive_method: selectedMethod, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'}).select('id').single();
+    // FIXED: Your REAL required column is receive_details, NOT receive_method
+    const receiveDetails = selectedMethod.toUpperCase() + ' - ' + account + ' - ' + fullName + (bankName ? ' - Bank: ' + bankName : '');
+    const payload = {user_id: user.id, artist_id: user.id, amount_grind: amountG, grinds: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, receive_method: selectedMethod, receive_details: receiveDetails, details: receiveDetails, account_details: receiveDetails, payment_details: receiveDetails, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'};
+    let {error, data: inserted} = await window.sb.from('withdrawals').insert(payload).select('id').single();
     if(error){
       console.log('Withdraw insert retry minimal:', error.message);
-      const r2 = await window.sb.from('withdrawals').insert({user_id: user.id, artist_id: user.id, amount_grind: amountG, method: selectedMethod, receive_method: selectedMethod, account: account, full_name: fullName, status: 'pending'}).select('id').single();
+      // Retry with ONLY the 3 required columns + essentials
+      const r2 = await window.sb.from('withdrawals').insert({user_id: user.id, amount_grind: amountG, receive_details: receiveDetails, method: selectedMethod, account: account, full_name: fullName, status: 'pending'}).select('id').single();
       if(r2.error) throw r2.error;
       inserted = r2.data;
     }
