@@ -107,6 +107,8 @@ async function loadHome() {
   const sb = getSB();
   if (!sb) {
     listEl.innerHTML = "<div class='card'>⏳ Connecting to Supabase...<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
+    // Retry once after 1.5s in case app.js is still loading
+    setTimeout(function(){ if(!getSB()) return; loadHome(); }, 1500);
     return;
   }
   try {
@@ -158,7 +160,6 @@ function playWithPlayer(url, s, start, end, isFull) {
   document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
-  // Reset handlers so old errors don't fire
   audio.onerror = null;
   audio.onloadedmetadata = null;
   audio.pause();
@@ -177,7 +178,6 @@ function playWithPlayer(url, s, start, end, isFull) {
     audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(e){
       console.log('Play blocked:', e.message);
       if(btn) btn.textContent = '▶';
-      // No annoying alert - user just taps ▶ in player bar
     });
   };
   if(!isFull && end){
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   const params = new URLSearchParams(location.search);
   if (params.get('song')) { await checkDeepLink(); } else { await loadHome(); }
 });
-<script>
+</script>
 <script src="player.js"></script>
 </body>
 </html>
