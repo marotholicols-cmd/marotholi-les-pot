@@ -4,18 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Marotholi Les-Pot - Home</title>
-<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<link rel="stylesheet" href="style.css">
 <style>
-body{background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,sans-serif;margin:0;padding-bottom:180px}
-header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px;letter-spacing:.5px;position:sticky;top:0;z-index:10}
+body{background:#0f0f0f;color:#fff;font-family:system-ui,sans-serif;margin:0;padding-bottom:180px}
+header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:900;font-size:18px;position:sticky;top:0;z-index:10}
 header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .wrap{max-width:600px;margin:0 auto;padding:14px}
 .card{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:14px;margin-bottom:12px}
-.card h3{margin:0 0 8px 0;font-size:17px}
 input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .balance{font-size:28px;font-weight:900;margin:6px 0}
@@ -48,190 +45,88 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <header>MAROTHOLI LES-POT<small>🐂 🌧️ Lesotho Music • 1G = M10 FIXED</small></header>
 <div class="wrap">
 <div class="card" id="balanceCard" style="display:none">
-<h3>💰 My Grinds</h3>
-<p class="balance"><span id="balText">Loading...</span></p>
-<p class="small" id="balMaloti"></p>
-<div class="top-links">
-<a href="deposit.html" class="green">＋ Deposit</a>
-<a href="wallet.html">Wallet</a>
-<a href="withdraw.html">Withdraw</a>
+<h3>💰 My Grinds</h3><p class="balance"><span id="balText">Loading...</span></p><p class="small" id="balMaloti"></p>
+<div class="top-links"><a href="deposit.html" class="green">＋ Deposit</a><a href="wallet.html">Wallet</a><a href="withdraw.html">Withdraw</a></div>
 </div>
-</div>
-<div class="card">
-<h3>🎵 Latest Songs</h3>
-<input id="searchInput" placeholder="Search songs, artists..." oninput="loadHome()">
-<p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p>
-</div>
+<div class="card"><h3>🎵 Latest Songs</h3><input id="searchInput" placeholder="Search songs, artists..." oninput="loadHome()"><p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p></div>
 <div id="songList"><p class="small">Loading songs...</p></div>
-<div class="card">
-<h3>📣 For Artists</h3>
-<p class="small">Upload your song. Set your own price. Min 0.2G = M2. You get 63%. Preview is 30 sec — you pick where it starts.</p>
-<button class="btn" onclick="location.href='upload.html'">⬆️ Upload Song</button>
+<div class="card"><h3>📣 For Artists</h3><p class="small">Upload your song. Set your own price. Min 0.2G = M2. You get 63%. Preview is 30 sec.</p><button class="btn" onclick="location.href='upload.html'">⬆️ Upload Song</button></div>
+<div class="card"><h3>ℹ️ How Les-Pot Works</h3><p class="small">- 1G = M10 — FIXED<br>- Split: 63% Artist / 23% Platform / 14% Fees<br>- Deposit via EcoCash Merchant 128235 or PostBank Visa 1040278800016<br>- Admin approves deposits manually<br>- Min withdraw: 3.5G = M35</p></div>
 </div>
-<div class="card">
-<h3>ℹ️ How Les-Pot Works</h3>
-<p class="small">
-- 1G = M10 — FIXED conversion<br>
-- Artist sets price, e.g. 0.35G = M3.50<br>
-- Split: 63% Artist / 23% Platform / 14% Fees<br>
-- Deposit via EcoCash Merchant 128235 or PostBank Visa 1040278800016<br>
-- Admin approves deposits manually<br>
-- Min withdraw: 3.5G = M35
-</p>
-</div>
-</div>
-<div class="player" id="playerBar">
-<img id="playerCover" src="icon.svg" alt="cover">
-<div class="meta"><b id="playerTitle">No song playing</b><span id="playerArtist">Marotholi Les-Pot</span></div>
-<button id="playerBtn" onclick="togglePlayer()">▶</button>
-<button class="stop" onclick="stopPlayer()">✕</button>
-</div>
+<div class="player" id="playerBar"><img id="playerCover" src="icon.svg"><div class="meta"><b id="playerTitle">No song playing</b><span id="playerArtist">Marotholi Les-Pot</span></div><button id="playerBtn" onclick="togglePlayer()">▶</button><button class="stop" onclick="stopPlayer()">✕</button></div>
 <audio id="mainAudio" preload="none" playsinline></audio>
-<div class="bottomnav">
-<a href="index.html" class="active">🏠<br>Home</a>
-<a href="discover.html">🎵<br>Discover</a>
-<a href="library.html">📚<br>Library</a>
-<a href="upload.html">⬆️<br>Upload</a>
-<a href="wallet.html">💰<br>Wallet</a>
-<a href="account.html">👤<br>Account</a>
-</div>
+<div class="bottomnav"><a href="index.html" class="active">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
-window._homeOwnsSongList = true;
-let allSongs = [];
-let _homeTries = 0;
-function getSB(){
-  if (window.sb) return window.sb;
-  if (typeof initSB === 'function') { try { const c = initSB(); if (c) return c; } catch(e){} }
-  return window.sb || null;
-}
-async function loadHome() {
-  const listEl = document.getElementById('songList');
-  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-  const sb = getSB();
-  if (!sb) {
-    _homeTries++;
-    if (_homeTries < 10) {
-      listEl.innerHTML = "<div class='card'>⏳ Connecting to Supabase... (" + _homeTries + "/10)<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
-      setTimeout(loadHome, 1200);
-    } else {
-      listEl.innerHTML = "<div class='card'>❌ Still not connecting. Check internet, then reload.<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
-    }
-    return;
-  }
-  _homeTries = 0;
-  try {
-    const { data, error } = await sb.from('songs').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    allSongs = data || [];
-    let songs = allSongs;
-    if (q) songs = songs.filter(function(s) { return ((s.title || '') + ' ' + (s.artist_name || '')).toLowerCase().includes(q); });
-    if (!songs.length) { listEl.innerHTML = "<div class='card'>No songs yet. Be the first to upload!</div>"; return; }
-    listEl.innerHTML = songs.map(function(s) {
-      const cover = getCoverUrl(s.cover_path || s.cover_url);
-      const safeTitle = String(s.title || '').replace(/'/g, "");
-      const safeArtist = String(s.artist_name || '').replace(/'/g, "");
-      const price = Number(s.price_grind || s.price || 0.5);
-      return "<div class='song'>"
-        + "<img src='" + cover + "' onerror=\"this.src='icon.svg'\">"
-        + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name) + " • " + formatPrice(price) + "</span>"
-        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button><button onclick=\"buySong('" + s.id + "', " + price + ")\">Buy " + price.toFixed(2) + "G</button><button class='share' onclick=\"shareSongLink('" + s.id + "', '" + safeTitle + "', '" + safeArtist + "')\">🔗</button></div>"
-        + "</div></div>";
-    }).join('');
-  } catch (e) {
-    listEl.innerHTML = "<div class='card'>❌ Error: " + escHtml(e.message) + "<br><button class='btn' style='margin-top:10px' onclick='loadHome()'>🔄 Try Again</button></div>";
-  }
-}
-async function loadBalance() {
+let allSongs=[]; let _homeTries=0;
+function getSB(){ if(window.sb) return window.sb; if(typeof initSB==='function'){ try{ const c=initSB(); if(c) return c; }catch(e){} } return window.sb||null; }
+async function loadHome(){
+  const listEl=document.getElementById('songList');
+  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  const sb=getSB();
+  if(!sb){ _homeTries++; if(_homeTries<10){ listEl.innerHTML="<div class='card'>⏳ Connecting... ("+_homeTries+"/10)<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>"; setTimeout(loadHome,800); } else { listEl.innerHTML="<div class='card'>❌ Still not connecting. Reload.<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>"; } return; }
+  _homeTries=0;
   try{
-    const sb = getSB(); if (!sb) { setTimeout(loadBalance, 1200); return; }
-    const user = await getCurrentUser(); if (!user) return;
-    document.getElementById('balanceCard').style.display = 'block';
-    const { data } = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
-    const bal = Number(data?.grind_balance || 0);
-    document.getElementById('balText').textContent = bal.toFixed(2) + " G";
-    document.getElementById('balMaloti').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
+    const {data,error}=await sb.from('songs').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    allSongs=data||[];
+    let songs=allSongs;
+    if(q) songs=songs.filter(s=>((s.title||'')+' '+(s.artist_name||'')).toLowerCase().includes(q));
+    if(!songs.length){ listEl.innerHTML="<div class='card'>No songs yet. Be the first to upload!</div>"; return; }
+    listEl.innerHTML=songs.map(s=>{
+      const cover=getCoverUrl(s.cover_path||s.cover_url);
+      const safeTitle=String(s.title||'').replace(/'/g,"");
+      const safeArtist=String(s.artist_name||'').replace(/'/g,"");
+      const price=Number(s.price_grind||s.price||0.5);
+      return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • "+formatPrice(price)+"</span><div class='row'><button class='play' onclick=\"previewSong('"+s.id+"')\">▶ Preview 30s</button><button onclick=\"buySong('"+s.id+"',"+price+")\">Buy "+price.toFixed(2)+"G</button><button class='share' onclick=\"shareSongLink('"+s.id+"','"+safeTitle+"','"+safeArtist+"')\">🔗</button></div></div></div>";
+    }).join('');
+  }catch(e){ listEl.innerHTML="<div class='card'>❌ Error: "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadHome()'>🔄 Try Again</button></div>"; }
+}
+async function loadBalance(){
+  try{ const sb=getSB(); if(!sb){ setTimeout(loadBalance,1000); return; }
+    const user=await getCurrentUser(); if(!user) return;
+    document.getElementById('balanceCard').style.display='block';
+    const {data}=await sb.from('profiles').select('grind_balance').eq('id',user.id).single();
+    const bal=Number(data?.grind_balance||0);
+    document.getElementById('balText').textContent=bal.toFixed(2)+" G";
+    document.getElementById('balMaloti').textContent="= M"+grindToMaloti(bal)+" • 1G = M10 FIXED";
   }catch(e){}
 }
-function playWithPlayer(url, s, start, end, isFull) {
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
-  const btn = document.getElementById('playerBtn');
-  document.getElementById('playerTitle').textContent = s.title || 'Unknown';
-  document.getElementById('playerArtist').textContent = (s.artist_name || '') + (isFull ? ' • FULL' : ' • PREVIEW 30s');
-  document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
-  if(bar) bar.classList.add('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
-  audio.pause(); audio.src = url; audio.load();
-  audio.onerror = function() { alert('❌ Audio file not found. Check Supabase > Storage > songs bucket. Audio_path = ' + (s.audio_path || s.audio_url || 'EMPTY')); if(btn) btn.textContent = '▶'; };
-  audio.onloadedmetadata = function() {
-    try { const st = Number(start || 0); if (st > 0 && st < audio.duration) audio.currentTime = st; } catch(e) {}
-    audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(){ if(btn) btn.textContent = '▶'; });
-  };
-  if(!isFull && end){
-    window._previewTimer = setInterval(function(){
-      if(!audio.paused && audio.currentTime >= Number(end)){
-        audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent = '▶';
-        document.getElementById('playerArtist').textContent = (s.artist_name || '') + ' • PREVIEW ENDED - Buy for full';
-      }
-    }, 300);
-  }
+function playWithPlayer(url,s,start,end,isFull){
+  const audio=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); const btn=document.getElementById('playerBtn');
+  document.getElementById('playerTitle').textContent=s.title||'Unknown';
+  document.getElementById('playerArtist').textContent=(s.artist_name||'')+(isFull?' • FULL':' • PREVIEW 30s');
+  document.getElementById('playerCover').src=getCoverUrl(s.cover_path||s.cover_url);
+  if(bar) bar.classList.add('show'); if(window._previewTimer) clearInterval(window._previewTimer);
+  audio.pause(); audio.src=url; audio.load();
+  audio.onerror=function(){ alert('❌ Audio file not found. File: '+(s.audio_path||s.audio_url||'EMPTY')); if(btn) btn.textContent='▶'; };
+  audio.onloadedmetadata=function(){ try{ const st=Number(start||0); if(st>0&&st<audio.duration) audio.currentTime=st; }catch(e){} audio.play().then(()=>{ if(btn) btn.textContent='⏸'; }).catch(()=>{ if(btn) btn.textContent='▶'; }); };
+  if(!isFull&&end){ window._previewTimer=setInterval(()=>{ if(!audio.paused&&audio.currentTime>=Number(end)){ audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent='▶'; document.getElementById('playerArtist').textContent=(s.artist_name||'')+' • PREVIEW ENDED - Buy for full'; } },300); }
 }
-function togglePlayer(){
-  const audio = document.getElementById('mainAudio'); const btn = document.getElementById('playerBtn');
-  if(!audio.src) return;
-  if(audio.paused){ audio.play().then(function(){ if(btn) btn.textContent='⏸'; }).catch(function(){}); }
-  else { audio.pause(); if(btn) btn.textContent='▶'; }
+function togglePlayer(){ const a=document.getElementById('mainAudio'); const b=document.getElementById('playerBtn'); if(!a.src) return; if(a.paused){ a.play().then(()=>{ if(b) b.textContent='⏸'; }); } else { a.pause(); if(b) b.textContent='▶'; } }
+function stopPlayer(){ const a=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); a.pause(); a.removeAttribute('src'); a.load(); if(bar) bar.classList.remove('show'); if(window._previewTimer) clearInterval(window._previewTimer); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; }
+async function previewSong(id){
+  const s=allSongs.find(x=>String(x.id)===String(id)); if(!s){ alert('Song not found - reload'); return; }
+  const raw=s.audio_path||s.audio_url||''; if(!raw){ alert('❌ This song has NO audio file. Title: '+s.title); return; }
+  const url=await getSongStreamUrl(raw,3600); if(!url){ alert('❌ Could not get stream URL. File: '+raw); return; }
+  const range=getPreviewRange(s.preview_start); playWithPlayer(url,s,range.start,range.end,false);
 }
-function stopPlayer(){
-  const audio = document.getElementById('mainAudio'); const bar = document.getElementById('playerBar');
-  audio.pause(); audio.removeAttribute('src'); audio.load();
-  if(bar) bar.classList.remove('show');
-  if(window._previewTimer) clearInterval(window._previewTimer);
-  const btn = document.getElementById('playerBtn'); if(btn) btn.textContent='▶';
-}
-async function previewSong(id) {
-  const s = allSongs.find(function(x) { return String(x.id) === String(id); });
-  if (!s) { alert('Song not found - reload page'); return; }
-  const rawPath = s.audio_path || s.audio_url || '';
-  if (!rawPath) { alert('❌ This song has NO audio file. Upload it again. Title: ' + s.title); return; }
-  const url = await getSongStreamUrl(rawPath, 3600);
-  if (!url) { alert('❌ Could not get stream URL. Check Supabase > Storage > songs bucket. File: ' + rawPath); return; }
-  const range = getPreviewRange(s.preview_start);
-  playWithPlayer(url, s, range.start, range.end, false);
-}
-async function buySong(id, price) {
-  const sb = getSB(); if (!sb) { alert('Still connecting... reload and try again'); return; }
-  const user = await requireLogin(); if (!user) return;
-  const {data:already} = await sb.from('purchases').select('id').eq('fan_id', user.id).eq('song_id', id).eq('status', 'approved').maybeSingle();
+async function buySong(id,price){
+  const sb=getSB(); if(!sb){ alert('Still connecting... reload'); return; }
+  const user=await requireLogin(); if(!user) return;
+  const {data:already}=await sb.from('purchases').select('id').eq('fan_id',user.id).eq('song_id',id).eq('status','approved').maybeSingle();
   if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
-  const { data: p } = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
-  const bal = Number(p?.grind_balance || 0);
-  if (bal < price) { alert('Not enough Grinds.\nYou have ' + bal.toFixed(2) + ' G\nNeed ' + price.toFixed(2) + ' G\n\nGo to Deposit to top up.'); location.href = 'deposit.html'; return; }
-  if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
-  const split = splitMoney(price);
-  const { error } = await sb.from('purchases').insert({ fan_id: user.id, song_id: id, price_grind: price, fees_grind: split.fees, payment_method: 'Wallet', status: 'approved' });
-  if (error) { alert('Buy failed: ' + error.message); return; }
-  await sb.from('profiles').update({ grind_balance: bal - price }).eq('id', user.id);
-  try{
-    const {data: songRow} = await sb.from('songs').select('user_id, artist_id').eq('id', id).single();
-    const artistId = songRow?.user_id || songRow?.artist_id;
-    if(artistId && String(artistId) !== String(user.id)){
-      const {data: artistProf} = await sb.from('profiles').select('grind_balance').eq('id', artistId).single();
-      const artistBal = Number(artistProf?.grind_balance || 0);
-      await sb.from('profiles').update({ grind_balance: artistBal + split.artist }).eq('id', artistId);
-    }
-  }catch(e){ console.log('Artist credit failed:', e.message); }
-  alert('✅ Bought! Go to Library to play FULL song.'); location.href = 'library.html';
+  const {data:p}=await sb.from('profiles').select('grind_balance').eq('id',user.id).single();
+  const bal=Number(p?.grind_balance||0);
+  if(bal<price){ alert('Not enough Grinds.\nYou have '+bal.toFixed(2)+' G\nNeed '+price.toFixed(2)+' G'); location.href='deposit.html'; return; }
+  if(!confirm('Buy this song for '+formatPrice(price)+'?\n\nYou will get FULL song in Library.')) return;
+  const split=splitMoney(price);
+  const {error}=await sb.from('purchases').insert({fan_id:user.id,song_id:id,price_grind:price,fees_grind:split.fees,payment_method:'Wallet',status:'approved'});
+  if(error){ alert('Buy failed: '+error.message); return; }
+  await sb.from('profiles').update({grind_balance: bal-price}).eq('id',user.id);
+  try{ const {data:songRow}=await sb.from('songs').select('user_id,artist_id').eq('id',id).single(); const artistId=songRow?.user_id||songRow?.artist_id; if(artistId&&String(artistId)!==String(user.id)){ const {data:ap}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single(); await sb.from('profiles').update({grind_balance: Number(ap?.grind_balance||0)+split.artist}).eq('id',artistId); } }catch(e){}
+  alert('✅ Bought! Go to Library'); location.href='library.html';
 }
-async function checkDeepLink() {
-  const params = new URLSearchParams(location.search); const songId = params.get('song'); if (!songId) return;
-  await loadHome(); setTimeout(function() { previewSong(songId); }, 500);
-}
-document.addEventListener('DOMContentLoaded', async function() {
-  await loadBalance();
-  const params = new URLSearchParams(location.search);
-  if (params.get('song')) { await checkDeepLink(); } else { await loadHome(); }
-});
+document.addEventListener('DOMContentLoaded', async function(){ await loadBalance(); const params=new URLSearchParams(location.search); if(params.get('song')){ await loadHome(); setTimeout(()=>previewSong(params.get('song')),500); } else { await loadHome(); } });
 </script>
 </body>
 </html>
