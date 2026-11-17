@@ -18,7 +18,6 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
 .btn:disabled{opacity:.5}
-.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
 .method{border:1px solid #333;border-radius:14px;padding:12px;margin-top:10px;cursor:pointer}
@@ -39,7 +38,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <div class="card"><h3>My Balance</h3><p class="big" id="bal">Loading...</p><p class="small" id="balM"></p></div>
 <div class="card">
 <h3>1. Choose Method</h3>
-<p class="small" id="methodsNote">Only EcoCash + PostBank are active now. Others are LOCKED — Coming Soon, not deleted.</p>
+<p class="small">Only EcoCash + PostBank are active now. Others are LOCKED — Coming Soon, not deleted.</p>
 <div id="methods"></div>
 </div>
 <div class="card" id="stepsCard" style="display:none">
@@ -54,10 +53,10 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <label>Reference / Proof - Transaction ID or Upload Screenshot</label>
 <input id="reference" placeholder="e.g. TXN12345 or EcoCash SMS code">
 <input id="proofFile" type="file" accept="image/*" style="margin-top:8px">
-<p class="small" id="proofNote">Screenshot is optional if you have Transaction ID. If you pick a screenshot, it will be uploaded.</p>
+<p class="small">Screenshot is optional if you have Transaction ID.</p>
 <button class="btn" id="submitBtn" onclick="submitDepositForm()">I Sent Money → Submit for Approval</button>
 <p class="msg" id="msg"></p>
-<p class="small">Admin approves manually in Admin Tab. Your Grinds appear after approval. Do NOT send again if pending.</p>
+<p class="small">Admin approves manually. Your Grinds appear after approval. Do NOT send again if pending.</p>
 </div>
 <div class="card"><h3>📋 My Deposits</h3><div id="myDeposits"><p class="small">Loading...</p></div></div>
 </div>
@@ -65,7 +64,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <script>
 let selectedMethod = null;
 let isLoggedIn = false;
-function getClient(){ return initSB() || window.sb || null; }
+function getClient(){ if (window.sb) return window.sb; if (typeof initSB === 'function') { try { const c = initSB(); if (c) return c; } catch(e){} } return window.sb || null; }
 function renderMethods(){
   const methods = (typeof DEPOSIT_METHODS !== 'undefined' ? DEPOSIT_METHODS : [
     {id:'ecocash',name:'EcoCash Merchant',number:'128235',accountName:'Marotholi Lespot MSU',active:true},
@@ -82,14 +81,8 @@ function renderMethods(){
     return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> <button class='copybtn' onclick=\"event.stopPropagation(); copyNumber('" + escHtml(m.number) + "')\">📋 Copy</button> • " + escHtml(m.accountName) + "</span></div>";
   }).join('');
 }
-function copyNumber(num){
-  if(navigator.clipboard) navigator.clipboard.writeText(num).then(function(){ alert('Copied: ' + num); }).catch(function(){ prompt('Copy this number:', num); });
-  else prompt('Copy this number:', num);
-}
-function setAmount(m){
-  document.getElementById('amountM').value = m;
-  document.getElementById('amountM').dispatchEvent(new Event('input'));
-}
+function copyNumber(num){ if(navigator.clipboard) navigator.clipboard.writeText(num).then(function(){ alert('Copied: ' + num); }).catch(function(){ prompt('Copy this number:', num); }); else prompt('Copy this number:', num); }
+function setAmount(m){ document.getElementById('amountM').value = m; document.getElementById('amountM').dispatchEvent(new Event('input')); }
 function selectMethod(id){
   if(!isLoggedIn){ location.href='account.html'; return; }
   const methods = window._depositMethods || DEPOSIT_METHODS;
@@ -105,23 +98,20 @@ document.getElementById('amountM').addEventListener('input', function(){
 });
 async function loadBalance(){
   try{
-    const client = getClient(); if(!client) return;
-    const user = await getCurrentUser(); if(!user) return;
+    const client = getClient(); if(!client){ setTimeout(loadBalance, 1200); return; }
+    const user = await getCurrentUser(); if(!user) { document.getElementById('bal').textContent = 'Login to see balance'; return; }
     const {data, error} = await client.from('profiles').select('grind_balance').eq('id', user.id).single();
     if(error) throw error;
     const bal = Number(data?.grind_balance || 0);
     document.getElementById('bal').textContent = bal.toFixed(2) + " G";
     document.getElementById('balM').textContent = "= M" + grindToMaloti(bal);
-  }catch(e){
-    document.getElementById('bal').textContent = 'Error';
-    document.getElementById('balM').textContent = e.message;
-  }
+  }catch(e){ document.getElementById('bal').textContent = 'Error'; document.getElementById('balM').textContent = e.message; }
 }
 async function loadDeposits(){
   const user = await getCurrentUser();
   if(!user){ document.getElementById('myDeposits').innerHTML = "<p class='small'>Login to see deposits. <a href='account.html' style='color:#d4ff3f'>Login</a></p>"; return; }
   try{
-    const client = getClient();
+    const client = getClient(); if(!client){ setTimeout(loadDeposits, 1200); return; }
     const {data, error} = await client.from('deposits').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
     if(error) throw error;
     if(!data || !data.length){ document.getElementById('myDeposits').innerHTML = "<p class='small'>No deposits yet.</p>"; return; }
@@ -130,15 +120,11 @@ async function loadDeposits(){
       const g = Number(d.amount_grind || (d.amount_maloti ? d.amount_maloti/10 : 0) || d.amount/10 || 0);
       return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + g.toFixed(2) + " G</b> • " + escHtml(d.method||'') + " • <span style='color:" + col + "'>" + escHtml(d.status||'pending') + "</span><br><span class='small'>" + escHtml(d.reference||'') + " • " + new Date(d.created_at).toLocaleDateString() + "</span></div>";
     }).join('');
-  }catch(e){
-    document.getElementById('myDeposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>";
-  }
+  }catch(e){ document.getElementById('myDeposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>"; }
 }
-// FIXED: Renamed from submitDeposit() to avoid clash with app.js submitDeposit()
 async function submitDepositForm(){
   const user = await requireLogin(); if(!user) return;
-  const msg = document.getElementById('msg');
-  const btn = document.getElementById('submitBtn');
+  const msg = document.getElementById('msg'); const btn = document.getElementById('submitBtn');
   if(!selectedMethod){ msg.textContent = 'Pick EcoCash or PostBank first'; msg.className = 'msg error'; return; }
   const amountM = Number(document.getElementById('amountM').value || 0);
   const sender = document.getElementById('senderInfo').value.trim();
@@ -146,8 +132,7 @@ async function submitDepositForm(){
   const proofFile = document.getElementById('proofFile').files[0];
   if(!amountM || amountM < 10){ msg.textContent = 'Min deposit M10 = 1G'; msg.className = 'msg error'; return; }
   if(!sender || !ref){ msg.textContent = 'Fill your name/number + reference'; msg.className = 'msg error'; return; }
-  btn.disabled = true;
-  msg.textContent = 'Submitting...'; msg.className = 'msg';
+  btn.disabled = true; msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
     const client = getClient();
     const {data: dup} = await client.from('deposits').select('id').eq('user_id', user.id).eq('reference', ref).maybeSingle();
@@ -159,43 +144,20 @@ async function submitDepositForm(){
       const safe = proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       proofPath = user.id + '/' + Date.now() + '_' + safe;
       const {error: upErr} = await client.storage.from('proofs').upload(proofPath, proofFile);
-      if(upErr){
-        console.log('Proof upload failed, continuing with reference only:', upErr.message);
-        proofPath = '';
-      }
+      if(upErr){ console.log('Proof upload failed, continuing:', upErr.message); proofPath = ''; }
     }
-    // Try full insert first, fallback to minimal that matches app.js if extra columns don't exist
     let insertRow = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, reference: ref, status: 'pending'};
-    // Only add extras if they are likely to exist - keep them in try, fallback will strip them
     let fullRow = Object.assign({}, insertRow, {amount_maloti: amountM, amount: amountM, sender_info: sender, proof_path: proofPath});
     let {error} = await client.from('deposits').insert(fullRow);
-    if(error){
-      console.log('Deposit insert retry minimal:', error.message);
-      const r2 = await client.from('deposits').insert(insertRow);
-      if(r2.error) throw r2.error;
-    }
-    msg.textContent = '✅ Submitted! Wait for Admin approval. Your Grinds will appear in Wallet after approval.'; msg.className = 'msg ok';
-    document.getElementById('amountM').value = '';
-    document.getElementById('senderInfo').value = '';
-    document.getElementById('reference').value = '';
-    document.getElementById('proofFile').value = '';
-    document.getElementById('amountG').textContent = 'Type amount to see Grinds';
-    loadDeposits();
-    loadBalance();
-  }catch(e){
-    msg.textContent = '❌ ' + e.message; msg.className = 'msg error';
-  } finally {
-    btn.disabled = false;
-  }
+    if(error){ console.log('Deposit retry minimal:', error.message); const r2 = await client.from('deposits').insert(insertRow); if(r2.error) throw r2.error; }
+    msg.textContent = '✅ Submitted! Wait for Admin approval.'; msg.className = 'msg ok';
+    document.getElementById('amountM').value = ''; document.getElementById('senderInfo').value = ''; document.getElementById('reference').value = ''; document.getElementById('proofFile').value = ''; document.getElementById('amountG').textContent = 'Type amount to see Grinds';
+    loadDeposits(); loadBalance();
+  }catch(e){ msg.textContent = '❌ ' + e.message; msg.className = 'msg error'; } finally { btn.disabled = false; }
 }
 document.addEventListener('DOMContentLoaded', async function(){
-  try{
-    const u = await getCurrentUser();
-    isLoggedIn = !!u;
-  }catch(e){ isLoggedIn = false; }
-  renderMethods();
-  await loadBalance();
-  await loadDeposits();
+  try{ const u = await getCurrentUser(); isLoggedIn = !!u; }catch(e){ isLoggedIn = false; }
+  renderMethods(); await loadBalance(); await loadDeposits();
 });
 </script>
 </body>
