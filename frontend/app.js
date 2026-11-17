@@ -14,8 +14,8 @@
 // Admin approves everything manually
 // ============================================
 
-const SUPA_URL = "https://mmkxiniybctmgoozaecp.supabase.co";
-const SUPA_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP";
+const SUPA_URL = "https://mmkxiniybctmgoozaecp.supabase.co"
+const SUPA_KEY = "sb_publishable_wWhjXCZ4JWfGlCIG95kzPg_WXqzfVDP"
 const GRIND_TO_MALOTI = 10;
 const ARTIST_CUT = 0.63;
 const PLATFORM_CUT = 0.23;
