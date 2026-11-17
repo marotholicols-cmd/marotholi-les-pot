@@ -1,6 +1,7 @@
 // ============================================
 // MAROTHOLI LES-POT - app.js - FINAL SIMPLE VERSION
 // Built: 11 Nov 2026 - Simple like Yesterday
+// FIXED 17 Nov 2026 - Stops fighting index.html + deposit.html
 // ============================================
 // FIXED RULES - DO NOT CHANGE:
 // 1G = M10 - CONVERSION ONLY, not song price
@@ -84,21 +85,18 @@ async function getMyProfile() {
 }
 async function requireLogin() {
   const user = await getCurrentUser();
-  if (!user) { location.href = "auth.html"; return null; }
+  if (!user) { location.href = "account.html"; return null; }
   return user;
 }
 // --- FIXED: Handles all audio_path formats ---
 function cleanStoragePath(p) {
   if (!p) return "";
   let path = String(p).trim();
-  // If it's a full Supabase storage URL, extract the file path after /songs/
   const marker = "/songs/";
   if (path.includes(marker)) {
     path = path.split(marker).pop().split("?")[0];
   }
-  // Strip leading songs/ or / or bucket name
   path = path.replace(/^\/+/, "").replace(/^songs\//, "");
-  // Decode %20 etc
   try { path = decodeURIComponent(path); } catch(e) {}
   return path;
 }
@@ -106,7 +104,6 @@ async function getSongStreamUrl(audioPath, seconds) {
   const client = initSB();
   if (!audioPath) return null;
   const raw = String(audioPath).trim();
-  // FIXED: If it's a Supabase Storage URL, extract path and make a SIGNED URL - fixes private bucket = no sound
   if (raw.includes('/storage/v1/object/')) {
     const clean = cleanStoragePath(raw);
     if (client && clean) {
@@ -118,27 +115,22 @@ async function getSongStreamUrl(audioPath, seconds) {
         }
         console.log('Signed failed:', error ? error.message : 'no url');
       } catch(e) { console.log('Signed exception:', e.message); }
-      // Fallback: try public URL
       try {
         const { data } = client.storage.from("songs").getPublicUrl(clean);
         if (data && data.publicUrl) return data.publicUrl;
       } catch(e) {}
     }
-    // Last fallback: return raw as-is
     return raw;
   }
-  // Already a direct http link (not Supabase) - return as-is
   if (raw.startsWith("http")) return raw;
   if (!client) return null;
   const clean = cleanStoragePath(raw);
   if (!clean) return null;
-  // Try signed URL first (works for private bucket)
   try {
     const { data, error } = await client.storage.from("songs").createSignedUrl(clean, seconds || 3600);
     if (!error && data && data.signedUrl) return data.signedUrl;
     console.log("Signed URL failed, trying public URL:", error ? error.message : "no url");
   } catch(e) { console.log("Signed URL exception:", e.message); }
-  // Fallback: public URL (works if bucket is public)
   try {
     const { data } = client.storage.from("songs").getPublicUrl(clean);
     if (data && data.publicUrl) return data.publicUrl;
@@ -173,11 +165,14 @@ function getPreviewRange(previewStart) {
 console.log("Marotholi Les-Pot app.js loaded - 1G = M10 FIXED - 63/23/14 - Min Withdraw 3.5G");
 
 // ============================================
-// ADDED BELOW - MISSING FUNCTIONS ONLY - NOTHING ABOVE WAS DELETED
-// These were missing, that's why page said "Connecting..."
+// FIXED HELPERS - Respect pages that have their own loaders
 // ============================================
 
 async function loadBalanceBadge() {
+  // FIXED: Don't fight deposit.html - it has its own loadBalance() for #bal
+  if (document.getElementById('myDeposits')) return;
+  // FIXED: Don't fight index.html - it has its own loadBalance() for #balText
+  if (window._homeOwnsSongList) return;
   const el = document.getElementById('bal');
   if (!el) return;
   const { user, profile } = await getMyProfile();
@@ -186,6 +181,8 @@ async function loadBalanceBadge() {
 }
 
 async function loadSongs(searchTerm) {
+  // FIXED: index.html owns #songList - do NOT overwrite its pretty cards
+  if (window._homeOwnsSongList) return;
   const containers = [
     document.getElementById('latestSongs'),
     document.getElementById('songsList'),
@@ -212,21 +209,22 @@ async function loadSongs(searchTerm) {
     containers.forEach(c => c.innerHTML = '<p>No songs yet.</p>');
     return;
   }
-  // Build HTML once, reuse for all containers
   let html = '';
   for (const s of songs) {
     const price = Number(s.price_grind || s.price || 0.5);
     const previewStart = Number(s.preview_start || 0);
+    const artistId = s.artist_id || s.user_id || '';
+    const cover = getCoverUrl(s.cover_path || s.cover_url);
     html += '<div class="card song" style="padding:12px;margin-bottom:12px">'
+      + '<img src="' + cover + '" onerror="this.src=\'icon.svg\'" style="width:64px;height:64px;border-radius:12px;object-fit:cover;float:left;margin-right:10px">'
       + '<b>' + escHtml(s.title) + '</b><br><small>' + escHtml(s.artist_name || '') + ' • ' + formatPrice(price) + '</small><br>'
-      + '<div style="display:flex;gap:8px;margin-top:8px">'
+      + '<div style="display:flex;gap:8px;margin-top:8px;clear:both">'
       + '<button onclick="playPreviewFor(\'' + s.id + '\', ' + previewStart + ', this)">▶️ Preview 30s</button>'
-      + '<button onclick="buySongWithWallet(\'' + s.id + '\', ' + price + ', \'' + (s.artist_id || '') + '\')">Buy ' + price + ' G</button>'
+      + '<button onclick="buySongWithWallet(\'' + s.id + '\', ' + price + ', \'' + artistId + '\')">Buy ' + price + ' G</button>'
       + '<button onclick="shareSongLink(\'' + s.id + '\', \'' + escHtml(s.title) + '\', \'' + escHtml(s.artist_name || '') + '\')">Share</button>'
       + '</div><div class="preview-holder" data-song="' + s.id + '"></div></div>';
   }
   containers.forEach(c => c.innerHTML = html);
-  // Store songs for preview player
   window._allSongs = songs;
 }
 window.loadSongs = loadSongs;
@@ -237,6 +235,7 @@ async function playPreviewFor(songId, previewStart, btn) {
   const song = (window._allSongs || []).find(x => String(x.id) === String(songId));
   if (!song) return;
   const holder = btn.parentElement.parentElement.querySelector('.preview-holder');
+  if (!holder) return;
   let audio = holder.querySelector('audio');
   if (!audio) {
     const url = await getSongStreamUrl(song.audio_path || song.audio_url || song.file_url);
@@ -269,8 +268,6 @@ window.playPreviewFor = playPreviewFor;
 
 function renderDepositMethods() {
   const el = document.getElementById('deposit-details');
-  const prompt = document.getElementById('login-prompt');
-  // Called after login check - only show active methods, locked ones show "Coming Soon"
   if (!el) return;
   let h = '<h3>Deposit - EcoCash | PostBank</h3>';
   DEPOSIT_METHODS.forEach(m => {
@@ -285,11 +282,13 @@ function renderDepositMethods() {
 
 async function loadWallet() {
   const { user, profile } = await getMyProfile();
-  const b = document.getElementById('walletBalance') || document.getElementById('bal');
-  if (b && profile) b.textContent = Number(profile.grind_balance || 0).toFixed(2) + ' G';
+  // FIXED: deposit.html owns #bal, don't overwrite it
+  if (!document.getElementById('myDeposits')) {
+    const b = document.getElementById('walletBalance') || document.getElementById('bal');
+    if (b && profile) b.textContent = Number(profile.grind_balance || 0).toFixed(2) + ' G';
+  }
   const b2 = document.getElementById('balBig');
   if (b2 && profile) b2.textContent = Number(profile.grind_balance || 0).toFixed(2) + ' G';
-  // Show deposit methods only if logged in
   const dep = document.getElementById('deposit-details');
   const prompt = document.getElementById('login-prompt');
   if (user) {
@@ -298,10 +297,11 @@ async function loadWallet() {
     loadMyDeposits(user.id); loadMyWithdrawals(user.id);
   } else {
     if (dep) { dep.style.display = 'none'; dep.innerHTML = ''; }
-    if (prompt) { prompt.style.display = 'block'; prompt.innerHTML = '<p>Login to see pay details</p><a href="auth.html">Login</a>'; }
+    if (prompt) { prompt.style.display = 'block'; prompt.innerHTML = '<p>Login to see pay details</p><a href="account.html">Login</a>'; }
   }
 }
 async function submitDeposit(amount, method, reference) {
+  // NOTE: deposit.html uses submitDepositForm() now - this is the generic fallback for other pages
   const user = await requireLogin(); if (!user) return;
   amount = Number(amount); if (!amount || amount <= 0) { alert('Enter amount'); return; }
   if (!reference) { alert('Paste OTP / Reference'); return; }
@@ -328,6 +328,8 @@ async function rejectDeposit(id) { await initSB().from('deposits').update({ stat
 window.rejectDeposit = rejectDeposit;
 async function loadMyDeposits(userId) {
   const el = document.getElementById('myDeposits'); if (!el) return;
+  // deposit.html has its own loadDeposits() - don't overwrite it if it already loaded
+  if (document.getElementById('submitBtn') && document.getElementById('amountM')) return;
   const { data } = await initSB().from('deposits').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20);
   if (!data || !data.length) { el.innerHTML = '<p>No deposits yet.</p>'; return; }
   el.innerHTML = data.map(d => '<div class="card" style="padding:10px"><b>+' + d.amount_grind + ' G</b> • ' + escHtml(d.method || '') + ' • ' + escHtml(d.reference || '') + ' • ' + escHtml(d.status) + '</div>').join('');
@@ -428,6 +430,8 @@ async function approveSong(id) { alert('Songs are auto-approved'); } window.appr
 async function rejectSong(id) { alert('Delete song from Supabase > songs table if needed'); } window.rejectSong = rejectSong;
 function searchSongs() {
   const input = document.getElementById('searchInput') || document.getElementById('search');
+  // FIXED: On home, search is handled by loadHome(), not loadSongs()
+  if (window._homeOwnsSongList && typeof loadHome === 'function') { loadHome(); return; }
   loadSongs(input ? input.value.trim() : '');
 }
 window.searchSongs = searchSongs;
@@ -439,6 +443,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { if (document.getElementById('pendingDeposits') || document.getElementById('pendingWithdrawals')) loadAdmin(); } catch(e) {}
   try { if (document.getElementById('librarySongs')) loadLibrary(); } catch(e) {}
   try { await loadSongs(); } catch(e) { console.log(e); }
-  const searchBox = document.getElementById('searchInput') || document.getElementById('search');
-  if (searchBox) searchBox.addEventListener('input', () => loadSongs(searchBox.value.trim()));
+  // FIXED: Don't add a second search listener on home - home already has oninput="loadHome()"
+  if (!window._homeOwnsSongList) {
+    const searchBox = document.getElementById('searchInput') || document.getElementById('search');
+    if (searchBox) searchBox.addEventListener('input', () => loadSongs(searchBox.value.trim()));
+  }
 });
