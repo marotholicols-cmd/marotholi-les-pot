@@ -19,9 +19,7 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .balance{font-size:28px;font-weight:900;margin:6px 0}
-.balance span{font-size:14px;opacity:.7;font-weight:700}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer}
-.btn2{width:100%;background:#222;color:#fff;border:1px solid #444;padding:12px;border-radius:99px;font-weight:800;font-size:14px;cursor:pointer}
 .song{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
 .song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0}
 .song .meta{flex:1;min-width:0}
@@ -98,30 +96,36 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <a href="account.html">👤<br>Account</a>
 </div>
 <script>
-// STOP app.js from overwriting our home cards - index has its own pretty renderer
 window._homeOwnsSongList = true;
 let allSongs = [];
-function getSB(){ return window.sb || null; }
-
+let _homeTries = 0;
+function getSB(){
+  if (window.sb) return window.sb;
+  if (typeof initSB === 'function') { try { const c = initSB(); if (c) return c; } catch(e){} }
+  return window.sb || null;
+}
 async function loadHome() {
   const listEl = document.getElementById('songList');
   const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
   const sb = getSB();
   if (!sb) {
-    listEl.innerHTML = "<div class='card'>⏳ Connecting to Supabase...<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
-    setTimeout(function(){ if(!getSB()) return; loadHome(); }, 1500);
+    _homeTries++;
+    if (_homeTries < 10) {
+      listEl.innerHTML = "<div class='card'>⏳ Connecting to Supabase... (" + _homeTries + "/10)<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
+      setTimeout(loadHome, 1200);
+    } else {
+      listEl.innerHTML = "<div class='card'>❌ Still not connecting. Check internet, then reload.<br><button class='btn' style='margin-top:10px' onclick='location.reload()'>🔄 Reload</button></div>";
+    }
     return;
   }
+  _homeTries = 0;
   try {
     const { data, error } = await sb.from('songs').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     allSongs = data || [];
     let songs = allSongs;
     if (q) songs = songs.filter(function(s) { return ((s.title || '') + ' ' + (s.artist_name || '')).toLowerCase().includes(q); });
-    if (!songs.length) {
-      listEl.innerHTML = "<div class='card'>No songs yet. Be the first to upload!</div>";
-      return;
-    }
+    if (!songs.length) { listEl.innerHTML = "<div class='card'>No songs yet. Be the first to upload!</div>"; return; }
     listEl.innerHTML = songs.map(function(s) {
       const cover = getCoverUrl(s.cover_path || s.cover_url);
       const safeTitle = String(s.title || '').replace(/'/g, "");
@@ -137,13 +141,10 @@ async function loadHome() {
     listEl.innerHTML = "<div class='card'>❌ Error: " + escHtml(e.message) + "<br><button class='btn' style='margin-top:10px' onclick='loadHome()'>🔄 Try Again</button></div>";
   }
 }
-
 async function loadBalance() {
   try{
-    const sb = getSB();
-    if (!sb) return;
-    const user = await getCurrentUser();
-    if (!user) return;
+    const sb = getSB(); if (!sb) { setTimeout(loadBalance, 1200); return; }
+    const user = await getCurrentUser(); if (!user) return;
     document.getElementById('balanceCard').style.display = 'block';
     const { data } = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
     const bal = Number(data?.grind_balance || 0);
@@ -151,7 +152,6 @@ async function loadBalance() {
     document.getElementById('balMaloti').textContent = "= M" + grindToMaloti(bal) + " • 1G = M10 FIXED";
   }catch(e){}
 }
-
 function playWithPlayer(url, s, start, end, isFull) {
   const audio = document.getElementById('mainAudio');
   const bar = document.getElementById('playerBar');
@@ -161,77 +161,52 @@ function playWithPlayer(url, s, start, end, isFull) {
   document.getElementById('playerCover').src = getCoverUrl(s.cover_path || s.cover_url);
   if(bar) bar.classList.add('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
-  audio.onerror = null;
-  audio.onloadedmetadata = null;
-  audio.pause();
-  audio.src = url;
-  audio.load();
-  audio.onerror = function() {
-    alert('❌ Audio file not found.\n\nCheck in Supabase > Storage > songs bucket — is the file there?\nCheck songs table — audio_path = ' + (s.audio_path || s.audio_url || 'EMPTY'));
-    if(btn) btn.textContent = '▶';
-  };
+  audio.pause(); audio.src = url; audio.load();
+  audio.onerror = function() { alert('❌ Audio file not found. Check Supabase > Storage > songs bucket. Audio_path = ' + (s.audio_path || s.audio_url || 'EMPTY')); if(btn) btn.textContent = '▶'; };
   audio.onloadedmetadata = function() {
-    try {
-      const st = Number(start || 0);
-      if (st > 0 && st < audio.duration) audio.currentTime = st;
-    } catch(e) {}
-    audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(e){
-      if(btn) btn.textContent = '▶';
-    });
+    try { const st = Number(start || 0); if (st > 0 && st < audio.duration) audio.currentTime = st; } catch(e) {}
+    audio.play().then(function(){ if(btn) btn.textContent = '⏸'; }).catch(function(){ if(btn) btn.textContent = '▶'; });
   };
   if(!isFull && end){
     window._previewTimer = setInterval(function(){
       if(!audio.paused && audio.currentTime >= Number(end)){
-        audio.pause();
-        clearInterval(window._previewTimer);
-        if(btn) btn.textContent = '▶';
+        audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent = '▶';
         document.getElementById('playerArtist').textContent = (s.artist_name || '') + ' • PREVIEW ENDED - Buy for full';
       }
     }, 300);
   }
 }
 function togglePlayer(){
-  const audio = document.getElementById('mainAudio');
-  const btn = document.getElementById('playerBtn');
+  const audio = document.getElementById('mainAudio'); const btn = document.getElementById('playerBtn');
   if(!audio.src) return;
   if(audio.paused){ audio.play().then(function(){ if(btn) btn.textContent='⏸'; }).catch(function(){}); }
   else { audio.pause(); if(btn) btn.textContent='▶'; }
 }
 function stopPlayer(){
-  const audio = document.getElementById('mainAudio');
-  const bar = document.getElementById('playerBar');
+  const audio = document.getElementById('mainAudio'); const bar = document.getElementById('playerBar');
   audio.pause(); audio.removeAttribute('src'); audio.load();
   if(bar) bar.classList.remove('show');
   if(window._previewTimer) clearInterval(window._previewTimer);
-  const btn = document.getElementById('playerBtn');
-  if(btn) btn.textContent='▶';
+  const btn = document.getElementById('playerBtn'); if(btn) btn.textContent='▶';
 }
-
 async function previewSong(id) {
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
   if (!s) { alert('Song not found - reload page'); return; }
   const rawPath = s.audio_path || s.audio_url || '';
-  if (!rawPath) { alert('❌ This song has NO audio file.\n\nUpload it again in upload.html.\nTitle: ' + s.title); return; }
+  if (!rawPath) { alert('❌ This song has NO audio file. Upload it again. Title: ' + s.title); return; }
   const url = await getSongStreamUrl(rawPath, 3600);
-  if (!url) { alert('❌ Could not get stream URL.\n\nCheck Supabase > Storage > songs bucket.\nIs the file named: ' + rawPath + ' ?'); return; }
+  if (!url) { alert('❌ Could not get stream URL. Check Supabase > Storage > songs bucket. File: ' + rawPath); return; }
   const range = getPreviewRange(s.preview_start);
   playWithPlayer(url, s, range.start, range.end, false);
 }
-
 async function buySong(id, price) {
-  const sb = getSB();
-  if (!sb) { alert('Still connecting... reload and try again'); return; }
-  const user = await requireLogin();
-  if (!user) return;
+  const sb = getSB(); if (!sb) { alert('Still connecting... reload and try again'); return; }
+  const user = await requireLogin(); if (!user) return;
   const {data:already} = await sb.from('purchases').select('id').eq('fan_id', user.id).eq('song_id', id).eq('status', 'approved').maybeSingle();
   if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
   const { data: p } = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
   const bal = Number(p?.grind_balance || 0);
-  if (bal < price) {
-    alert('Not enough Grinds.\nYou have ' + bal.toFixed(2) + ' G\nNeed ' + price.toFixed(2) + ' G\n\nGo to Deposit to top up.');
-    location.href = 'deposit.html';
-    return;
-  }
+  if (bal < price) { alert('Not enough Grinds.\nYou have ' + bal.toFixed(2) + ' G\nNeed ' + price.toFixed(2) + ' G\n\nGo to Deposit to top up.'); location.href = 'deposit.html'; return; }
   if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
   const split = splitMoney(price);
   const { error } = await sb.from('purchases').insert({ fan_id: user.id, song_id: id, price_grind: price, fees_grind: split.fees, payment_method: 'Wallet', status: 'approved' });
@@ -246,18 +221,12 @@ async function buySong(id, price) {
       await sb.from('profiles').update({ grind_balance: artistBal + split.artist }).eq('id', artistId);
     }
   }catch(e){ console.log('Artist credit failed:', e.message); }
-  alert('✅ Bought! Go to Library to play FULL song.');
-  location.href = 'library.html';
+  alert('✅ Bought! Go to Library to play FULL song.'); location.href = 'library.html';
 }
-
 async function checkDeepLink() {
-  const params = new URLSearchParams(location.search);
-  const songId = params.get('song');
-  if (!songId) return;
-  await loadHome();
-  setTimeout(function() { previewSong(songId); }, 500);
+  const params = new URLSearchParams(location.search); const songId = params.get('song'); if (!songId) return;
+  await loadHome(); setTimeout(function() { previewSong(songId); }, 500);
 }
-
 document.addEventListener('DOMContentLoaded', async function() {
   await loadBalance();
   const params = new URLSearchParams(location.search);
