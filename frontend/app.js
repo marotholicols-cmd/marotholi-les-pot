@@ -26,9 +26,8 @@ const PREVIEW_MAX_SECONDS = 30;
 const DEPOSIT_METHODS = [
   { id: "ecocash", name: "EcoCash Merchant", number: "128235", accountName: "Marotholi Lespot MSU", active: true },
   { id: "postbank", name: "PostBank Visa", number: "1040278800016", accountName: "Marotholi Lespot MSU", active: true },
-  { id: "mpesa", name: "M-Pesa Lesotho", number: "", accountName: "", active: false, lockedReason: "Coming Soon" },
   { id: "capitec", name: "Capitec SA", number: "", accountName: "", active: false, lockedReason: "Coming Soon" },
-  { id: "fnb", name: "FNB SA", number: "", accountName: "", active: false, lockedReason: "Coming Soon" },
+  { id: "fnb", name: "【entity-FNB SA¦canonical_name=FNB SA】", number: "", accountName: "", active: false, lockedReason: "Coming Soon" },
   { id: "standardbank", name: "Standard Bank SA", number: "", accountName: "", active: false, lockedReason: "Coming Soon" }
 ];
 
