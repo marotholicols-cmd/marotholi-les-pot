@@ -55,7 +55,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <input id="reference" placeholder="e.g. TXN12345 or EcoCash SMS code">
 <input id="proofFile" type="file" accept="image/*" style="margin-top:8px">
 <p class="small" id="proofNote">Screenshot is optional if you have Transaction ID. If you pick a screenshot, it will be uploaded.</p>
-<button class="btn" id="submitBtn" onclick="submitDeposit()">I Sent Money → Submit for Approval</button>
+<button class="btn" id="submitBtn" onclick="submitDepositForm()">I Sent Money → Submit for Approval</button>
 <p class="msg" id="msg"></p>
 <p class="small">Admin approves manually in Admin Tab. Your Grinds appear after approval. Do NOT send again if pending.</p>
 </div>
@@ -65,8 +65,18 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <script>
 let selectedMethod = null;
 let isLoggedIn = false;
+function getClient(){ return initSB() || window.sb || null; }
 function renderMethods(){
-  document.getElementById('methods').innerHTML = DEPOSIT_METHODS.map(function(m){
+  const methods = (typeof DEPOSIT_METHODS !== 'undefined' ? DEPOSIT_METHODS : [
+    {id:'ecocash',name:'EcoCash Merchant',number:'128235',accountName:'Marotholi Lespot MSU',active:true},
+    {id:'postbank',name:'PostBank Visa',number:'1040278800016',accountName:'Marotholi Lespot MSU',active:true},
+    {id:'mpesa',name:'M-Pesa Lesotho',number:'',accountName:'',active:false},
+    {id:'capitec',name:'Capitec SA',number:'',accountName:'',active:false},
+    {id:'fnb',name:'FNB SA',number:'',accountName:'',active:false},
+    {id:'standardbank',name:'Standard Bank SA',number:'',accountName:'',active:false}
+  ]);
+  window._depositMethods = methods;
+  document.getElementById('methods').innerHTML = methods.map(function(m){
     if(!m.active) return "<div class='method locked'><b>🔒 " + escHtml(m.name) + "</b><br><span class='small'>Coming Soon - Locked for now</span></div>";
     if(!isLoggedIn) return "<div class='method' onclick=\"location.href='account.html'\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>🔒 Login to see pay details • <b style='color:#d4ff3f'>Tap to Login</b></span></div>";
     return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> <button class='copybtn' onclick=\"event.stopPropagation(); copyNumber('" + escHtml(m.number) + "')\">📋 Copy</button> • " + escHtml(m.accountName) + "</span></div>";
@@ -82,7 +92,8 @@ function setAmount(m){
 }
 function selectMethod(id){
   if(!isLoggedIn){ location.href='account.html'; return; }
-  selectedMethod = DEPOSIT_METHODS.find(function(m){ return m.id === id; });
+  const methods = window._depositMethods || DEPOSIT_METHODS;
+  selectedMethod = methods.find(function(m){ return m.id === id; });
   document.querySelectorAll('.method').forEach(function(el){ el.classList.remove('active'); });
   const el = document.getElementById('m_' + id); if(el) el.classList.add('active');
   document.getElementById('stepsCard').style.display = 'block';
@@ -94,10 +105,11 @@ document.getElementById('amountM').addEventListener('input', function(){
 });
 async function loadBalance(){
   try{
+    const client = getClient(); if(!client) return;
     const user = await getCurrentUser(); if(!user) return;
-    const {data, error} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
+    const {data, error} = await client.from('profiles').select('grind_balance').eq('id', user.id).single();
     if(error) throw error;
-    const bal = Number(data?.balance_grind || 0);
+    const bal = Number(data?.grind_balance || 0);
     document.getElementById('bal').textContent = bal.toFixed(2) + " G";
     document.getElementById('balM').textContent = "= M" + grindToMaloti(bal);
   }catch(e){
@@ -109,7 +121,8 @@ async function loadDeposits(){
   const user = await getCurrentUser();
   if(!user){ document.getElementById('myDeposits').innerHTML = "<p class='small'>Login to see deposits. <a href='account.html' style='color:#d4ff3f'>Login</a></p>"; return; }
   try{
-    const {data, error} = await window.sb.from('deposits').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+    const client = getClient();
+    const {data, error} = await client.from('deposits').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
     if(error) throw error;
     if(!data || !data.length){ document.getElementById('myDeposits').innerHTML = "<p class='small'>No deposits yet.</p>"; return; }
     document.getElementById('myDeposits').innerHTML = data.map(function(d){
@@ -121,7 +134,8 @@ async function loadDeposits(){
     document.getElementById('myDeposits').innerHTML = "<p class='small'>Could not load deposits: " + escHtml(e.message) + "</p>";
   }
 }
-async function submitDeposit(){
+// FIXED: Renamed from submitDeposit() to avoid clash with app.js submitDeposit()
+async function submitDepositForm(){
   const user = await requireLogin(); if(!user) return;
   const msg = document.getElementById('msg');
   const btn = document.getElementById('submitBtn');
@@ -135,29 +149,29 @@ async function submitDeposit(){
   btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
-    const {data: dup} = await window.sb.from('deposits').select('id').eq('user_id', user.id).eq('reference', ref).maybeSingle();
+    const client = getClient();
+    const {data: dup} = await client.from('deposits').select('id').eq('user_id', user.id).eq('reference', ref).maybeSingle();
     if(dup){ throw new Error('You already submitted this reference: ' + ref + '. Check My Deposits below - do not submit again.'); }
     const amountG = amountM / 10;
     let proofPath = '';
-    let proofUrl = '';
     if(proofFile){
       msg.textContent = 'Uploading proof screenshot...';
       const safe = proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       proofPath = user.id + '/' + Date.now() + '_' + safe;
-      const {error: upErr} = await window.sb.storage.from('proofs').upload(proofPath, proofFile);
+      const {error: upErr} = await client.storage.from('proofs').upload(proofPath, proofFile);
       if(upErr){
         console.log('Proof upload failed, continuing with reference only:', upErr.message);
         proofPath = '';
       }
     }
-    let insertRow = {user_id: user.id, method: selectedMethod.id, amount_maloti: amountM, amount_grind: amountG, amount: amountM, sender_info: sender, reference: ref, status: 'pending', proof_path: proofPath};
-    if(proofUrl) insertRow.proof_url = proofUrl;
-    if(proofPath) insertRow.proof_url = proofPath;
-    let {error} = await window.sb.from('deposits').insert(insertRow);
+    // Try full insert first, fallback to minimal that matches app.js if extra columns don't exist
+    let insertRow = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, reference: ref, status: 'pending'};
+    // Only add extras if they are likely to exist - keep them in try, fallback will strip them
+    let fullRow = Object.assign({}, insertRow, {amount_maloti: amountM, amount: amountM, sender_info: sender, proof_path: proofPath});
+    let {error} = await client.from('deposits').insert(fullRow);
     if(error){
       console.log('Deposit insert retry minimal:', error.message);
-      let row2 = {user_id: user.id, method: selectedMethod.id, amount_grind: amountG, status: 'pending', reference: ref, proof_path: proofPath};
-      const r2 = await window.sb.from('deposits').insert(row2);
+      const r2 = await client.from('deposits').insert(insertRow);
       if(r2.error) throw r2.error;
     }
     msg.textContent = '✅ Submitted! Wait for Admin approval. Your Grinds will appear in Wallet after approval.'; msg.className = 'msg ok';
@@ -184,6 +198,5 @@ document.addEventListener('DOMContentLoaded', async function(){
   await loadDeposits();
 });
 </script>
-<script src="player.js"></script>
 </body>
 </html>
