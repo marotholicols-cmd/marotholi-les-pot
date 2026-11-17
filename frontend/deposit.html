@@ -39,7 +39,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <div class="card"><h3>My Balance</h3><p class="big" id="bal">Loading...</p><p class="small" id="balM"></p></div>
 <div class="card">
 <h3>1. Choose Method</h3>
-<p class="small">Only EcoCash + PostBank are active now. Others are LOCKED — Coming Soon, not deleted.</p>
+<p class="small" id="methodsNote">Only EcoCash + PostBank are active now. Others are LOCKED — Coming Soon, not deleted.</p>
 <div id="methods"></div>
 </div>
 <div class="card" id="stepsCard" style="display:none">
@@ -64,9 +64,11 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html" class="active">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 let selectedMethod = null;
+let isLoggedIn = false;
 function renderMethods(){
   document.getElementById('methods').innerHTML = DEPOSIT_METHODS.map(function(m){
     if(!m.active) return "<div class='method locked'><b>🔒 " + escHtml(m.name) + "</b><br><span class='small'>Coming Soon - Locked for now</span></div>";
+    if(!isLoggedIn) return "<div class='method' onclick=\"location.href='account.html'\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>🔒 Login to see pay details • <b style='color:#d4ff3f'>Tap to Login</b></span></div>";
     return "<div class='method' id='m_" + m.id + "' onclick=\"selectMethod('" + m.id + "')\"><b>✅ " + escHtml(m.name) + "</b><br><span class='small'>Number: <b style='color:#d4ff3f'>" + escHtml(m.number) + "</b> <button class='copybtn' onclick=\"event.stopPropagation(); copyNumber('" + escHtml(m.number) + "')\">📋 Copy</button> • " + escHtml(m.accountName) + "</span></div>";
   }).join('');
 }
@@ -79,6 +81,7 @@ function setAmount(m){
   document.getElementById('amountM').dispatchEvent(new Event('input'));
 }
 function selectMethod(id){
+  if(!isLoggedIn){ location.href='account.html'; return; }
   selectedMethod = DEPOSIT_METHODS.find(function(m){ return m.id === id; });
   document.querySelectorAll('.method').forEach(function(el){ el.classList.remove('active'); });
   const el = document.getElementById('m_' + id); if(el) el.classList.add('active');
@@ -132,11 +135,9 @@ async function submitDeposit(){
   btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
-    // FIXED: Block duplicate reference - was causing double submits
     const {data: dup} = await window.sb.from('deposits').select('id').eq('user_id', user.id).eq('reference', ref).maybeSingle();
     if(dup){ throw new Error('You already submitted this reference: ' + ref + '. Check My Deposits below - do not submit again.'); }
     const amountG = amountM / 10;
-    // FIXED: Store proof_path (private bucket), NOT public URL. Admin uses Signed URL to view.
     let proofPath = '';
     let proofUrl = '';
     if(proofFile){
@@ -173,7 +174,15 @@ async function submitDeposit(){
     btn.disabled = false;
   }
 }
-document.addEventListener('DOMContentLoaded', async function(){ renderMethods(); await loadBalance(); await loadDeposits(); });
+document.addEventListener('DOMContentLoaded', async function(){
+  try{
+    const u = await getCurrentUser();
+    isLoggedIn = !!u;
+  }catch(e){ isLoggedIn = false; }
+  renderMethods();
+  await loadBalance();
+  await loadDeposits();
+});
 </script>
 <script src="player.js"></script>
 </body>
