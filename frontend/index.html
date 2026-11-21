@@ -18,7 +18,7 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 .balance{font-size:28px;font-weight:900;margin:6px 0}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer}
 .song{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
-.song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0}
+.song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0;border:1px solid #333}
 .song .meta{flex:1;min-width:0}
 .song .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row{display:flex;gap:6px;margin-top:9px}
@@ -39,18 +39,22 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 .top-links{display:flex;gap:8px;margin-top:10px}
 .top-links a{flex:1;text-align:center;background:#222;border:1px solid #333;color:#fff;text-decoration:none;padding:10px;border-radius:99px;font-size:13px;font-weight:800}
 .top-links a.green{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.removed{background:#2a1212;border:1px solid #ff3b3b;border-radius:18px;padding:14px;margin-bottom:12px;text-align:center}
+.removed b{color:#ff3b3b}
+.count{font-size:12px;opacity:.6;margin-top:6px}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🐂 🌧️ Lesotho Music • 1G = M10 FIXED</small></header>
 <div class="wrap">
+<div id="removedBanner" style="display:none" class="removed"><b>❌ MAMA - REMOVED</b><br><span class="small" style="opacity:.9">This song was removed by Marotholi Rule: One Song, One Home.<br>Check NTABAZI (MY PAIN) below - still grinding ✅</span><br><button class="btn" style="margin-top:10px;background:#d4ff3f" onclick="document.getElementById('removedBanner').style.display='none'">OK, Show Songs</button></div>
 <div class="card" id="balanceCard" style="display:none">
 <h3>💰 My Grinds</h3><p class="balance"><span id="balText">Loading...</span></p><p class="small" id="balMaloti"></p>
 <div class="top-links"><a href="deposit.html" class="green">＋ Deposit</a><a href="wallet.html">Wallet</a><a href="withdraw.html">Withdraw</a></div>
 </div>
-<div class="card"><h3>🎵 Latest Songs</h3><input id="searchInput" placeholder="Search songs, artists..." oninput="loadHome()"><p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p></div>
+<div class="card"><h3>🎵 Latest Songs</h3><input id="searchInput" placeholder="Search songs, artists..." oninput="loadHome()"><p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p><p class="count" id="songCount"></p></div>
 <div id="songList"><p class="small">Loading songs...</p></div>
-<div class="card"><h3>📣 For Artists</h3><p class="small">Upload your song. Set your own price. Min 0.2G = M2. You get 63%. Preview is 30 sec.</p><button class="btn" onclick="location.href='upload.html'">⬆️ Upload Song</button></div>
+<div class="card"><h3>📣 For Artists</h3><p class="small">Upload your song. Set your own price. Min 0.2G = M2. You get 63%. Preview is 30 sec.<br><b style="color:#d4ff3f">⚠️ STREET RULE: One Song, One Home. If your song is already on Spotify / YouTube / anywhere else, DON'T upload it here. It will be removed.</b></p><button class="btn" onclick="location.href='upload.html'">⬆️ Upload Song</button></div>
 <div class="card"><h3>ℹ️ How Les-Pot Works</h3><p class="small">- 1G = M10 — FIXED<br>- Split: 63% Artist / 23% Platform / 14% Fees<br>- Deposit via EcoCash Merchant 128235 or PostBank Visa 1040278800016<br>- Admin approves deposits manually<br>- Min withdraw: 3.5G = M35</p></div>
 </div>
 <div class="player" id="playerBar"><img id="playerCover" src="icon.svg"><div class="meta"><b id="playerTitle">No song playing</b><span id="playerArtist">Marotholi Les-Pot</span></div><button id="playerBtn" onclick="togglePlayer()">▶</button><button class="stop" onclick="stopPlayer()">✕</button></div>
@@ -58,7 +62,15 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <div class="bottomnav"><a href="index.html" class="active">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 let allSongs=[]; let _homeTries=0;
+const REMOVED_IDS=['4f924d31-8873-4ec4-befc-f0d7b2a3d697'];
 function getSB(){ if(window.sb) return window.sb; if(typeof initSB==='function'){ try{ const c=initSB(); if(c) return c; }catch(e){} } return window.sb||null; }
+function coverFor(s){
+  try{
+    const c=getCoverUrl(s.cover_path||s.cover_url);
+    if(c && c!=='icon.svg' && !String(c).includes('undefined') && !String(c).includes('null')) return c;
+  }catch(e){}
+  return 'icon.svg';
+}
 async function loadHome(){
   const listEl=document.getElementById('songList');
   const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
@@ -68,16 +80,17 @@ async function loadHome(){
   try{
     const {data,error}=await sb.from('songs').select('*').order('created_at',{ascending:false});
     if(error) throw error;
-    allSongs=data||[];
+    allSongs=(data||[]).filter(s=>!REMOVED_IDS.includes(String(s.id)));
     let songs=allSongs;
-    if(q) songs=songs.filter(s=>((s.title||'')+' '+(s.artist_name||'')).toLowerCase().includes(q));
-    if(!songs.length){ listEl.innerHTML="<div class='card'>No songs yet. Be the first to upload!</div>"; return; }
+    if(q) songs=songs.filter(s=>((s.title||'')+' '+(s.artist_name||'')+' '+(s.artist||'')).toLowerCase().includes(q));
+    document.getElementById('songCount').textContent = q ? songs.length+' found for "'+q+'"' : allSongs.length+' songs • Fresh first';
+    if(!songs.length){ listEl.innerHTML="<div class='card'>No songs found. Try another search.</div>"; return; }
     listEl.innerHTML=songs.map(s=>{
-      const cover=getCoverUrl(s.cover_path||s.cover_url);
+      const cover=coverFor(s);
       const safeTitle=String(s.title||'').replace(/'/g,"");
-      const safeArtist=String(s.artist_name||'').replace(/'/g,"");
+      const safeArtist=String(s.artist_name||s.artist||'').replace(/'/g,"");
       const price=Number(s.price_grind||s.price||0.5);
-      return "<div class='song'><img src='"+cover+"' onerror=\"this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name)+" • "+formatPrice(price)+"</span><div class='row'><button class='play' onclick=\"previewSong('"+s.id+"')\">▶ Preview 30s</button><button onclick=\"buySong('"+s.id+"',"+price+")\">Buy "+price.toFixed(2)+"G</button><button class='share' onclick=\"shareSongLink('"+s.id+"','"+safeTitle+"','"+safeArtist+"')\">🔗</button></div></div></div>";
+      return "<div class='song'><img src='"+cover+"' loading='lazy' onerror=\"this.onerror=null;this.src='icon.svg'\"><div class='meta'><b>"+escHtml(s.title)+"</b><span class='small'>"+escHtml(s.artist_name||s.artist||'')+" • "+formatPrice(price)+"</span><div class='row'><button class='play' onclick=\"previewSong('"+s.id+"')\">▶ Preview 30s</button><button onclick=\"buySong('"+s.id+"',"+price+")\">Buy "+price.toFixed(2)+"G</button><button class='share' onclick=\"shareSongLink('"+s.id+"','"+safeTitle+"','"+safeArtist+"')\">🔗</button></div></div></div>";
     }).join('');
   }catch(e){ listEl.innerHTML="<div class='card'>❌ Error: "+escHtml(e.message)+"<br><button class='btn' style='margin-top:10px' onclick='loadHome()'>🔄 Try Again</button></div>"; }
 }
@@ -94,17 +107,18 @@ async function loadBalance(){
 function playWithPlayer(url,s,start,end,isFull){
   const audio=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); const btn=document.getElementById('playerBtn');
   document.getElementById('playerTitle').textContent=s.title||'Unknown';
-  document.getElementById('playerArtist').textContent=(s.artist_name||'')+(isFull?' • FULL':' • PREVIEW 30s');
-  document.getElementById('playerCover').src=getCoverUrl(s.cover_path||s.cover_url);
+  document.getElementById('playerArtist').textContent=(s.artist_name||s.artist||'')+(isFull?' • FULL':' • PREVIEW 30s');
+  document.getElementById('playerCover').src=coverFor(s);
   if(bar) bar.classList.add('show'); if(window._previewTimer) clearInterval(window._previewTimer);
   audio.pause(); audio.src=url; audio.load();
   audio.onerror=function(){ alert('❌ Audio file not found. File: '+(s.audio_path||s.audio_url||'EMPTY')); if(btn) btn.textContent='▶'; };
   audio.onloadedmetadata=function(){ try{ const st=Number(start||0); if(st>0&&st<audio.duration) audio.currentTime=st; }catch(e){} audio.play().then(()=>{ if(btn) btn.textContent='⏸'; }).catch(()=>{ if(btn) btn.textContent='▶'; }); };
-  if(!isFull&&end){ window._previewTimer=setInterval(()=>{ if(!audio.paused&&audio.currentTime>=Number(end)){ audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent='▶'; document.getElementById('playerArtist').textContent=(s.artist_name||'')+' • PREVIEW ENDED - Buy for full'; } },300); }
+  if(!isFull&&end){ window._previewTimer=setInterval(()=>{ if(!audio.paused&&audio.currentTime>=Number(end)){ audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent='▶'; document.getElementById('playerArtist').textContent=(s.artist_name||s.artist||'')+' • PREVIEW ENDED - Buy for full'; } },300); }
 }
 function togglePlayer(){ const a=document.getElementById('mainAudio'); const b=document.getElementById('playerBtn'); if(!a.src) return; if(a.paused){ a.play().then(()=>{ if(b) b.textContent='⏸'; }); } else { a.pause(); if(b) b.textContent='▶'; } }
 function stopPlayer(){ const a=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); a.pause(); a.removeAttribute('src'); a.load(); if(bar) bar.classList.remove('show'); if(window._previewTimer) clearInterval(window._previewTimer); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; }
 async function previewSong(id){
+  if(REMOVED_IDS.includes(String(id))){ document.getElementById('removedBanner').style.display='block'; window.scrollTo({top:0,behavior:'smooth'}); return; }
   const s=allSongs.find(x=>String(x.id)===String(id)); if(!s){ alert('Song not found - reload'); return; }
   const raw=s.audio_path||s.audio_url||''; if(!raw){ alert('❌ This song has NO audio file. Title: '+s.title); return; }
   const url=await getSongStreamUrl(raw,3600); if(!url){ alert('❌ Could not get stream URL. File: '+raw); return; }
@@ -126,7 +140,16 @@ async function buySong(id,price){
   try{ const {data:songRow}=await sb.from('songs').select('user_id,artist_id').eq('id',id).single(); const artistId=songRow?.user_id||songRow?.artist_id; if(artistId&&String(artistId)!==String(user.id)){ const {data:ap}=await sb.from('profiles').select('grind_balance').eq('id',artistId).single(); await sb.from('profiles').update({grind_balance: Number(ap?.grind_balance||0)+split.artist}).eq('id',artistId); } }catch(e){}
   alert('✅ Bought! Go to Library'); location.href='library.html';
 }
-document.addEventListener('DOMContentLoaded', async function(){ await loadBalance(); const params=new URLSearchParams(location.search); if(params.get('song')){ await loadHome(); setTimeout(()=>previewSong(params.get('song')),500); } else { await loadHome(); } });
+document.addEventListener('DOMContentLoaded', async function(){
+  await loadBalance();
+  const params=new URLSearchParams(location.search);
+  const songParam=params.get('song');
+  if(songParam && REMOVED_IDS.includes(String(songParam))){
+    document.getElementById('removedBanner').style.display='block';
+    await loadHome();
+  } else if(songParam){ await loadHome(); setTimeout(()=>previewSong(songParam),500); }
+  else { await loadHome(); }
+});
 </script>
 </body>
 </html>
