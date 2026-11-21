@@ -1,64 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#0f0f0f"/>
-  <!-- Clouds - Blue -->
+  <defs>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0f0f0f"/>
   <g fill="#2196F3">
-    <ellipse cx="145" cy="145" rx="95" ry="45"/>
-    <ellipse cx="105" cy="160" rx="55" ry="35"/>
-    <ellipse cx="190" cy="160" rx="55" ry="35"/>
-    <ellipse cx="145" cy="125" rx="55" ry="35"/>
-    <ellipse cx="365" cy="145" rx="80" ry="38"/>
-    <ellipse cx="330" cy="158" rx="45" ry="28"/>
-    <ellipse cx="400" cy="158" rx="45" ry="28"/>
-    <ellipse cx="365" cy="128" rx="45" ry="28"/>
+    <path d="M186 108a38 38 0 0 1 72-14 32 32 0 0 1 42 30 26 26 0 0 1-5 50H188a28 28 0 0 1-2-56 38 38 0 0 1 0-10z"/>
+    <path d="M122 138a24 24 0 0 1 46-7 20 20 0 0 1 26 20 17 17 0 0 1-3 31h-68a18 18 0 0 1-1-36 24 24 0 0 1 0-8z"/>
+    <path d="M306 138a24 24 0 0 1 46-7 20 20 0 0 1 26 20 17 17 0 0 1-3 31h-68a18 18 0 0 1-1-36 24 24 0 0 1 0-8z"/>
   </g>
-  <!-- RainDrops -->
-  <g fill="#2196F3">
-    <path d="M70 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M110 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M150 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M190 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M230 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M90 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M130 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M170 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M210 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M70 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M110 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M380 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M420 195 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M380 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M420 245 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M380 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M420 295 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M380 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M60 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
-    <path d="M100 345 q10 -18 20 0 q0 12 -10 12 q-10 0 -10 -12 Z"/>
+  <g stroke="#2196F3" stroke-width="6" stroke-linecap="round" opacity="0.95">
+    <line x1="152" y1="188" x2="146" y2="206"/>
+    <line x1="176" y1="188" x2="170" y2="206"/>
+    <line x1="230" y1="184" x2="224" y2="204"/>
+    <line x1="256" y1="184" x2="250" y2="204"/>
+    <line x1="282" y1="184" x2="276" y2="204"/>
+    <line x1="332" y1="188" x2="326" y2="206"/>
+    <line x1="356" y1="188" x2="350" y2="206"/>
   </g>
-  <!-- Mountains - Lime -->
-  <path d="M20 430 L130 330 L210 410 L280 350 L380 440 L470 360 L470 470 Q470 490 450 490 L60 490 Q20 490 20 450 Z" fill="#d4ff3f"/>
-  <!-- Bull - Lime -->
-  <g fill="#d4ff3f">
-    <path d="M130 300 Q150 250 220 240 Q260 235 290 250 Q330 265 335 300 Q340 330 320 350 Q300 365 260 365 L180 365 Q140 360 130 330 Z"/>
-    <path d="M320 260 Q340 250 360 260 Q375 270 370 290 Q365 310 345 315 Q325 318 315 305 Q305 285 320 260 Z"/>
-    <path d="M325 258 Q320 230 340 225 Q335 240 345 245 L335 260 Z"/>
-    <path d="M365 262 Q385 255 390 235 Q395 255 380 268 Z"/>
-    <rect x="155" y="360" width="18" height="55" rx="8"/>
-    <rect x="215" y="360" width="18" height="55" rx="8"/>
-    <rect x="270" y="360" width="18" height="55" rx="8"/>
-    <path d="M135 290 Q110 310 120 350 Q115 330 130 315 Z"/>
-    <ellipse cx="340" cy="275" rx="12" ry="6"/>
+  <g fill="none" stroke="#d4ff3f" stroke-linecap="round" filter="url(#glow)">
+    <path d="M176 282 C176 208, 336 208, 336 282" stroke-width="18"/>
+    <path d="M194 276 C194 230, 318 230, 318 276" stroke-width="6" opacity="0.7" stroke="#ffffff"/>
   </g>
-  <!-- Headphones - NEW, makes it MUSIC -->
-  <g fill="none" stroke="#0f0f0f" stroke-width="10" stroke-linecap="round">
-    <path d="M312 285 Q315 235 345 232 Q375 235 378 285"/>
-  </g>
+  <rect x="152" y="264" width="28" height="76" rx="14" fill="#d4ff3f"/>
+  <rect x="142" y="282" width="12" height="40" rx="6" fill="#d4ff3f"/>
+  <rect x="332" y="264" width="28" height="76" rx="14" fill="#d4ff3f"/>
+  <rect x="358" y="282" width="12" height="40" rx="6" fill="#d4ff3f"/>
+  <path d="M200 256 C148 252, 122 212, 144 168 C150 200, 170 226, 214 232 Z" fill="#d4ff3f"/>
+  <path d="M312 256 C364 252, 390 212, 368 168 C362 200, 342 226, 298 232 Z" fill="#d4ff3f"/>
+  <path d="M210 248 L302 248 L320 300 L300 354 C296 378, 278 390, 256 390 C234 390, 216 378, 212 354 L192 300 Z" fill="#d4ff3f"/>
   <g fill="#0f0f0f">
-    <rect x="302" y="278" width="18" height="34" rx="8"/>
-    <rect x="368" y="278" width="18" height="34" rx="8"/>
+    <path d="M202 288 L238 296 L232 310 L204 300 Z"/>
+    <path d="M310 288 L274 296 L280 310 L308 300 Z"/>
+    <path d="M200 280 L238 288" stroke="#0f0f0f" stroke-width="6" stroke-linecap="round"/>
+    <path d="M312 280 L274 288" stroke="#0f0f0f" stroke-width="6" stroke-linecap="round"/>
+    <path d="M236 298 Q240 328 234 348" fill="none" stroke="#0f0f0f" stroke-width="5" stroke-linecap="round"/>
+    <path d="M276 298 Q272 328 278 348" fill="none" stroke="#0f0f0f" stroke-width="5" stroke-linecap="round"/>
+    <rect x="220" y="348" width="72" height="36" rx="17" fill="none" stroke="#0f0f0f" stroke-width="6"/>
+    <ellipse cx="238" cy="366" rx="7" ry="9" transform="rotate(-15 238 366)"/>
+    <ellipse cx="274" cy="366" rx="7" ry="9" transform="rotate(15 274 366)"/>
   </g>
-  <!-- Music Note -->
-  <text x="428" y="92" font-size="54" fill="#d4ff3f" font-family="system-ui" font-weight="900">♪</text>
-  <path d="M175 270 q8 -14 16 0 q0 10 -8 10 q-8 0 -8 -10 Z" fill="#2196F3"/>
-  <!-- Bottom label -->
-  <rect x="28" y="452" width="456" height="0" fill="none"/>
+  <path d="M60 452 L168 372 L222 416 L258 392 L300 426 L352 382 L452 452 L356 418 L300 456 L258 420 L216 446 L168 408 Z" fill="#d4ff3f"/>
+  <path d="M168 372 L182 388 L168 396 L154 388 Z" fill="#0f0f0f" opacity="0.25"/>
+  <path d="M258 392 L270 406 L258 414 L246 406 Z" fill="#0f0f0f" opacity="0.25"/>
 </svg>
