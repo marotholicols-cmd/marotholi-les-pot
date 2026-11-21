@@ -16,7 +16,7 @@ header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:
 .big{font-size:26px;font-weight:900;color:#d4ff3f}
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .btn{display:block;text-align:center;background:#d4ff3f;color:#000;padding:12px;border-radius:99px;font-weight:900;text-decoration:none;margin-top:10px}
-.btn2{display:block;text-align:center;background:#222;color:#fff;border:1px solid #444;padding:11px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:8px}
+.btn2{display:block;text-align:center;background:#222;color:#fff;border:1px solid #444;padding:11px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:8px;cursor:pointer;width:100%;box-sizing:border-box}
 .song{border-bottom:1px solid #333;padding:10px 0;display:flex;justify-content:space-between;gap:10px}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
@@ -43,6 +43,9 @@ function copyShareLink(songId, songTitle){
   if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ alert('Share link copied for: ' + songTitle + '\n' + url); }).catch(function(){ prompt('Copy share link:', url); });
   else prompt('Copy share link:', url);
 }
+function getPrice(obj, fallback){
+  return Number(obj.price_grind ?? obj.price ?? obj.amount_grind ?? obj.amount ?? fallback ?? 0);
+}
 async function loadDashboard(){
   try{
     const user = await getCurrentUser();
@@ -54,20 +57,19 @@ async function loadDashboard(){
       document.getElementById('totalEarned').textContent = "-";
       return;
     }
-    // Balance NOW - what you can actually withdraw
     try{
-      const {data: prof} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
-      const bal = Number(prof?.balance_grind || 0);
+      const bal = (typeof getMyBalance==='function') ? await getMyBalance(user.id) : 0;
       document.getElementById('balInfo').innerHTML = "💰 Your Balance NOW: <b style='color:#d4ff3f'>" + bal.toFixed(2) + " G = M" + grindToMaloti(bal) + "</b> — This is what you can withdraw.";
     }catch(e){}
-    // 1. Get my songs - try user_id then artist_id
-    let {data: songs, error: sErr} = await window.sb.from('songs').select('id,title,artist_name,price_grind').eq('user_id', user.id).order('created_at', {ascending:false});
+    let {data: songs, error: sErr} = await window.sb.from('songs').select('id,title,artist_name,price_grind,price').eq('user_id', user.id).order('created_at', {ascending:false});
     if(sErr) throw sErr;
     let mySongs = songs || [];
     if(!mySongs.length){
-      const r2 = await window.sb.from('songs').select('id,title,artist_name,price_grind').eq('artist_id', user.id);
+      const r2 = await window.sb.from('songs').select('id,title,artist_name,price_grind,price').eq('artist_id', user.id);
       mySongs = r2.data || [];
     }
+    // Filter removed songs - don't show them as selling
+    if(typeof isRemovedSong==='function') mySongs = mySongs.filter(s=>!isRemovedSong(s.id));
     document.getElementById('totalSongs').textContent = mySongs.length;
     if(!mySongs.length){
       document.getElementById('songList').innerHTML = "<p class='small'>You have no songs yet. <a href='upload.html' style='color:#d4ff3f'>Upload one →</a></p>";
@@ -78,31 +80,28 @@ async function loadDashboard(){
       return;
     }
     const ids = mySongs.map(function(s){ return s.id; });
-    // 2. Get purchases for my songs
-    const {data: purchases, error: pErr} = await window.sb.from('purchases').select('*').in('song_id', ids).order('created_at', {ascending:false});
+    const {data: purchases, error: pErr} = await window.sb.from('purchases').select('*').in('song_id', ids).eq('status','approved').order('created_at', {ascending:false});
     if(pErr) throw pErr;
     const buys = purchases || [];
-    let gross = 0;
-    let myCut = 0;
+    let gross = 0; let myCut = 0;
     const html = mySongs.map(function(s){
       const myBuys = buys.filter(function(b){ return String(b.song_id) === String(s.id); });
       const count = myBuys.length;
-      const songGross = myBuys.reduce(function(sum, b){ return sum + Number(b.price_grind || b.amount_grind || s.price_grind || 0); }, 0);
+      const songGross = myBuys.reduce(function(sum, b){ return sum + getPrice(b, s.price_grind ?? s.price); }, 0);
       const songCut = songGross * 0.63;
-      gross += songGross;
-      myCut += songCut;
-      return "<div class='song'><div><b>" + escHtml(s.title||'Untitled') + "</b><br><span class='small'>Price: " + Number(s.price_grind||0).toFixed(2) + " G • Gross: " + songGross.toFixed(2) + " G • Your 63%: " + songCut.toFixed(2) + " G</span><br><button class='sharebtn' onclick=\"copyShareLink('" + s.id + "','" + escHtml(s.title||'Song').replace(/'/g,'') + "')\">🔗 Copy Share Link</button></div><div style='text-align:right'><b style='color:#d4ff3f;font-size:20px'>" + count + " bought</b><br><span class='small'>" + (count===0 ? 'No sales yet' : '🔥 Selling!') + "</span></div></div>";
+      gross += songGross; myCut += songCut;
+      return "<div class='song'><div><b>" + escHtml(s.title||'Untitled') + "</b><br><span class='small'>Price: " + getPrice(s,0).toFixed(2) + " G • Gross: " + songGross.toFixed(2) + " G • Your 63%: " + songCut.toFixed(2) + " G</span><br><button class='sharebtn' onclick=\"copyShareLink('" + s.id + "','" + escHtml(s.title||'Song').replace(/'/g,'') + "')\">🔗 Copy Share Link</button></div><div style='text-align:right'><b style='color:#d4ff3f;font-size:20px'>" + count + " bought</b><br><span class='small'>" + (count===0 ? 'No sales yet' : '🔥 Selling!') + "</span></div></div>";
     }).join('');
     document.getElementById('songList').innerHTML = html;
     document.getElementById('totalBought').textContent = buys.length;
     document.getElementById('totalEarned').textContent = myCut.toFixed(2) + " G";
-    document.getElementById('earnM').textContent = "Gross sales ALL-TIME: " + gross.toFixed(2) + " G = M" + grindToMaloti(gross) + " • Your 63% ALL-TIME: " + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + " from " + buys.length + " purchases";
+    document.getElementById('earnM').textContent = "Gross sales ALL-TIME: " + gross.toFixed(2) + " G = M" + grindToMaloti(gross) + " • Your 63% ALL-TIME: " + myCut.toFixed(2) + " G = M" + grindToMaloti(myCut) + " from " + buys.length + " approved purchases";
     if(!buys.length){
       document.getElementById('buyList').innerHTML = "<p class='small'>No one has bought yet. Share your link!</p>";
     } else {
       document.getElementById('buyList').innerHTML = buys.slice(0,20).map(function(b){
         const song = mySongs.find(function(s){ return String(s.id) === String(b.song_id); });
-        const price = Number(b.price_grind || b.amount_grind || 0);
+        const price = getPrice(b, song ? getPrice(song,0) : 0);
         return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + escHtml(song ? song.title : 'Song') + "</b> • " + price.toFixed(2) + " G (your 63%: " + (price*0.63).toFixed(2) + " G)<br><span class='small'>" + new Date(b.created_at).toLocaleString() + "</span></div>";
       }).join('');
     }
