@@ -4,9 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Marotholi Les-Pot - Home</title>
-<link rel="icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#d4ff3f">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <style>
@@ -44,22 +47,20 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 .removed{background:#2a1212;border:1px solid #ff3b3b;border-radius:18px;padding:14px;margin-bottom:12px;text-align:center}
 .removed b{color:#ff3b3b}
 .count{font-size:12px;opacity:.6;margin-top:6px}
-/* DOPE HERO - SPLASH USING icon.svg - NO PNG NEEDED */
-.hero{background:linear-gradient(180deg,#d4ff3f 0%,#0f0f0f 68%);border-radius:22px;padding:16px 14px 14px;text-align:center;margin-bottom:12px;border:1px solid #d4ff3f;overflow:hidden}
-.hero img{width:100%;max-width:340px;border-radius:16px;border:3px solid #d4ff3f;display:block;margin:0 auto;box-shadow:0 10px 30px rgba(212,255,63,.35)}
-.hero h1{font-size:26px;margin:12px 0 2px;color:#fff;line-height:1.1}
+.hero{background:radial-gradient(circle at 50% 18%,rgba(33,150,243,.24) 0%,rgba(212,255,63,.12) 45%,#0f0f0f 82%);border-radius:22px;padding:18px 14px 14px;text-align:center;margin-bottom:12px;border:1px solid rgba(212,255,63,.65);box-shadow:0 12px 32px rgba(0,0,0,.6);overflow:hidden}
+.hero img{width:100%;max-width:250px;aspect-ratio:1/1;border-radius:24px;border:2px solid #d4ff3f;display:block;margin:0 auto;background:#0f0f0f;box-shadow:0 0 28px rgba(33,150,243,.28),0 8px 24px rgba(212,255,63,.22)}
+.hero h1{font-size:26px;font-weight:900;letter-spacing:.5px;margin:14px 0 4px;color:#fff;line-height:1.1}
 .hero h1 span{color:#d4ff3f}
-.hero p{margin:0;font-size:13px;opacity:.8}
-.hero .hero-btns{display:flex;gap:8px;margin-top:12px}
+.hero p{margin:0;font-size:13px;opacity:.85}
+.hero .hero-btns{display:flex;gap:8px;margin-top:14px}
 .hero .hero-btns a{flex:1;padding:12px;border-radius:99px;font-weight:900;font-size:14px;text-decoration:none;text-align:center}
 .hero .hero-btns a.lime{background:#d4ff3f;color:#000}
-.hero .hero-btns a.dark{background:#111;color:#fff;border:1px solid #444}
+.hero .hero-btns a.dark{background:#161616;color:#fff;border:1px solid #333}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🐂 🌧️ Lesotho Music • 1G = M10 FIXED</small></header>
 <div class="wrap">
-<!-- HERO SPLASH -->
 <div class="hero">
 <img src="icon.svg" alt="Marotholi Les-Pot Splash">
 <h1>MAROTHOLI <span>LES-POT</span></h1>
