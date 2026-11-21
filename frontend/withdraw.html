@@ -56,6 +56,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <script>
 let myBal = 0;
 let selectedMethod = 'ecocash';
+let _submitting = false;
 const METHODS = [
   {id:'ecocash',name:'EcoCash',hint:'Mobile Money',label:'Your EcoCash Number',placeholder:'e.g. 6288...'},
   {id:'mpesa',name:'M-Pesa',hint:'Mobile Money',label:'Your M-Pesa Number',placeholder:'e.g. 5088...'},
@@ -90,9 +91,7 @@ document.getElementById('amountG').addEventListener('input', function(){
 async function loadBal(){
   try{
     const user = await getCurrentUser(); if(!user) return;
-    const {data, error} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
-    if(error) throw error;
-    myBal = Number(data?.balance_grind || 0);
+    myBal = (typeof getMyBalance==='function') ? await getMyBalance(user.id) : 0;
     document.getElementById('bal').textContent = myBal.toFixed(2) + " G";
     document.getElementById('balM').textContent = "= M" + grindToMaloti(myBal);
   }catch(e){
@@ -104,12 +103,17 @@ async function loadList(){
   const user = await getCurrentUser();
   if(!user){ document.getElementById('list').innerHTML = "<p class='small'>Login to see withdrawals.</p>"; return; }
   try{
-    const {data, error} = await window.sb.from('withdrawals').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
-    if(error) throw error;
+    let data=null;
+    let r = await window.sb.from('withdrawals').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+    if(r.data && r.data.length) data=r.data;
+    else {
+      let r2 = await window.sb.from('withdrawals').select('*').eq('fan_id', user.id).order('created_at', {ascending:false});
+      if(r2.data && r2.data.length) data=r2.data; else if(!r.error) data=r.data; else throw r.error;
+    }
     if(!data || !data.length){ document.getElementById('list').innerHTML = "<p class='small'>No withdrawals yet.</p>"; return; }
     document.getElementById('list').innerHTML = data.map(function(w){
-      const col = w.status === 'approved' ? '#d4ff3f' : w.status === 'rejected' ? '#ff6b6b' : '#ffb020';
-      const g = Number(w.amount_grind || w.grinds || (w.amount_maloti ? w.amount_maloti/10 : 0) || w.amount/10 || 0);
+      const col = String(w.status||'').toLowerCase() === 'approved' ? '#d4ff3f' : String(w.status||'').toLowerCase() === 'rejected' ? '#ff6b6b' : '#ffb020';
+      const g = Number(w.amount_grind ?? w.grinds ?? (w.amount_maloti ? w.amount_maloti/10 : 0) ?? w.amount/10 ?? 0);
       const meth = w.receive_details || w.method || w.receive_method || '';
       return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + g.toFixed(2) + " G = M" + grindToMaloti(g) + "</b> • " + escHtml(meth) + " • <span style='color:" + col + "'>" + escHtml(w.status||'pending') + "</span><br><span class='small'>" + escHtml(w.account || w.account_number || '') + (w.bank_name ? " • Bank: " + escHtml(w.bank_name) : "") + " • " + escHtml(w.full_name||'') + " • " + new Date(w.created_at).toLocaleDateString() + "</span></div>";
     }).join('');
@@ -118,6 +122,7 @@ async function loadList(){
   }
 }
 async function submitWithdraw(){
+  if(_submitting) return;
   const user = await requireLogin(); if(!user) return;
   const msg = document.getElementById('msg');
   const btn = document.getElementById('submitBtn');
@@ -130,33 +135,38 @@ async function submitWithdraw(){
   if(!account || account.length < 5 || !fullName){ msg.textContent = 'Fill account/card number (5+ digits) + full name'; msg.className = 'msg error'; return; }
   if(selectedMethod === 'bank' && !bankName){ msg.textContent = 'For BANK, please fill Bank Name (Standard / FNB / Nedbank / PostBank)'; msg.className = 'msg error'; return; }
   if(!confirm('Request withdraw ' + amountG.toFixed(2) + ' G = M' + grindToMaloti(amountG) + ' via ' + selectedMethod.toUpperCase() + ' to ' + account + '?\n\nBalance will be deducted now. If Admin rejects, it will be refunded.')) return;
-  btn.disabled = true;
+  _submitting=true; btn.disabled = true;
   msg.textContent = 'Submitting...'; msg.className = 'msg';
   try{
     const {data: pending} = await window.sb.from('withdrawals').select('id, amount_grind').eq('user_id', user.id).eq('status', 'pending').maybeSingle();
-    if(pending){
-      throw new Error('You already have a PENDING withdrawal of ' + Number(pending.amount_grind||0).toFixed(2) + ' G. Wait for Admin to approve / reject it before requesting another.');
-    }
-    const {data: fresh} = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
-    const freshBal = Number(fresh?.balance_grind || 0);
-    if(amountG > freshBal){ msg.textContent = 'Balance changed. You now have ' + freshBal.toFixed(2) + ' G'; msg.className = 'msg error'; btn.disabled = false; return; }
-    // FIXED: Your REAL required column is receive_details, NOT receive_method
+    if(pending){ throw new Error('You already have a PENDING withdrawal of ' + Number(pending.amount_grind ?? pending.amount ?? 0).toFixed(2) + ' G. Wait for Admin to approve / reject it before requesting another.'); }
+    const {data: pending2} = await window.sb.from('withdrawals').select('id').eq('fan_id', user.id).eq('status', 'pending').maybeSingle();
+    if(pending2){ throw new Error('You already have a PENDING withdrawal. Wait for Admin first.'); }
+    const freshBal = (typeof getMyBalance==='function') ? await getMyBalance(user.id) : myBal;
+    if(amountG > freshBal){ msg.textContent = 'Balance changed. You now have ' + freshBal.toFixed(2) + ' G'; msg.className = 'msg error'; _submitting=false; btn.disabled = false; return; }
     const receiveDetails = selectedMethod.toUpperCase() + ' - ' + account + ' - ' + fullName + (bankName ? ' - Bank: ' + bankName : '');
-    const payload = {user_id: user.id, artist_id: user.id, amount_grind: amountG, grinds: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, receive_method: selectedMethod, receive_details: receiveDetails, details: receiveDetails, account_details: receiveDetails, payment_details: receiveDetails, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'};
+    const payload = {user_id: user.id, fan_id: user.id, artist_id: user.id, amount_grind: amountG, grinds: amountG, amount_maloti: amountG*10, amount: amountG*10, method: selectedMethod, receive_method: selectedMethod, receive_details: receiveDetails, details: receiveDetails, account_details: receiveDetails, payment_details: receiveDetails, account: account, account_number: account, full_name: fullName, bank_name: bankName, status: 'pending'};
     let {error, data: inserted} = await window.sb.from('withdrawals').insert(payload).select('id').single();
     if(error){
       console.log('Withdraw insert retry minimal:', error.message);
-      // Retry with ONLY the 3 required columns + essentials
+      delete payload.fan_id; delete payload.artist_id;
       const r2 = await window.sb.from('withdrawals').insert({user_id: user.id, amount_grind: amountG, receive_details: receiveDetails, method: selectedMethod, account: account, full_name: fullName, status: 'pending'}).select('id').single();
       if(r2.error) throw r2.error;
       inserted = r2.data;
     }
-    const {error: balErr} = await window.sb.from('profiles').update({balance_grind: freshBal - amountG}).eq('id', user.id);
+    // DEDUCT FROM BOTH COLUMNS - prevents double-spend
+    const newBal = Math.max(0, freshBal - amountG);
+    let balErr=null;
+    let upd = await window.sb.from('profiles').update({grind_balance: newBal, balance_grind: newBal}).eq('id', user.id);
+    if(upd.error){
+      let upd2 = await window.sb.from('profiles').update({grind_balance: newBal}).eq('id', user.id);
+      if(upd2.error) balErr = upd2.error;
+    }
     if(balErr){
       if(inserted && inserted.id) await window.sb.from('withdrawals').delete().eq('id', inserted.id);
       throw new Error('Could not deduct balance: ' + balErr.message + ' - Withdraw cancelled, try again.');
     }
-    myBal = freshBal - amountG;
+    myBal = newBal;
     document.getElementById('bal').textContent = myBal.toFixed(2) + ' G';
     document.getElementById('balM').textContent = '= M' + grindToMaloti(myBal);
     msg.textContent = '✅ Request sent! ' + amountG.toFixed(2) + ' G deducted. Admin will pay you via ' + selectedMethod.toUpperCase() + ' to ' + account; msg.className = 'msg ok';
@@ -166,7 +176,7 @@ async function submitWithdraw(){
   }catch(e){
     msg.textContent = '❌ ' + e.message; msg.className = 'msg error';
   } finally {
-    btn.disabled = false;
+    _submitting=false; btn.disabled = false;
   }
 }
 document.addEventListener('DOMContentLoaded', async function(){ renderMethods(); await loadBal(); await loadList(); });
