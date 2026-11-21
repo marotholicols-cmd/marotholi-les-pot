@@ -19,7 +19,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .small{font-size:13px;opacity:.7;line-height:1.5}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer}
 .song{background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center}
-.song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0}
+.song img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#333;flex-shrink:0;border:1px solid #333}
 .song .meta{flex:1;min-width:0}
 .song .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row{display:flex;gap:6px;margin-top:9px}
@@ -40,26 +40,41 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 .filters{display:flex;gap:8px;margin-top:10px}
 .filters select{flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:8px 14px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+.chip.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
+.removed{background:#2a1212;border:1px solid #ff3b3b;border-radius:18px;padding:14px;margin-bottom:12px;text-align:center;display:none}
+.count{font-size:12px;opacity:.6;margin-top:6px}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🎵 Discover • 1G = M10 FIXED</small></header>
 <div class="wrap">
+<div id="removedBanner" class="removed"><b>❌ MAMA - REMOVED</b><br><span class="small">One Song, One Home rule. NTABAZI still grinding ✅</span></div>
 <div class="card">
 <h3>🔍 Find Music</h3>
 <input id="searchInput" placeholder="Search songs, artists..." oninput="loadDiscover()">
+<div class="chips" id="genreChips">
+<button class="chip active" onclick="setGenre('',this)">All 🔥</button>
+<button class="chip" onclick="setGenre('Hip Hop',this)">Hip Hop</button>
+<button class="chip" onclick="setGenre('Amapiano',this)">Amapiano</button>
+<button class="chip" onclick="setGenre('Afrobeat',this)">Afrobeat</button>
+<button class="chip" onclick="setGenre('Gospel',this)">Gospel</button>
+<button class="chip" onclick="setGenre('House',this)">House</button>
+<button class="chip" onclick="setGenre('Famo',this)">Famo</button>
+<button class="chip" onclick="setGenre('R&B',this)">R&B</button>
+</div>
 <div class="filters">
-<select id="genreFilter" onchange="loadDiscover()">
-<option value="">All Genres</option>
-<option>Hip Hop</option><option>Amapiano</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>Famo</option><option>R&B</option><option>Other</option>
-</select>
+<select id="genreFilter" onchange="loadDiscover()" style="display:none"><option value="">All Genres</option><option>Hip Hop</option><option>Amapiano</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>Famo</option><option>R&B</option><option>Other</option></select>
 <select id="sortFilter" onchange="loadDiscover()">
-<option value="new">Newest First</option>
-<option value="price-low">Price: Low to High</option>
-<option value="price-high">Price: High to Low</option>
+<option value="new">Newest First 🔥</option>
+<option value="price-low">Price: Low to High 💰</option>
+<option value="price-high">Price: High to Low 💎</option>
+<option value="title">A - Z</option>
 </select>
 </div>
 <p class="small" style="margin:8px 0 0 0">Preview = 30 sec only • Buy = Full song in Library • No Download • Stream Only</p>
+<p class="count" id="songCount"></p>
 </div>
 <div id="songList"><p class="small">Loading songs...</p></div>
 </div>
@@ -81,9 +96,20 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <script>
 let allSongs = [];
 let ownedIds = [];
-// FIXED: DO NOT declare let currentSong here - player.js already declares it
-// FIXED: DO NOT re-define playWithPlayer / togglePlayer / stopPlayer here - player.js owns them now
-
+const REMOVED_IDS=['4f924d31-8873-4ec4-befc-f0d7b2a3d697'];
+function setGenre(g,btn){
+  document.getElementById('genreFilter').value=g;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  loadDiscover();
+}
+function coverFor(s){
+  try{
+    const c=getCoverUrl(s.cover_path||s.cover_url);
+    if(c && !String(c).includes('undefined') && !String(c).includes('null')) return c;
+  }catch(e){}
+  return 'icon.svg';
+}
 async function loadDiscover() {
   const listEl = document.getElementById('songList');
   const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
@@ -93,89 +119,97 @@ async function loadDiscover() {
     try{
       const u = await getCurrentUser();
       if(u){
-        const {data: myP} = await window.sb.from('purchases').select('song_id').eq('buyer_id', u.id);
+        const {data: myP} = await window.sb.from('purchases').select('song_id').eq('fan_id', u.id).eq('status','approved');
         ownedIds = (myP || []).map(function(p){ return String(p.song_id); });
+        if(!ownedIds.length){
+          const r2 = await window.sb.from('purchases').select('song_id').eq('buyer_id', u.id);
+          ownedIds = (r2.data||[]).map(function(p){ return String(p.song_id); });
+        }
       }
     }catch(e){}
     const { data, error } = await window.sb.from('songs').select('*').eq('status', 'published').order('created_at', { ascending: false });
     if (error) throw error;
-    allSongs = data || [];
+    allSongs = (data || []).filter(s=>!REMOVED_IDS.includes(String(s.id)));
     let songs = allSongs.slice();
-    if (q) songs = songs.filter(function(s) { return ((s.title || '') + ' ' + (s.artist_name || '')).toLowerCase().includes(q); });
+    if (q) songs = songs.filter(function(s) { return ((s.title || '') + ' ' + (s.artist_name || '') + ' ' + (s.artist||'')).toLowerCase().includes(q); });
     if (genre) songs = songs.filter(function(s){ return s.genre === genre; });
-    if (sort === 'price-low') songs.sort(function(a,b){ return Number(a.price_grind||0) - Number(b.price_grind||0); });
-    if (sort === 'price-high') songs.sort(function(a,b){ return Number(b.price_grind||0) - Number(a.price_grind||0); });
+    if (sort === 'price-low') songs.sort(function(a,b){ return Number(a.price_grind||a.price||0) - Number(b.price_grind||b.price||0); });
+    if (sort === 'price-high') songs.sort(function(a,b){ return Number(b.price_grind||b.price||0) - Number(a.price_grind||a.price||0); });
+    if (sort === 'title') songs.sort(function(a,b){ return String(a.title||'').localeCompare(String(b.title||'')); });
+    document.getElementById('songCount').textContent = songs.length + ' songs' + (genre ? ' • '+genre : '') + (q ? ' • "'+q+'"' : '');
     if (!songs.length) {
       listEl.innerHTML = "<div class='card'>No songs found. Try another search / genre.</div>";
       return;
     }
     listEl.innerHTML = songs.map(function(s) {
-      const cover = getCoverUrl(s.cover_path || s.cover_url);
+      const cover = coverFor(s);
       const owned = ownedIds.indexOf(String(s.id)) !== -1;
+      const price = Number(s.price_grind||s.price||0.5);
       const buyBtn = owned
         ? "<button class='owned' onclick=\"location.href='library.html'\">✅ Owned - Play</button>"
-        : "<button onclick=\"buySong('" + s.id + "', " + Number(s.price_grind || 0) + ")\">Buy " + Number(s.price_grind || 0).toFixed(2) + "G</button>";
+        : "<button onclick=\"buySong('" + s.id + "', " + price + ")\">Buy " + price.toFixed(2) + "G</button>";
+      const safeTitle=String(s.title||'').replace(/'/g,"");
+      const safeArtist=String(s.artist_name||'').replace(/'/g,"");
       return "<div class='song'>"
-        + "<img src='" + cover + "' onerror=\"this.src='icon.svg'\">"
-        + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name) + " • " + escHtml(s.genre||'') + " • " + formatPrice(s.price_grind) + "</span>"
-        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button>" + buyBtn + "<button class='share' onclick=\"shareById('" + s.id + "')\">🔗</button></div>"
+        + "<img src='" + cover + "' loading='lazy' onerror=\"this.onerror=null;this.src='icon.svg'\">"
+        + "<div class='meta'><b>" + escHtml(s.title) + "</b><span class='small'>" + escHtml(s.artist_name||s.artist||'') + " • " + escHtml(s.genre||'') + " • " + formatPrice(price) + (owned ? " • ✅ Owned" : "") + "</span>"
+        + "<div class='row'><button class='play' onclick=\"previewSong('" + s.id + "')\">▶ Preview 30s</button>" + buyBtn + "<button class='share' onclick=\"shareSongLink('" + s.id + "','"+safeTitle+"','"+safeArtist+"')\">🔗</button></div>"
         + "</div></div>";
     }).join('');
   } catch (e) {
     listEl.innerHTML = "<div class='card'>❌ Error: " + escHtml(e.message) + "<br><button class='btn' style='margin-top:10px' onclick='loadDiscover()'>🔄 Try Again</button></div>";
   }
 }
-
 function shareById(id){
   const s = allSongs.find(function(x){ return String(x.id) === String(id); });
   if(!s) return;
   shareSongLink(s.id, s.title, s.artist_name);
 }
-
 async function previewSong(id) {
+  if(REMOVED_IDS.includes(String(id))){ document.getElementById('removedBanner').style.display='block'; return; }
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
   if (!s) return;
-  // Use player.js playSong - it handles Signed URL + preview_start + saving state
-  await playSong(s, true);
+  if(typeof playSong==='function'){ await playSong(s, true); return; }
+  const raw=s.audio_path||s.audio_url||''; const url=await getSongStreamUrl(raw,3600);
+  if(!url) return;
+  const range=getPreviewRange(s.preview_start); playWithPlayer(url,s,range.start,range.end,false);
 }
-
 async function buySong(id, price) {
   const user = await requireLogin();
   if (!user) return;
-  const {data:already} = await window.sb.from('purchases').select('id').eq('buyer_id', user.id).eq('song_id', id).maybeSingle();
+  const sb=window.sb;
+  const {data:already} = await sb.from('purchases').select('id').eq('fan_id', user.id).eq('song_id', id).eq('status','approved').maybeSingle();
   if(already){ alert('You already bought this - check Library'); location.href='library.html'; return; }
-  const { data: p } = await window.sb.from('profiles').select('balance_grind').eq('id', user.id).single();
-  const bal = Number(p?.balance_grind || 0);
+  const { data: p } = await sb.from('profiles').select('grind_balance').eq('id', user.id).single();
+  const bal = Number(p?.grind_balance || 0);
   if (bal < price) {
     alert('Not enough Grinds.\nYou have ' + bal.toFixed(2) + ' G\nNeed ' + price.toFixed(2) + ' G\n\nGo to Deposit to top up.');
     location.href = 'deposit.html';
     return;
   }
   if (!confirm('Buy this song for ' + formatPrice(price) + '?\n\nYou will get FULL song in Library.')) return;
-  const { error } = await window.sb.from('purchases').insert({ buyer_id: user.id, song_id: id, price_grind: price, status: 'approved' });
+  const split = typeof splitMoney==='function' ? splitMoney(price) : {artist: price*0.63, fees: price*0.14};
+  const { error } = await sb.from('purchases').insert({ fan_id: user.id, song_id: id, price_grind: price, fees_grind: split.fees||0, payment_method:'Wallet', status: 'approved' });
   if (error) { alert('Buy failed: ' + error.message); return; }
-  await window.sb.from('profiles').update({ balance_grind: bal - price }).eq('id', user.id);
-  // CREDIT ARTIST 63% - was missing, artist never got paid
+  await sb.from('profiles').update({ grind_balance: bal - price }).eq('id', user.id);
   try{
-    const {data: songRow} = await window.sb.from('songs').select('user_id, artist_id').eq('id', id).single();
+    const {data: songRow} = await sb.from('songs').select('user_id, artist_id').eq('id', id).single();
     const artistId = songRow?.user_id || songRow?.artist_id;
     if(artistId && String(artistId) !== String(user.id)){
-      const {data: artistProf} = await window.sb.from('profiles').select('balance_grind').eq('id', artistId).single();
-      const artistBal = Number(artistProf?.balance_grind || 0);
-      await window.sb.from('profiles').update({ balance_grind: artistBal + (price * 0.63) }).eq('id', artistId);
+      const {data: artistProf} = await sb.from('profiles').select('grind_balance').eq('id', artistId).single();
+      const artistBal = Number(artistProf?.grind_balance || 0);
+      await sb.from('profiles').update({ grind_balance: artistBal + split.artist }).eq('id', artistId);
     }
   }catch(e){ console.log('Artist credit failed:', e.message); }
   alert('✅ Bought! Go to Library to play FULL song.');
   location.href = 'library.html';
 }
-
 document.addEventListener('DOMContentLoaded', async function(){
   const params = new URLSearchParams(location.search);
   const songId = params.get('song');
   await loadDiscover();
-  if(songId){
-    setTimeout(function(){ previewSong(songId); }, 500);
-  }
+  if(songId && REMOVED_IDS.includes(String(songId))){ document.getElementById('removedBanner').style.display='block'; }
+  else if(songId){ setTimeout(function(){ previewSong(songId); }, 500); }
 });
 </script>
 <script src="player.js"></script>
