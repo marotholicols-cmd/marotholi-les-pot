@@ -21,6 +21,7 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .msg{margin-top:10px;font-size:14px;min-height:20px}.msg.error{color:#ff6b6b}.msg.ok{color:#d4ff3f}
 .tabs{display:flex;gap:8px}.tabs button{flex:1;padding:12px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-weight:800;cursor:pointer}.tabs button.active{background:#d4ff3f;color:#000}
 .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:900;background:#d4ff3f;color:#000}
+.passwrap{position:relative}.passwrap button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:#222;color:#fff;border:1px solid #444;border-radius:99px;padding:6px 10px;font-size:12px;cursor:pointer}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:10px 0}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65}.bottomnav a.active{color:#d4ff3f;opacity:1}
 </style>
@@ -28,23 +29,33 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <body>
 <header>MAROTHOLI LES-POT<small>🐂 🌧️ Lesotho Music • 1G = M10 FIXED</small></header>
 <div class="wrap">
-<div class="card" id="statusCard"><h3>👤 My Account</h3><p class="small" id="statusText">Checking...</p><div id="loggedInBox" style="display:none"><p class="small" id="userInfo"></p><p><span class="badge" id="roleBadge"></span></p><p style="font-size:22px;font-weight:900" id="balText"></p><button class="btn2" onclick="location.href='wallet.html'">💰 Go to Wallet →</button><button class="btn2" onclick="location.href='upload.html'">⬆️ Upload Song →</button><button class="btn" onclick="doLogout()">Logout</button></div><button class="btn2" id="reloadBtn" style="display:none" onclick="location.reload()">🔄 Reload</button></div>
+<div class="card" id="statusCard"><h3>👤 My Account</h3><p class="small" id="statusText">Checking...</p><div id="loggedInBox" style="display:none"><p class="small" id="userInfo"></p><p class="small" id="userReal"></p><p><span class="badge" id="roleBadge"></span></p><p style="font-size:22px;font-weight:900" id="balText"></p><button class="btn2" onclick="location.href='wallet.html'">💰 Go to Wallet →</button><button class="btn2" onclick="location.href='upload.html'">⬆️ Upload Song →</button><button class="btn" onclick="doLogout()">Logout</button></div><button class="btn2" id="reloadBtn" style="display:none" onclick="location.reload()">🔄 Reload</button></div>
 <div class="card" id="authCard">
 <div class="tabs"><button id="tabLogin" class="active" onclick="switchTab('login')">Login</button><button id="tabSignup" onclick="switchTab('signup')">Sign Up</button></div>
-<div id="loginForm"><label>Email</label><input id="loginEmail" type="email" placeholder="you@gmail.com"><label>Password</label><input id="loginPass" type="password" placeholder="Password"><button class="btn" id="loginBtn" onclick="doLogin()">Login →</button><p class="small" style="text-align:center;margin-top:10px"><a href="#" onclick="doForgot();return false;" style="color:#d4ff3f">Forgot password?</a></p></div>
-<div id="signupForm" style="display:none"><label>Stage Name / Username</label><input id="suName" placeholder="e.g. Flackobird1"><label>Email</label><input id="suEmail" type="email" placeholder="you@gmail.com"><label>Password</label><input id="suPass" type="password" placeholder="Min 6 characters"><label>Are you an Artist?</label><select id="suRole"><option value="fan">Fan - I buy & listen</option><option value="artist">Artist - I upload & sell</option></select><button class="btn" id="signupBtn" onclick="doSignup()">Create Account →</button><p class="small">By signing up you agree: No download, stream only. Preview 30 sec. Artist gets 63%.</p></div>
+<div id="loginForm"><label>Email</label><input id="loginEmail" type="email" placeholder="you@gmail.com"><label>Password</label><div class="passwrap"><input id="loginPass" type="password" placeholder="Password"><button type="button" onclick="togglePass('loginPass',this)">Show</button></div><button class="btn" id="loginBtn" onclick="doLogin()">Login →</button><p class="small" style="text-align:center;margin-top:10px"><a href="#" onclick="doForgot();return false;" style="color:#d4ff3f">Forgot password?</a></p></div>
+<div id="signupForm" style="display:none">
+<label>Real Full Name * — Must match EcoCash / PostBank / ID</label><input id="suRealName" placeholder="e.g. Thabo Mokoena">
+<label>Stage Name / Artist Name *</label><input id="suName" placeholder="e.g. Flackobird1">
+<label>Phone Number * — EcoCash / WhatsApp</label><input id="suPhone" type="tel" placeholder="e.g. 62881234">
+<label>Email *</label><input id="suEmail" type="email" placeholder="you@gmail.com">
+<label>Password *</label><div class="passwrap"><input id="suPass" type="password" placeholder="Min 6 characters"><button type="button" onclick="togglePass('suPass',this)">Show</button></div>
+<label>Are you an Artist?</label><select id="suRole"><option value="fan">Fan - I buy & listen</option><option value="artist">Artist - I upload & sell</option></select>
+<button class="btn" id="signupBtn" onclick="doSignup()">Create Account →</button>
+<p class="small">⚠️ Use REAL name + REAL phone. Admin checks this before approving deposits / withdrawals. Fake names = no payout. By signing up you agree: No download, stream only. Preview 30 sec. Artist gets 63%.</p></div>
 <p class="msg" id="msg"></p></div>
 </div>
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
 <script>
 let mode='login';
+function togglePass(id,btn){ const el=document.getElementById(id); if(el.type==='password'){el.type='text';btn.textContent='Hide';} else {el.type='password';btn.textContent='Show';} }
 function getClient(){ if(window.sb) return window.sb; if(typeof initSB==='function'){ try{ const c=initSB(); if(c) return c; }catch(e){} } return window.sb||null; }
 function switchTab(m){ mode=m; document.getElementById('tabLogin').classList.toggle('active',m==='login'); document.getElementById('tabSignup').classList.toggle('active',m==='signup'); document.getElementById('loginForm').style.display=m==='login'?'block':'none'; document.getElementById('signupForm').style.display=m==='signup'?'block':'none'; document.getElementById('msg').textContent=''; }
 function showMsg(t,ok){ const el=document.getElementById('msg'); el.textContent=t; el.className='msg '+(ok?'ok':'error'); }
 async function waitForSB(){ for(let i=0;i<10;i++){ const c=getClient(); if(c&&c.auth) return c; await new Promise(r=>setTimeout(r,500)); } return null; }
+function cleanPhone(p){ return String(p||'').replace(/[^0-9+]/g,''); }
 async function checkLogin(){
   const c=await waitForSB();
-  if(!c){ document.getElementById('statusText').textContent='Still connecting to Supabase... check internet and reload'; document.getElementById('reloadBtn').style.display='block'; return; }
+  if(!c){ document.getElementById('statusText').textContent='Still connecting... check internet and reload'; document.getElementById('reloadBtn').style.display='block'; return; }
   let user=null;
   try{ user = (typeof getCurrentUser==='function') ? await getCurrentUser() : (await c.auth.getUser()).data?.user; }catch(e){}
   if(!user){ document.getElementById('statusText').textContent='Not logged in - Login or Sign Up below'; return; }
@@ -55,43 +66,43 @@ async function checkLogin(){
   try{
     const {data:prof}=await c.from('profiles').select('*').eq('id',user.id).single();
     const role = prof?.role || 'fan';
-    document.getElementById('roleBadge').textContent = role==='artist' ? '🎤 ARTIST' : '🎧 FAN';
+    document.getElementById('roleBadge').textContent = role==='artist' ? '🎤 ARTIST' : role==='admin' ? '🛡️ ADMIN' : '🎧 FAN';
     const bal = Number(prof?.grind_balance ?? prof?.balance_grind ?? 0);
     document.getElementById('balText').textContent = bal.toFixed(2)+' G = M'+(bal*10).toFixed(2);
-    if(prof?.username) document.getElementById('userInfo').textContent = prof.username + ' • ' + user.email;
+    const real = prof?.full_name || prof?.real_name || '';
+    const stage = prof?.username || prof?.artist_name || '';
+    document.getElementById('userInfo').textContent = (stage ? stage + ' • ' : '') + user.email;
+    document.getElementById('userReal').textContent = (real ? 'Real Name: ' + real : '') + (prof?.phone ? ' • Phone: ' + prof.phone : '');
   }catch(e){
     const bal = (typeof getMyBalance==='function') ? await getMyBalance(user.id) : 0;
     document.getElementById('balText').textContent = bal.toFixed(2)+' G = M'+(bal*10).toFixed(2);
   }
 }
 async function doSignup(){
+  const realName=document.getElementById('suRealName').value.trim();
   const name=document.getElementById('suName').value.trim();
+  const phone=cleanPhone(document.getElementById('suPhone').value.trim());
   const email=document.getElementById('suEmail').value.trim().toLowerCase();
   const pass=document.getElementById('suPass').value;
   const role=document.getElementById('suRole').value;
+  if(!realName || realName.split(' ').length < 2){ showMsg('Enter your REAL Full Name - First + Last, e.g. Thabo Mokoena'); return; }
   if(!name || name.length < 2){ showMsg('Stage Name must be 2+ characters'); return; }
+  if(!phone || phone.replace('+','').length < 8){ showMsg('Enter a real phone number - 8+ digits, e.g. 62881234'); return; }
   if(!email || !email.includes('@')){ showMsg('Enter a valid email'); return; }
-  if(!pass){ showMsg('Fill password'); return; }
-  if(pass.length<6){ showMsg('Password must be 6+ characters'); return; }
+  if(!pass || pass.length<6){ showMsg('Password must be 6+ characters'); return; }
   const btn=document.getElementById('signupBtn'); btn.disabled=true; showMsg('Creating account...',true);
   const c=await waitForSB();
   if(!c){ showMsg('Still not connected. Check internet and reload.'); btn.disabled=false; return; }
   try{
-    const {data,error}=await c.auth.signUp({email,password:pass, options:{ data:{ username:name, role:role } }});
+    const {data,error}=await c.auth.signUp({email,password:pass, options:{ data:{ username:name, full_name:realName, phone:phone, role:role } }});
     if(error) throw error;
     const user=data?.user;
     if(user){
-      // Try to create profile - if RLS blocks, Admin / trigger will create it on first login
-      try{ const {error:pErr}=await c.from('profiles').upsert({id:user.id,username:name,email:email,role:role,grind_balance:0}); if(pErr) console.log('Profile upsert:',pErr.message); }catch(e){ console.log(e.message); }
+      const row = {id:user.id, username:name, display_name:name, artist_name:name, full_name:realName, real_name:realName, phone:phone, email:email, role:role, grind_balance:0, balance_grind:0};
+      try{ const {error:pErr}=await c.from('profiles').upsert(row); if(pErr) console.log('Profile upsert:',pErr.message); }catch(e){ console.log(e.message); }
     }
-    if(data?.session){
-      showMsg('✅ Account created & logged in! Going Home...',true);
-      setTimeout(()=>location.href='index.html',800);
-    } else {
-      showMsg('✅ Account created! Check your email ( + Spam ) to confirm, then Login here.',true);
-      document.getElementById('loginEmail').value = email;
-      setTimeout(()=>switchTab('login'),1200);
-    }
+    if(data?.session){ showMsg('✅ Account created & logged in! Going Home...',true); setTimeout(()=>location.href='index.html',800); }
+    else { showMsg('✅ Account created! Check your email ( + Spam ) to confirm, then Login here.',true); document.getElementById('loginEmail').value = email; setTimeout(()=>switchTab('login'),1200); }
   }catch(e){
     let m=e.message||'Signup failed';
     if(m.toLowerCase().includes('already registered') || m.toLowerCase().includes('already exists')) m='This email is already registered. Tap Login instead.';
@@ -107,10 +118,9 @@ async function doLogin(){
   try{
     const {data,error}=await c.auth.signInWithPassword({email,password:pass});
     if(error) throw error;
-    // Ensure profile exists on login
     try{
       const u=data?.user;
-      if(u){ const {data:prof}=await c.from('profiles').select('id').eq('id',u.id).single(); if(!prof) await c.from('profiles').upsert({id:u.id,email:u.email,username:u.email.split('@')[0],role:'fan',grind_balance:0}); }
+      if(u){ const {data:prof}=await c.from('profiles').select('id').eq('id',u.id).single(); if(!prof) await c.from('profiles').upsert({id:u.id,email:u.email,username:u.email.split('@')[0],full_name:u.email.split('@')[0],role:'fan',grind_balance:0,balance_grind:0}); }
     }catch(e){}
     showMsg('✅ Logged in! Going Home...',true);
     setTimeout(()=>location.href='index.html',700);
