@@ -85,6 +85,7 @@ let allSongs=[]; let _homeTries=0;
 const REMOVED_IDS=['4f924d31-8873-4ec4-befc-f0d7b2a3d697'];
 function getSB(){ if(window.sb) return window.sb; if(typeof initSB==='function'){ try{ const c=initSB(); if(c) return c; }catch(e){} } return window.sb||null; }
 function coverFor(s){
+  if(s._coverUrl && String(s._coverUrl).startsWith('http')) return s._coverUrl;
   try{
     const c=getCoverUrl(s.cover_path||s.cover_url);
     if(c && c!=='icon.svg' && !String(c).includes('undefined') && !String(c).includes('null')) return c;
@@ -101,6 +102,12 @@ async function loadHome(){
     const {data,error}=await sb.from('songs').select('*').order('created_at',{ascending:false});
     if(error) throw error;
     allSongs=(data||[]).filter(s=>!REMOVED_IDS.includes(String(s.id)));
+    // FIX: Resolve real signed cover for each song - private bucket needs signed URL
+    for(const s of allSongs){
+      if(s.cover_path && typeof getCoverDisplayUrl==='function'){
+        try{ const u=await getCoverDisplayUrl(s.cover_path,3600); if(u && u!=='icon.svg') s._coverUrl=u; }catch(e){}
+      }
+    }
     let songs=allSongs;
     if(q) songs=songs.filter(s=>((s.title||'')+' '+(s.artist_name||'')+' '+(s.artist||'')).toLowerCase().includes(q));
     document.getElementById('songCount').textContent = q ? songs.length+' found for "'+q+'"' : allSongs.length+' songs • Fresh first';
@@ -124,19 +131,7 @@ async function loadBalance(){
     document.getElementById('balMaloti').textContent="= M"+grindToMaloti(bal)+" • 1G = M10 FIXED";
   }catch(e){}
 }
-function playWithPlayer(url,s,start,end,isFull){
-  const audio=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); const btn=document.getElementById('playerBtn');
-  document.getElementById('playerTitle').textContent=s.title||'Unknown';
-  document.getElementById('playerArtist').textContent=(s.artist_name||s.artist||'')+(isFull?' • FULL':' • PREVIEW 30s');
-  document.getElementById('playerCover').src=coverFor(s);
-  if(bar) bar.classList.add('show'); if(window._previewTimer) clearInterval(window._previewTimer);
-  audio.pause(); audio.src=url; audio.load();
-  audio.onerror=function(){ alert('❌ Audio file not found. File: '+(s.audio_path||s.audio_url||'EMPTY')); if(btn) btn.textContent='▶'; };
-  audio.onloadedmetadata=function(){ try{ const st=Number(start||0); if(st>0&&st<audio.duration) audio.currentTime=st; }catch(e){} audio.play().then(()=>{ if(btn) btn.textContent='⏸'; }).catch(()=>{ if(btn) btn.textContent='▶'; }); };
-  if(!isFull&&end){ window._previewTimer=setInterval(()=>{ if(!audio.paused&&audio.currentTime>=Number(end)){ audio.pause(); clearInterval(window._previewTimer); if(btn) btn.textContent='▶'; document.getElementById('playerArtist').textContent=(s.artist_name||s.artist||'')+' • PREVIEW ENDED - Buy for full'; } },300); }
-}
-function togglePlayer(){ const a=document.getElementById('mainAudio'); const b=document.getElementById('playerBtn'); if(!a.src) return; if(a.paused){ a.play().then(()=>{ if(b) b.textContent='⏸'; }); } else { a.pause(); if(b) b.textContent='▶'; } }
-function stopPlayer(){ const a=document.getElementById('mainAudio'); const bar=document.getElementById('playerBar'); a.pause(); a.removeAttribute('src'); a.load(); if(bar) bar.classList.remove('show'); if(window._previewTimer) clearInterval(window._previewTimer); const b=document.getElementById('playerBtn'); if(b) b.textContent='▶'; }
+// NOTE: playWithPlayer / togglePlayer / stopPlayer now come ONLY from player.js - DO NOT re-define them here or notification breaks
 async function previewSong(id){
   if(REMOVED_IDS.includes(String(id))){ document.getElementById('removedBanner').style.display='block'; window.scrollTo({top:0,behavior:'smooth'}); return; }
   const s=allSongs.find(x=>String(x.id)===String(id)); if(!s){ alert('Song not found - reload'); return; }
@@ -171,5 +166,6 @@ document.addEventListener('DOMContentLoaded', async function(){
   else { await loadHome(); }
 });
 </script>
+<script src="player.js"></script>
 </body>
 </html>
