@@ -185,14 +185,22 @@ async function uploadSong(){
       const {error: cErr} = await window.sb.storage.from('covers').upload(coverPath, coverFile);
       if(cErr){ console.log('Cover upload failed:', cErr.message); coverPath = ''; }
     }
-    const row = { user_id: user.id, artist_id: user.id, title: title, artist_name: artistName, genre: genre, price_grind: priceG, preview_start: previewStart, preview_seconds: 30, duration_seconds: _audioDuration || null, audio_path: audioPath, cover_path: coverPath, status: 'published' };
+    // FIX: Your table uses cover_url - save to BOTH cover_url + cover_path so it never gets lost again
+    const row = { user_id: user.id, artist_id: user.id, title: title, artist_name: artistName, genre: genre, price_grind: priceG, preview_start: previewStart, preview_seconds: 30, duration_seconds: _audioDuration || null, audio_path: audioPath, cover_url: coverPath, cover_path: coverPath, status: 'published' };
     let {error: dbErr} = await window.sb.from('songs').insert(row);
     if(dbErr){
-      const row2 = { user_id: user.id, artist_id: user.id, title: title, artist_name: artistName, genre: genre, price_grind: priceG, preview_seconds: 30, audio_path: audioPath, status: 'published' };
+      // Fallback: If your table only has ONE of cover_url / cover_path, try with just cover_url
+      console.log('First insert failed, trying cover_url only:', dbErr.message);
+      const row2 = { user_id: user.id, artist_id: user.id, title: title, artist_name: artistName, genre: genre, price_grind: priceG, preview_start: previewStart, preview_seconds: 30, duration_seconds: _audioDuration || null, audio_path: audioPath, cover_url: coverPath, status: 'published' };
       const r2 = await window.sb.from('songs').insert(row2);
-      if(r2.error) throw r2.error;
+      if(r2.error){
+        // Last fallback: try with just cover_path
+        const row3 = { user_id: user.id, artist_id: user.id, title: title, artist_name: artistName, genre: genre, price_grind: priceG, preview_start: previewStart, preview_seconds: 30, duration_seconds: _audioDuration || null, audio_path: audioPath, cover_path: coverPath, status: 'published' };
+        const r3 = await window.sb.from('songs').insert(row3);
+        if(r3.error) throw r3.error;
+      }
     }
-    msg.textContent = '✅ Uploaded as ' + artistName + '! Preview: ' + previewStart + 's-' + (previewStart+30) + 's • Price: ' + priceG.toFixed(2) + ' G • You earn 63%'; msg.className = 'msg ok';
+    msg.textContent = '✅ Uploaded as ' + artistName + '! Preview: ' + previewStart + 's-' + (previewStart+30) + 's • Price: ' + priceG.toFixed(2) + ' G • You earn 63%' + (coverPath ? ' • 🖼️ Cover Saved ✅' : ' • No Cover'); msg.className = 'msg ok';
     document.getElementById('title').value = ''; document.getElementById('audioFile').value = ''; document.getElementById('coverFile').value = ''; document.getElementById('exclusiveCheck').checked=false; document.getElementById('coverPreview').style.display='none';
     _audioDuration = 0; document.getElementById('durationInfo').style.display = 'none';
     loadMySongs();
@@ -207,7 +215,8 @@ async function loadMySongs(){
     if(!data || !data.length){ const r2 = await window.sb.from('songs').select('*').eq('artist_id', user.id).order('created_at', {ascending:false}); data = r2.data || []; }
     if(!data.length){ document.getElementById('mySongs').innerHTML = "<p class='small'>No songs yet. Upload your first hit! 🔥</p>"; return; }
     document.getElementById('mySongs').innerHTML = data.map(function(s){
-      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + escHtml(s.title||'') + "</b> • " + Number(s.price_grind||0).toFixed(2) + " G • Preview " + Number(s.preview_start||0) + "s-" + (Number(s.preview_start||0)+30) + "s • " + escHtml(s.status||'') + "<br><span class='small'>" + escHtml(s.genre||'') + " • " + escHtml(s.artist_name||'') + (s.cover_path ? " • 🖼️ Cover Set ✅" : " • No Cover") + "</span></div>";
+      const hasCover = (s.cover_url || s.cover_path) ? true : false;
+      return "<div style='border-bottom:1px solid #333;padding:8px 0'><b>" + escHtml(s.title||'') + "</b> • " + Number(s.price_grind||0).toFixed(2) + " G • Preview " + Number(s.preview_start||0) + "s-" + (Number(s.preview_start||0)+30) + "s • " + escHtml(s.status||'') + "<br><span class='small'>" + escHtml(s.genre||'') + " • " + escHtml(s.artist_name||'') + (hasCover ? " • 🖼️ Cover Set ✅" : " • No Cover") + "</span></div>";
     }).join('');
   }catch(e){ document.getElementById('mySongs').innerHTML = "<p class='small'>Could not load: " + escHtml(e.message) + "</p>"; }
 }
