@@ -39,7 +39,8 @@ header{background:#d4ff3f;color:#000;padding:14px;text-align:center;font-weight:
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html" class="active">👤<br>Account</a></div>
 <script>
 function copyShareLink(songId, songTitle){
-  const url = window.location.origin + '/index.html?song=' + songId;
+  // FIX: Discover handles ?song= and auto-plays preview
+  const url = window.location.origin + '/discover.html?song=' + songId;
   if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ alert('Share link copied for: ' + songTitle + '\n' + url); }).catch(function(){ prompt('Copy share link:', url); });
   else prompt('Copy share link:', url);
 }
@@ -68,8 +69,6 @@ async function loadDashboard(){
       const r2 = await window.sb.from('songs').select('id,title,artist_name,price_grind,price').eq('artist_id', user.id);
       mySongs = r2.data || [];
     }
-    // Filter removed songs - don't show them as selling
-    if(typeof isRemovedSong==='function') mySongs = mySongs.filter(s=>!isRemovedSong(s.id));
     document.getElementById('totalSongs').textContent = mySongs.length;
     if(!mySongs.length){
       document.getElementById('songList').innerHTML = "<p class='small'>You have no songs yet. <a href='upload.html' style='color:#d4ff3f'>Upload one →</a></p>";
