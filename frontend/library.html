@@ -36,13 +36,11 @@ header small{display:block;font-size:12px;font-weight:700;opacity:.7}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 .count{font-size:12px;opacity:.6;margin-top:6px}
-.removed{background:#2a1212;border:1px solid #ff3b3b;border-radius:18px;padding:12px;margin-bottom:12px;text-align:center;display:none}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>📚 My Library • Bought Songs = FULL</small></header>
 <div class="wrap">
-<div id="removedNote" class="removed"><b>❌ MAMA - REMOVED</b><br><span class="small">That song was removed by Street Rule. It no longer plays.</span></div>
 <div class="card"><h3 style="margin:0">My Bought Songs</h3><p class="small" style="margin:6px 0 0 0">Only songs you bought play FULL here. No download — stream only, works on lock screen.</p><input id="libSearch" placeholder="Search my library..." oninput="renderLibrary()" style="margin-top:10px"><p class="count" id="libCount"></p></div>
 <div id="list"><p class="small">Loading library...</p></div>
 </div>
@@ -51,10 +49,12 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1p
 <div class="bottomnav"><a href="index.html">🏠<br>Home</a><a href="discover.html">🎵<br>Discover</a><a href="library.html" class="active">📚<br>Library</a><a href="upload.html">⬆️<br>Upload</a><a href="wallet.html">💰<br>Wallet</a><a href="account.html">👤<br>Account</a></div>
 <script>
 let mySongs=[];
-const REMOVED_IDS=['4f924d31-8873-4ec4-befc-f0d7b2a3d697'];
 function coverFor(s){
   try{
-    const c=getCoverUrl(s.cover_path||s.cover_url);
+    // FIX: try cover_url FIRST, then cover_path
+    const raw = s.cover_url || s.cover_path || '';
+    if(!raw) return 'icon.svg';
+    const c = getCoverUrl(raw);
     if(c && !String(c).includes('undefined') && !String(c).includes('null')) return c;
   }catch(e){}
   return 'icon.svg';
@@ -91,9 +91,7 @@ async function loadLibrary(){
       else if(e1) throw e1;
     }
     let all=(purchases||[]).map(function(p){return p.songs;}).filter(function(s){return !!s;});
-    const hadRemoved = all.some(s=>REMOVED_IDS.includes(String(s.id)));
-    if(hadRemoved) document.getElementById('removedNote').style.display='block';
-    let songs=all.filter(s=>!REMOVED_IDS.includes(String(s.id)));
+    let songs=all;
     const seen={}; songs=songs.filter(s=>{ if(seen[String(s.id)]) return false; seen[String(s.id)]=1; return true; });
     mySongs=songs;
     renderLibrary();
