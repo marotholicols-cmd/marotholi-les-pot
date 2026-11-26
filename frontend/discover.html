@@ -43,14 +43,12 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .chip{padding:8px 14px;border-radius:99px;border:1px solid #444;background:#222;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
 .chip.active{background:#d4ff3f;color:#000;border-color:#d4ff3f}
-.removed{background:#2a1212;border:1px solid #ff3b3b;border-radius:18px;padding:14px;margin-bottom:12px;text-align:center;display:none}
 .count{font-size:12px;opacity:.6;margin-top:6px}
 </style>
 </head>
 <body>
 <header>MAROTHOLI LES-POT<small>🎵 Discover • 1G = M10 FIXED</small></header>
 <div class="wrap">
-<div id="removedBanner" class="removed"><b>❌ MAMA - REMOVED</b><br><span class="small">One Song, One Home rule. NTABAZI still grinding ✅</span></div>
 <div class="card">
 <h3>🔍 Find Music</h3>
 <input id="searchInput" placeholder="Search songs, artists..." oninput="loadDiscover()">
@@ -96,7 +94,6 @@ input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;bo
 <script>
 let allSongs = [];
 let ownedIds = [];
-const REMOVED_IDS=['4f924d31-8873-4ec4-befc-f0d7b2a3d697'];
 function setGenre(g,btn){
   document.getElementById('genreFilter').value=g;
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -105,7 +102,10 @@ function setGenre(g,btn){
 }
 function coverFor(s){
   try{
-    const c=getCoverUrl(s.cover_path||s.cover_url);
+    // FIX: try cover_url FIRST (what Upload now saves), then cover_path
+    const raw = s.cover_url || s.cover_path || '';
+    if(!raw) return 'icon.svg';
+    const c = getCoverUrl(raw);
     if(c && !String(c).includes('undefined') && !String(c).includes('null')) return c;
   }catch(e){}
   return 'icon.svg';
@@ -129,7 +129,7 @@ async function loadDiscover() {
     }catch(e){}
     const { data, error } = await window.sb.from('songs').select('*').eq('status', 'published').order('created_at', { ascending: false });
     if (error) throw error;
-    allSongs = (data || []).filter(s=>!REMOVED_IDS.includes(String(s.id)));
+    allSongs = (data || []);
     let songs = allSongs.slice();
     if (q) songs = songs.filter(function(s) { return ((s.title || '') + ' ' + (s.artist_name || '') + ' ' + (s.artist||'')).toLowerCase().includes(q); });
     if (genre) songs = songs.filter(function(s){ return s.genre === genre; });
@@ -166,7 +166,6 @@ function shareById(id){
   shareSongLink(s.id, s.title, s.artist_name);
 }
 async function previewSong(id) {
-  if(REMOVED_IDS.includes(String(id))){ document.getElementById('removedBanner').style.display='block'; return; }
   const s = allSongs.find(function(x) { return String(x.id) === String(id); });
   if (!s) return;
   if(typeof playSong==='function'){ await playSong(s, true); return; }
@@ -208,8 +207,7 @@ document.addEventListener('DOMContentLoaded', async function(){
   const params = new URLSearchParams(location.search);
   const songId = params.get('song');
   await loadDiscover();
-  if(songId && REMOVED_IDS.includes(String(songId))){ document.getElementById('removedBanner').style.display='block'; }
-  else if(songId){ setTimeout(function(){ previewSong(songId); }, 500); }
+  if(songId){ setTimeout(function(){ previewSong(songId); }, 500); }
 });
 </script>
 <script src="player.js"></script>
