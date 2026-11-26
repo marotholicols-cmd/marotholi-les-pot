@@ -57,7 +57,6 @@ function getCoverUrl(path){
   const p=String(path).trim();
   if(p.startsWith('http')) return p;
   if(p.startsWith('icon.svg')) return 'icon.svg';
-  // Strip accidental prefixes: covers/covers/xxx, audio/, etc.
   let clean=p.replace(/^covers\//,'').replace(/^audio\//,'').replace(/^\//,'');
   const c = window.sb || initSB();
   if(!c) return 'icon.svg';
@@ -79,6 +78,22 @@ async function getCoverSignedUrl(path, expires){
 }
 window.getCoverSignedUrl = getCoverSignedUrl;
 
+// NEW - FIX FOR COVERS: Tries Signed first, then Public. Use this for display.
+async function getCoverDisplayUrl(path, expires){
+  if(!path || String(path)==='null' || String(path)==='undefined') return 'icon.svg';
+  const p=String(path).trim();
+  if(p.startsWith('http')) return p;
+  if(p.startsWith('icon.svg')) return 'icon.svg';
+  const c = window.sb || initSB(); if(!c) return 'icon.svg';
+  let clean=p.replace(/^covers\//,'').replace(/^audio\//,'').replace(/^\//,'');
+  try{
+    const {data, error} = await c.storage.from('covers').createSignedUrl(clean, expires||3600);
+    if(!error && data?.signedUrl) return data.signedUrl;
+  }catch(e){}
+  return getCoverUrl(path);
+}
+window.getCoverDisplayUrl = getCoverDisplayUrl;
+
 // ===== AUDIO BRAIN - Always returns a stream URL =====
 async function getSongStreamUrl(path, expires){
   if(!path) return null;
@@ -90,7 +105,6 @@ async function getSongStreamUrl(path, expires){
     if(error) throw error;
     return data?.signedUrl || null;
   }catch(e){
-    // Fallback: try raw path as stored, try public URL
     try{
       const {data} = await c.storage.from('songs').getPublicUrl(clean);
       if(data?.publicUrl) return data.publicUrl;
@@ -112,7 +126,6 @@ async function getCurrentUser(){
 window.getCurrentUser = getCurrentUser;
 
 async function requireLogin(){
-  // Wait a bit for Supabase to init, don't fail instantly
   for(let i=0;i<5;i++){
     const c = window.sb || initSB();
     if(c) break;
@@ -124,7 +137,6 @@ async function requireLogin(){
 }
 window.requireLogin = requireLogin;
 
-// Get balance - ONE function, ONE truth: grind_balance
 async function getMyBalance(userId){
   const c = window.sb || initSB(); if(!c) return 0;
   const uid = userId || (await getCurrentUser())?.id;
@@ -134,18 +146,15 @@ async function getMyBalance(userId){
 }
 window.getMyBalance = getMyBalance;
 
-// Check if user owns a song - ONE function
 async function hasBoughtSong(userId, songId){
   const c = window.sb || initSB(); if(!c) return false;
   const {data} = await c.from('purchases').select('id').eq('fan_id', userId).eq('song_id', songId).eq('status','approved').maybeSingle();
   if(data) return true;
-  // Legacy backup: buyer_id
   const r2 = await c.from('purchases').select('id').eq('buyer_id', userId).eq('song_id', songId).maybeSingle();
   return !!r2.data;
 }
 window.hasBoughtSong = hasBoughtSong;
 
-// ===== Share =====
 function shareSongLink(id, title, artist){
   if(isRemovedSong(id)){ alert('❌ This song was removed. Share NTABAZI instead.'); return; }
   const url = location.origin + "/index.html?song=" + id;
@@ -155,10 +164,8 @@ function shareSongLink(id, title, artist){
 }
 window.shareSongLink = shareSongLink;
 
-// ===== Auto-init - Think always =====
 document.addEventListener('DOMContentLoaded', function(){ initSB(); });
 if(window.supabase) initSB();
-// Retry init if supabase lib loads late
 let _sbRetry=0;
 const _sbTimer=setInterval(function(){
   if(window.sb || _sbRetry>10){ clearInterval(_sbTimer); return; }
