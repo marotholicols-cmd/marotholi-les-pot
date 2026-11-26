@@ -22,6 +22,7 @@ label{display:block;font-size:13px;opacity:.8;margin:12px 0 4px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:15px}
 input[type=range]{padding:0}
 input[type=checkbox]{width:auto;margin-right:8px;accent-color:#d4ff3f}
+input[readonly]{background:#1a1a1a;border-color:#d4ff3f;opacity:1;font-weight:800}
 .btn{width:100%;background:#d4ff3f;color:#000;border:0;padding:13px;border-radius:99px;font-weight:900;font-size:15px;cursor:pointer;margin-top:14px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn2{display:block;text-align:center;background:#333;color:#fff;padding:12px;border-radius:99px;font-weight:800;text-decoration:none;margin-top:10px}
@@ -31,7 +32,9 @@ input[type=checkbox]{width:auto;margin-right:8px;accent-color:#d4ff3f}
 .bottomnav a{color:#fff;text-decoration:none;font-size:11px;font-weight:700;text-align:center;opacity:.65;line-height:1.3}
 .bottomnav a.active{color:#d4ff3f;opacity:1}
 .rule{background:#2a1212;border:1px solid #ff3b3b;border-radius:12px;padding:12px;margin-top:12px}
+.payrule{background:#1e2a10;border:1px solid #d4ff3f;border-radius:12px;padding:12px;margin-top:12px}
 .coverPrev{width:80px;height:80px;border-radius:12px;object-fit:cover;background:#333;border:1px solid #333;display:none;margin-top:8px}
+.lockedHint{font-size:12px;color:#d4ff3f;opacity:.9;margin-top:4px}
 </style>
 </head>
 <body>
@@ -42,8 +45,9 @@ input[type=checkbox]{width:auto;margin-right:8px;accent-color:#d4ff3f}
 <h3>Upload New Song</h3>
 <label>Song Title *</label>
 <input id="title" placeholder="e.g. Marotholi">
-<label>Artist Name *</label>
-<input id="artistName" placeholder="e.g. Thabo Mokoena">
+<label>Artist Name * — Locked to your signup name</label>
+<input id="artistName" placeholder="e.g. Alinah" readonly>
+<p class="lockedHint">🔒 This is your registered Stage Name from Sign Up. It cannot be changed here.</p>
 <label>Genre</label>
 <select id="genre"><option>Hip Hop</option><option>Amapiano</option><option>Afrobeat</option><option>Gospel</option><option>House</option><option>Famo</option><option>R&B</option><option>Other</option></select>
 <label>Price in Grinds (G) * — 1G = M10 — Min 0.2G = M2</label>
@@ -60,6 +64,7 @@ input[type=checkbox]{width:auto;margin-right:8px;accent-color:#d4ff3f}
 <p class="small" id="previewLabel"><b style="color:#d4ff3f;font-size:16px">Preview: 0s - 30s</b> — Fans hear 30s free from here, then must BUY to hear full song.</p>
 <p class="small">Tip: 0s = start of song. 30s = chorus / hook. Pick your best 30s.</p>
 <button class="btn" id="testPreviewBtn" onclick="testPreview()" style="background:#222;color:#fff;margin-top:8px">▶ Hear My Preview (30s)</button>
+<div class="payrule"><b style="color:#d4ff3f">💰 PAY RULE: Only the UPLOADER gets paid.</b><p class="small" style="opacity:.9">1 Song = 1 Owner = Uploader gets 100% of the 63% artist share. If you have featured artists, YOU pay them yourself from your share, on your own agreement. Marotholi does NOT pay featured artists.</p></div>
 <div class="rule"><b style="color:#ff6b6b">⚠️ MAROTHOLI STREET RULE: One Song, One Home.</b><p class="small" style="opacity:.9">Marotholi is for EXCLUSIVE songs only. If this song is already on Spotify, YouTube, Audiomack, or anywhere else — DO NOT upload it here. It will be removed.</p>
 <label style="display:flex;align-items:flex-start;opacity:1"><input type="checkbox" id="exclusiveCheck"><span style="font-size:14px"><b>I confirm:</b> This song is NOT on Spotify / YouTube / anywhere else. It is ONLY on Marotholi.</span></label></div>
 <button class="btn" id="uploadBtn" onclick="uploadSong()">⬆️ Upload Song →</button>
@@ -71,6 +76,29 @@ input[type=checkbox]{width:auto;margin-right:8px;accent-color:#d4ff3f}
 <script>
 let _audioDuration = 0;
 let _testAudio = null;
+let _registeredArtistName = '';
+async function getRegisteredArtistName(){
+  try{
+    const user = await getCurrentUser();
+    if(!user) return '';
+    const c = window.sb || (typeof initSB==='function' ? initSB() : null);
+    if(!c) return '';
+    const {data:prof} = await c.from('profiles').select('username,artist_name,display_name').eq('id', user.id).single();
+    return prof?.username || prof?.artist_name || prof?.display_name || '';
+  }catch(e){ return ''; }
+}
+async function loadArtistName(){
+  const name = await getRegisteredArtistName();
+  _registeredArtistName = name;
+  const el = document.getElementById('artistName');
+  if(name){
+    el.value = name;
+    el.readOnly = true;
+    el.placeholder = name;
+  } else {
+    el.placeholder = 'e.g. Alinah';
+  }
+}
 document.getElementById('priceG').addEventListener('input', function(){
   const g = Number(this.value || 0);
   const earn = g * 0.63;
@@ -121,13 +149,18 @@ async function uploadSong(){
   const msg = document.getElementById('msg');
   const btn = document.getElementById('uploadBtn');
   const title = document.getElementById('title').value.trim();
-  const artistName = document.getElementById('artistName').value.trim();
+  let artistName = _registeredArtistName || await getRegisteredArtistName();
+  if(!artistName){
+    artistName = document.getElementById('artistName').value.trim();
+  } else {
+    document.getElementById('artistName').value = artistName;
+  }
   const genre = document.getElementById('genre').value;
   const priceG = Number(document.getElementById('priceG').value || 0);
   const previewStart = Number(document.getElementById('previewStart').value || 0);
   const audioFile = document.getElementById('audioFile').files[0];
   const coverFile = document.getElementById('coverFile').files[0];
-  if(!title || !artistName){ msg.textContent = 'Fill Title + Artist Name'; msg.className = 'msg error'; return; }
+  if(!title || !artistName){ msg.textContent = 'Fill Title + Artist Name. If Artist Name is empty, go to Account and check your profile.'; msg.className = 'msg error'; return; }
   if(!priceG || priceG < 0.2){ msg.textContent = 'Price min 0.2G = M2'; msg.className = 'msg error'; return; }
   if(!audioFile){ msg.textContent = 'Choose MP3 file'; msg.className = 'msg error'; return; }
   if(!document.getElementById('exclusiveCheck').checked){ msg.textContent = '⚠️ You must tick the Street Rule box: Song is ONLY on Marotholi. If it is on Spotify, do NOT upload.'; msg.className = 'msg error'; return; }
@@ -159,7 +192,7 @@ async function uploadSong(){
       const r2 = await window.sb.from('songs').insert(row2);
       if(r2.error) throw r2.error;
     }
-    msg.textContent = '✅ Uploaded! Preview: ' + previewStart + 's-' + (previewStart+30) + 's • Price: ' + priceG.toFixed(2) + ' G • You earn 63%'; msg.className = 'msg ok';
+    msg.textContent = '✅ Uploaded as ' + artistName + '! Preview: ' + previewStart + 's-' + (previewStart+30) + 's • Price: ' + priceG.toFixed(2) + ' G • You earn 63%'; msg.className = 'msg ok';
     document.getElementById('title').value = ''; document.getElementById('audioFile').value = ''; document.getElementById('coverFile').value = ''; document.getElementById('exclusiveCheck').checked=false; document.getElementById('coverPreview').style.display='none';
     _audioDuration = 0; document.getElementById('durationInfo').style.display = 'none';
     loadMySongs();
@@ -178,7 +211,7 @@ async function loadMySongs(){
     }).join('');
   }catch(e){ document.getElementById('mySongs').innerHTML = "<p class='small'>Could not load: " + escHtml(e.message) + "</p>"; }
 }
-document.addEventListener('DOMContentLoaded', loadMySongs);
+document.addEventListener('DOMContentLoaded', function(){ loadArtistName(); loadMySongs(); });
 </script>
 <script src="player.js"></script>
 </body>
